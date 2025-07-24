@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36121.58 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamPlaytimeTracker", "SteamPlaytimeTracker\SteamPlaytimeTracker.csproj", "{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BB1D04B4-186C-4282-B540-68F2DBDD8EF8}
+	EndGlobalSection
+EndGlobal
