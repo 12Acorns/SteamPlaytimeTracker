@@ -1,9 +1,9 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace SteamPlaytimeTracker.Steam.Data;
+namespace SteamPlaytimeTracker.Steam.Data.App;
 
 internal sealed class AppList
 {
 	[JsonPropertyName("apps")]
-	public required AppData[] SteamApps { get; set; }
+	public required SteamApp[] SteamApps { get; set; }
 }

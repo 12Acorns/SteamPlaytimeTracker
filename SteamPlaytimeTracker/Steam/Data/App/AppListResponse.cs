@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace SteamPlaytimeTracker.Steam.Data;
+namespace SteamPlaytimeTracker.Steam.Data.App;
 
 internal readonly record struct AppListResponse
 {

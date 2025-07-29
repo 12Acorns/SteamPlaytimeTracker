@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="SteamPlaytimeTracker.MVVM.View.UserControls.Steam.SteamCapsule"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
+             mc:Ignorable="d" 
+             d:DesignHeight="160" d:DesignWidth="120">
+    <Grid>
+        <Image Source="{Binding CapsuleImagePath}" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0.6*" />
+                <RowDefinition Height="0.08*" />
+                <RowDefinition Height="0.1*"/>
+            </Grid.RowDefinitions>
+            <Label Content="{Binding CapsuleName}" />
+        </Grid>
+    </Grid>
+</UserControl>
