@@ -7,24 +7,26 @@ using System.Diagnostics;
 using System.Windows;
 using System.IO;
 using Serilog;
+using SteamPlaytimeTracker.DbObject.Conversions;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
 	private readonly AppConfig _config;
+	private readonly DbAccess _steamDb;
 	private readonly ILogger _logger;
 	private INavigationService _navigationService;
 
 	private string _steamInstallPath = string.Empty;
 	private bool? _autoRefreshSteamApps = true;
 
-	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config)
+	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, DbAccess steamDb)
 	{
 		NavigationService = navigationService;
 		_logger = logger;
 		_config = config;
-
+		_steamDb = steamDb;
 		AutoRefreshSteamApps = _config.AppData.CheckForSteamAppsPeriodically;
 		SteamInstallPath = _config.AppData.SteamInstallationFolder;
 
@@ -42,7 +44,12 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		QuerySteamGamesCommand = new RelayCommand(async o =>
 		{
 			var res = await SteamRequest.GetAppListAsync().ConfigureAwait(false);
-			_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+			res.Switch(async response =>
+			{
+				_steamDb.AllSteamApps.UpdateRange(response.Apps.SteamApps.Select(x => x.ToDTO()));
+				await _steamDb.SaveChangesAsync().ConfigureAwait(false);
+				_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+			}, (_) => { }, (_) => { });
 		});	
 	}
 

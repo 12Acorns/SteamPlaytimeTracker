@@ -14,7 +14,9 @@
                 <RowDefinition Height="0.08*" />
                 <RowDefinition Height="0.1*"/>
             </Grid.RowDefinitions>
-            <Label Content="{Binding CapsuleName}" />
+            <Label Grid.Row="1" Content="{Binding CapsuleName}" Foreground="White" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center" 
+                   FontSize="12" Padding="0"/>
         </Grid>
     </Grid>
 </UserControl>

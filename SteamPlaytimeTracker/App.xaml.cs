@@ -32,10 +32,11 @@ public partial class App : Application
 		{
 			DataContext = provider.GetRequiredService<HomeViewModel>()
 		});
-
 		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(new ConfigurationBuilder<IAppData>()
 			.UseJsonFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Steam Playtime Tracker", "AppData.json"))
 			.Build()));
+
+		serviceCollection.AddSingleton<DbAccess>();
 		serviceCollection.AddSingleton<HomeWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();

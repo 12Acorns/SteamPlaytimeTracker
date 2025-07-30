@@ -2,7 +2,7 @@
 
 namespace SteamPlaytimeTracker.MVVM.View;
 
-public unsafe partial class HomeWindow : Window
+public partial class HomeWindow : Window
 {
     public HomeWindow()
     {

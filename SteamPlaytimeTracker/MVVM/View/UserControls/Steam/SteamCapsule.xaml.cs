@@ -17,6 +17,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		CapsuleImagePath = imagePath;
 		CapsuleName = steamAppData.Name;
 	}
+	public SteamCapsule() : this("", new SteamApp(-1, "n/a")) { }
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -19,9 +19,11 @@ internal sealed class DbAccess : DbContext
 		_logger = logger;
 		_logger.Information("Db Path: {0}", _dbPath);
 	}
+	public DbAccess() : this(LoggingService.Logger) { }
 
 	public DbSet<SteamAppEntry> SteamAppEntries { get; private set; }
+	public DbSet<SteamAppDTO> AllSteamApps { get; private set; }
 
-	protected override void OnConfiguring(DbContextOptionsBuilder options)
-		=> options.UseSqlite($"Data Source={_dbPath}");
+	protected override void OnConfiguring(DbContextOptionsBuilder options) => 
+		options.UseSqlite($"Data Source={_dbPath}");
 }
