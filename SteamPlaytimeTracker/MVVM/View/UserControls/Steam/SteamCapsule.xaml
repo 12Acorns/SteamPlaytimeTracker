@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
              mc:Ignorable="d" 
-             d:DesignHeight="160" d:DesignWidth="120">
+             d:DesignHeight="160" d:DesignWidth="100">
     <Grid>
         <Image Source="{Binding CapsuleImagePath}" />
         <Grid>
@@ -14,9 +14,20 @@
                 <RowDefinition Height="0.08*" />
                 <RowDefinition Height="0.1*"/>
             </Grid.RowDefinitions>
-            <Label Grid.Row="1" Content="{Binding CapsuleName}" Foreground="White" 
-                   HorizontalAlignment="Center" VerticalAlignment="Center" 
-                   FontSize="12" Padding="0"/>
+            <TextBlock Grid.Row="1" Text="{Binding CapsuleName}" Foreground="White" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" 
+                   FontSize="12" Padding="0" />
+            <Rectangle Grid.Row="1" Panel.ZIndex="-1">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="Transparent" Offset="0.0" />
+                        <GradientStop Color="#A0000000" Offset="0.1" />
+                        <GradientStop Color="Black" Offset="0.5" />
+                        <GradientStop Color="#A0000000" Offset="0.9" />
+                        <GradientStop Color="Transparent" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
         </Grid>
     </Grid>
 </UserControl>

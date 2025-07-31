@@ -1,29 +1,31 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using SteamPlaytimeTracker.DbObject;
+using Microsoft.EntityFrameworkCore;
+using SteamPlaytimeTracker.IO;
 using Serilog;
-using SteamPlaytimeTracker.DbObject;
-using System.IO;
 
 namespace SteamPlaytimeTracker;
 
 internal sealed class DbAccess : DbContext
 {
-	private static readonly string _dbPath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-		"Steam Playtime Tracker",
-		"appusage.db");
-
 	private readonly ILogger _logger;
 
-	public DbAccess(ILogger logger)
+	public DbAccess(DbContextOptions<DbAccess> options, ILogger logger) : base(options)
 	{
 		_logger = logger;
-		_logger.Information("Db Path: {0}", _dbPath);
+		_logger.Information("Db Path: {0}", ApplicationPath.GetPath("Db"));
 	}
-	public DbAccess() : this(LoggingService.Logger) { }
+	public DbAccess() : this(
+		RefreshConnection(),
+		LoggingService.Logger) { }
 
 	public DbSet<SteamAppEntry> SteamAppEntries { get; private set; }
 	public DbSet<SteamAppDTO> AllSteamApps { get; private set; }
 
-	protected override void OnConfiguring(DbContextOptionsBuilder options) => 
-		options.UseSqlite($"Data Source={_dbPath}");
+	private static DbContextOptions<DbAccess> RefreshConnection()
+	{
+		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
+		return new DbContextOptionsBuilder<DbAccess>()
+			.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}")
+			.Options;
+	}
 }

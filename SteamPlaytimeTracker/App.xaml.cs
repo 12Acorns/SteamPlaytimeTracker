@@ -4,12 +4,13 @@ using SteamPlaytimeTracker.MVVM.ViewModel;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Services;
+using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.IO;
 using System.Windows;
-using Config.Net;
-using System.IO;
-using Serilog;
 using Serilog.Core;
+using Config.Net;
+using Serilog;
 
 namespace SteamPlaytimeTracker;
 
@@ -19,6 +20,17 @@ public partial class App : Application
 
 	public App()
 	{
+		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
+		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
+		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
+
+		var iConfigData = new ConfigurationBuilder<IAppData>()
+			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
+			.Build();
+
+		ApplicationPath.TryAddPath(GlobalData.MainTimeSliceCheckLookupName, ApplicationPathOption.CustomGlobal,
+			iConfigData.SteamInstallationFolder, GlobalData.MainSliceCheckLocalPath);
+
 		var serviceCollection = new ServiceCollection();
 		serviceCollection.AddSingleton<HomeWindow>(provider => new HomeWindow()
 		{
@@ -32,15 +44,13 @@ public partial class App : Application
 		{
 			DataContext = provider.GetRequiredService<HomeViewModel>()
 		});
-		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(new ConfigurationBuilder<IAppData>()
-			.UseJsonFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Steam Playtime Tracker", "AppData.json"))
-			.Build()));
+		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(iConfigData));
+		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"));
 
-		serviceCollection.AddSingleton<DbAccess>();
 		serviceCollection.AddSingleton<HomeWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();
-		serviceCollection.AddSingleton<INavigationService, NavigationService>();
+		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 
 		serviceCollection.AddSingleton<Func<Type, ViewModel>>(provider => viewModelType => (ViewModel)provider.GetRequiredService(viewModelType));

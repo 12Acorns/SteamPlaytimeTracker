@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="SteamPlaytimeTracker.MVVM.View.UserControls.DateTime.DateViews.DateMonthView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.DateTime.DateViews"
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="300">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Button Grid.Row="0" Grid.Column="0" Content="January" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="0" Grid.Column="1" Content="February" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="0" Grid.Column="2" Content="March" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="0" Grid.Column="3" Content="April" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="1" Grid.Column="0" Content="May" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="1" Grid.Column="1" Content="June" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="1" Grid.Column="2" Content="July" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="1" Grid.Column="3" Content="August" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="2" Grid.Column="0" Content="September" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="2" Grid.Column="1" Content="October" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="2" Grid.Column="2" Content="November" Style="{StaticResource ResourceKey=DefaultButton}" />
+        <Button Grid.Row="2" Grid.Column="3" Content="December" Style="{StaticResource ResourceKey=DefaultButton}" />
+    </Grid>
+</UserControl>

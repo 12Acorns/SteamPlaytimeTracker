@@ -14,4 +14,7 @@ internal class PlaytimeSliceDTO
 	public short StartTimeOffsetMinutes { get; set; }
 	public long SessionTimeTicks { get; set; }
 	public uint AppId { get; set; }
+
+	public override int GetHashCode() => HashCode.Combine(
+		StartTimeTicks, StartTimeOffsetMinutes, SessionTimeTicks);
 }

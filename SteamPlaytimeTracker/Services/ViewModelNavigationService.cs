@@ -2,12 +2,12 @@
 
 namespace SteamPlaytimeTracker.Services;
 
-class NavigationService : ObservableObject, INavigationService
+class ViewModelNavigationService : ObservableObject, INavigationService
 {
 	private readonly Func<Type, ViewModel> _modelViewFactory;
-	private ViewModel _currentView;
+	private ViewModel _currentView = null!;
 
-	public NavigationService(Func<Type, ViewModel> modelViewFactory)
+	public ViewModelNavigationService(Func<Type, ViewModel> modelViewFactory)
 	{
 		_modelViewFactory = modelViewFactory ?? throw new ArgumentNullException(nameof(modelViewFactory));
 	}

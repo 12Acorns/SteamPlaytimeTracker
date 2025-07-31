@@ -16,6 +16,10 @@
         <!-- Static Resources -->
             <!-- Colours -->
         <SolidColorBrush x:Key="translucentGray">#40AAAAAA</SolidColorBrush>
-        
+
+        <Style x:Key="DefaultButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="LightGray" />
+        </Style>
     </Application.Resources>
 </Application>

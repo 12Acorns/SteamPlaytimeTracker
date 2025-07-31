@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 namespace SteamPlaytimeTracker.Core;
 

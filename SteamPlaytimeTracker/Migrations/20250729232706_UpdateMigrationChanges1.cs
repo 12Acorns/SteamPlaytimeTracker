@@ -10,8 +10,6 @@ namespace SteamPlaytimeTracker.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-			migrationBuilder.Sql("PRAGMA foreign_keys = OFF;", suppressTransaction: true);
-
 			migrationBuilder.DropForeignKey(
                 name: "FK_SteamAppEntries_SteamAppDTO_SteamAppDTOId",
                 table: "SteamAppEntries");
@@ -36,8 +34,6 @@ namespace SteamPlaytimeTracker.Migrations
                 principalTable: "AllSteamApps",
                 principalColumn: "SteamAppDTOId",
                 onDelete: ReferentialAction.Cascade);
-
-			migrationBuilder.Sql("PRAGMA foreign_keys = ON;", suppressTransaction: true);
 		}
 
         /// <inheritdoc />
