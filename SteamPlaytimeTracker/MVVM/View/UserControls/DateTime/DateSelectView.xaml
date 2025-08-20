@@ -12,7 +12,8 @@
             <RowDefinition Height="50"/>
             <RowDefinition />
         </Grid.RowDefinitions>
-        <local:DateHeader x:Name="DateHeader" HeaderText="2025" HeaderFontSize="24" />
-        <ContentControl Grid.Row="1" Content="{Binding DateView}"/>
+        <local:DateHeader x:Name="hdr_Header" HeaderText="2025" HeaderFontSize="24" 
+                          HeaderClickCommand="{Binding HeaderClickCommand}" />
+        <ContentControl Grid.Row="1" Content="{Binding DateView}" />
     </Grid>
 </UserControl>

@@ -2,10 +2,10 @@
 
 namespace SteamPlaytimeTracker.MVVM.View.UserControls.DateTime.DateViews;
 
-public partial class DateMonthView : UserControl, IDateView
+public partial class DateYearView : UserControl, IDateView
 {
-	public DateMonthView()
+	public DateYearView()
 	{
-		//InitializeComponent();
+		InitializeComponent();
 	}
 }

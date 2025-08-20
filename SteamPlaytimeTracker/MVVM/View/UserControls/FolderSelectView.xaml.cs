@@ -1,8 +1,8 @@
-﻿using System.Runtime.CompilerServices;
-using System.Windows.Controls;
+﻿using Microsoft.Win32;
 using System.ComponentModel;
-using Microsoft.Win32;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace SteamPlaytimeTracker.MVVM.View.UserControls;
 

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace SteamPlaytimeTracker.IO;
 
@@ -30,7 +30,7 @@ internal static class ApplicationPath
 
 	public static bool TryAddPath(string lookupName, ApplicationPathOption option, params ReadOnlySpan<string> relativePath) =>
 		TryAddPath(lookupName, Path.Combine(relativePath), option);
-	public static bool TryAddPath(string lookupName, params ReadOnlySpan<string> relativePath) => 
+	public static bool TryAddPath(string lookupName, params ReadOnlySpan<string> relativePath) =>
 		TryAddPath(lookupName, ApplicationPathOption.LocalAppData, relativePath);
 	public static bool TryAddPath(string lookupName, string relativePath, ApplicationPathOption option = ApplicationPathOption.LocalAppData)
 	{
@@ -61,7 +61,7 @@ internal static class ApplicationPath
 	{
 		if(!TryGetPath(lookupName, out var globalPath))
 		{
-			return "";
+			return string.Empty;
 		}
 		return globalPath;
 	}

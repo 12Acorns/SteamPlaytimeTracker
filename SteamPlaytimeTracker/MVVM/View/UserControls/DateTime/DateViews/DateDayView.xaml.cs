@@ -8,6 +8,6 @@ public partial class DateDayView : UserControl, IDateView
 {
 	public DateDayView()
 	{
-		InitializeComponent();
+		//InitializeComponent();
 	}
 }

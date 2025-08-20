@@ -7,8 +7,10 @@
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" 
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
              xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
+             xmlns:dv="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.DateTime"
+             xmlns:app="clr-namespace:SteamPlaytimeTracker.Steam.Data.App"
              mc:Ignorable="d" 
-             Background="#252525"
+             Background="{StaticResource defaultGray}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Grid.RowDefinitions>
@@ -25,19 +27,30 @@
                     Background="Transparent" Foreground="LightGray" HoverBackground="{StaticResource translucentGray}"
                     Command="{Binding SwitchToSettingsMenuCommand}" Margin="0,0,5,0"  />
         </Grid>
-        <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamCapsuleList}">
+        <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamApps}"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 ScrollViewer.CanContentScroll="True"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 BorderThickness="0">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel x:Name="wrapPanel" HorizontalAlignment="Center" VerticalAlignment="Top" />
+                    <WrapPanel x:Name="wrapPanel" HorizontalAlignment="Center" VerticalAlignment="Top" Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
-            <ItemsControl.Template>
-                <ControlTemplate TargetType="{x:Type ItemsControl}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
-                        <ItemsPresenter />
-                    </ScrollViewer>
-                </ControlTemplate>
-            </ItemsControl.Template>
+            <ListBox.ItemTemplate>
+                <!-- DataContext is SteamApp, so when doing bindings reference the properties/fields in SteamApp - NOT SteamCapsule! -->
+                <DataTemplate DataType="{x:Type app:SteamApp}">
+                    <ucsteam:SteamCapsule Width="120" Height="180" 
+                                          Title="{Binding Name}"
+                                          ImageUrl="{Binding ImageUrl}"
+                                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand, 
+                                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                          CommandParameter="{Binding}">
+                    </ucsteam:SteamCapsule>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
         </ListBox>
     </Grid>
 </UserControl>

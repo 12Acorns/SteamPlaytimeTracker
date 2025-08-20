@@ -1,6 +1,6 @@
-﻿using SteamPlaytimeTracker.Services;
+﻿using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Services;
 using System.IO;
-using SteamPlaytimeTracker.SelfConfig;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 

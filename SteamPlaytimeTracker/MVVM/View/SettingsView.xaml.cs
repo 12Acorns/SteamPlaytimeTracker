@@ -4,8 +4,8 @@ namespace SteamPlaytimeTracker.MVVM.View;
 
 public partial class SettingsView : UserControl
 {
-    public SettingsView()
-    {
-        InitializeComponent();
-    }
+	public SettingsView()
+	{
+		InitializeComponent();
+	}
 }

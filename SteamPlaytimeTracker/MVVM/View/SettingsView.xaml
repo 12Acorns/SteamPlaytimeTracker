@@ -9,14 +9,14 @@
         xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel"
         mc:Ignorable="d"
         d:DesignHeight="450" d:DesignWidth="800"
-        Background="#252525">
+        Background="{StaticResource defaultGray}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="22" />
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" >
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <ItemsControl Name="ictrl_Settings" Background="Transparent" HorizontalContentAlignment="Stretch">
                 <userControls:FolderSelectView x:Name="fsv_SteamInstall"
                     InstallIndicator="Steam Installation Location:" InstallPlaceholder="Steam Install Here..." 

@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
         mc:Ignorable="d"
         MinWidth="350"  MinHeight="400"
+        Background="Transparent"
         Title="HomeWindow" Height="450" Width="800">
     <ContentControl Content="{Binding NavigationService.CurrentView}" />
 </Window>

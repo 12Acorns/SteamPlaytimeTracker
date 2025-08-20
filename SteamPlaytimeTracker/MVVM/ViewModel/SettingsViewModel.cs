@@ -9,24 +9,27 @@ using SteamPlaytimeTracker.Services;
 using SteamPlaytimeTracker.Steam;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Windows;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
+	private readonly IAsyncLifetimeService _lifetimeService;
+	private readonly INavigationService _navigationService;
 	private readonly AppConfig _config;
 	private readonly DbAccess _steamDb;
 	private readonly ILogger _logger;
-	private INavigationService _navigationService;
 
 	private string _steamInstallPath = string.Empty;
 	private bool? _autoRefreshSteamApps = true;
 
-	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, DbAccess steamDb)
+	private bool _dbBeingUpdated = false;
+
+	public SettingsViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeService, ILogger logger, AppConfig config, DbAccess steamDb)
 	{
-		NavigationService = navigationService;
+		_navigationService = navigationService;
+		_lifetimeService = lifetimeService;
 		_logger = logger;
 		_config = config;
 		_steamDb = steamDb;
@@ -35,6 +38,13 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
+			if(_dbBeingUpdated)
+			{
+				MessageBox.Show("Please wait until the database is updated before confirming settings.", "Database Update in Progress",
+					MessageBoxButton.OK, MessageBoxImage.Warning);
+				return;
+			}
+
 			var settingsView = (SettingsView)o!;
 			if(VerifySettings(settingsView.fsv_SteamInstall.tf_AppInstall.Text))
 			{
@@ -46,32 +56,45 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 				_logger.Information("Successfully saved AppData", _config.AppData);
 			}
-		});
+		}, _ => !_dbBeingUpdated);
 		QuerySteamGamesCommand = new RelayCommand(async o =>
 		{
-			var res = await SteamRequest.GetAppListAsync().ConfigureAwait(false);
+			if(_dbBeingUpdated)
+			{
+				MessageBox.Show("Please wait until the database is updated before querying Steam games.", "Database Update in Progress",
+					MessageBoxButton.OK, MessageBoxImage.Warning);
+				return;
+			}
+
+			_dbBeingUpdated = true;
+			var res = await SteamRequest.GetAppListAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
 			res.Switch(async response =>
 			{
-				var entries = await _steamDb.AllSteamApps.ToHashSetAsync().ConfigureAwait(false);
-				_steamDb.AllSteamApps.UpdateRange(response.Apps.SteamApps.Select(x => x.ToDTO()).Where(x => !entries.Contains(x)));
-				await _steamDb.SaveChangesAsync().ConfigureAwait(false);
-				_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+				try
+				{
+					var entries = await _steamDb.AllSteamApps.ToHashSetAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
+					await _steamDb.AllSteamApps.AddRangeAsync(response.Apps.SteamApps.Select(x => x.ToDTO()).Where(x => !entries.Contains(x))).ConfigureAwait(false);
+					await _steamDb.SaveChangesAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
+					_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+				}
+				catch(Exception ex)
+				{
+					_logger.Error(ex, "Error while updating Steam App List");
+					MessageBox.Show("An error occurred while updating the Steam App List. Please check the logs for more details.", "Error",
+						MessageBoxButton.OK, MessageBoxImage.Error);
+				}
+				finally
+				{
+					_dbBeingUpdated = false;
+				}
 			}, (_) => { }, (_) => { });
-		});	
+		}, _ => !_dbBeingUpdated);
 	}
 
 	public RelayCommand QuerySteamGamesCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 
-	public INavigationService NavigationService
-	{
-		get => _navigationService;
-		set
-		{
-			_navigationService = value;
-			OnPropertyChanged();
-		}
-	}
+	public INavigationService NavigationService => _navigationService;
 	public bool? AutoRefreshSteamApps
 	{
 		get => _autoRefreshSteamApps;
