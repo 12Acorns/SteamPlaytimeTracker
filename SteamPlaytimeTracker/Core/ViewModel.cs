@@ -8,4 +8,5 @@ internal abstract class ViewModel : ObservableObject
 	{
 		IsConstructed = true;
 	}
+	public virtual void OnLoad(params ReadOnlySpan<object> args) { }
 }

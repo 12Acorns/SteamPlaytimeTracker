@@ -10,8 +10,8 @@ using SteamPlaytimeTracker;
 namespace SteamPlaytimeTracker.Migrations
 {
     [DbContext(typeof(DbAccess))]
-    [Migration("20250730224752_Recreate")]
-    partial class Recreate
+    [Migration("20250822022927_Initialize")]
+    partial class Initialize
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

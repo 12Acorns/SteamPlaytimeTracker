@@ -61,13 +61,14 @@ public partial class App : Application
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 
-		serviceCollection.AddSingleton<Func<Type, ViewModel>>(provider => viewModelType =>
+		serviceCollection.AddSingleton<Func<Type, ReadOnlySpan<object>, ViewModel>>(provider => (viewModelType, @params) =>
 		{
 			var model = (ViewModel)provider.GetRequiredService(viewModelType);
 			if(!model.IsConstructed)
 			{
 				model.OnConstructed();
 			}
+			model.OnLoad(@params);
 			return model;
 		});
 

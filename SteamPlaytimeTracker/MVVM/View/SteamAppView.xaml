@@ -3,8 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" xmlns:steam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
-             xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" 
+             xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
+             xmlns:steam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
+             xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF" 
+             xmlns:data="clr-namespace:SteamPlaytimeTracker.Graphing.Data"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="{StaticResource defaultGray}">
@@ -34,14 +37,14 @@
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="0.4*" MinHeight="200" MaxHeight="300" />
+                    <RowDefinition Height="0.4*" MinHeight="200" MaxHeight="400" />
                     <RowDefinition Height="0.6*" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding SelectedApp.ImageUrl}" />
+                <Image Source="{Binding SelectedApp.ImageUrl}" Margin="5,5,5,0" />
                 <TextBlock Grid.Row="1" Text="{Binding SelectedApp.Name}" 
                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" 
-                           TextWrapping="Wrap" FontSize="24" Padding="10,0,10,0" />
+                           TextWrapping="Wrap" FontSize="18" Padding="5,0,5,0" />
             </Grid>
 
             <Grid Grid.Column="1">
@@ -49,8 +52,59 @@
                     <RowDefinition Height="0.8*"/>
                     <RowDefinition Height="0.2*" MinHeight="80"/>
                 </Grid.RowDefinitions>
-                
+
                 <ContentControl Grid.Column="1" Content="{Binding Plot, Mode=OneTime}" />
+
+                <Grid Grid.Row="1" Margin="5,0,5,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.18*" MinWidth="115" />
+                        <ColumnDefinition Width="0.82*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="0.31*" MinHeight="26"/>
+                            <RowDefinition Height="0.69*"/>
+                        </Grid.RowDefinitions>
+                        <ComboBox HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                                  ItemsSource="{Binding AvailableGraphingOptions}"
+                                  SelectedItem="{Binding SelectedGraphingOption, Mode=TwoWay}"
+                                  SelectedValuePath="IsSelectedByDefault"
+                                  SelectedValue="True"
+                                  Margin="2">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type data:GrapthViewSelectionData}">
+                                    <TextBlock Text="{Binding Title}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                    <Setter Property="VerticalContentAlignment" Value="Center" />
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelectedByDefault}" Value="True">
+                                            <Setter Property="IsSelected" Value="True" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+                        </ComboBox>
+
+                        <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                            <DatePicker Text="{Binding StartDateText, Mode=TwoWay}" SelectedDate="{Binding StartDate, Mode=TwoWay}"
+                                        DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}" 
+                                        Margin="1,0,0,0" BorderThickness="0" />
+                            <DatePicker Text="{Binding EndDateText, Mode=TwoWay}" SelectedDate="{Binding EndDate, Mode=TwoWay}"
+                                        DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
+                                        Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" />
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Column="1">
+                        <TextBlock Text="{Binding TotalPlaytimeText}" Foreground="White" Background="Transparent" />
+                    </Grid>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

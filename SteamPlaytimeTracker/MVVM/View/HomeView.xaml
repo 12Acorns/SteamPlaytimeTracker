@@ -7,7 +7,6 @@
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" 
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
              xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
-             xmlns:dv="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.DateTime"
              xmlns:app="clr-namespace:SteamPlaytimeTracker.Steam.Data.App"
              mc:Ignorable="d" 
              Background="{StaticResource defaultGray}"

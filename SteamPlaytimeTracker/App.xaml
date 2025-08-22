@@ -21,7 +21,7 @@
             <!-- Colours -->
         <SolidColorBrush x:Key="translucentGray">#40AAAAAA</SolidColorBrush>
         <SolidColorBrush x:Key="defaultGray">#252525</SolidColorBrush>
-        
+
         <Style x:Key="DefaultButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="LightGray" />

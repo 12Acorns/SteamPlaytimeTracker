@@ -1,27 +1,23 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OutParsing;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.DbObject;
-using SteamPlaytimeTracker.DbObject.Conversions;
-using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services;
-using SteamPlaytimeTracker.Steam;
+﻿using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.Steam.Data.Playtime;
-using SteamPlaytimeTracker.Utility;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
+using SteamPlaytimeTracker.SelfConfig;
 using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
+using SteamPlaytimeTracker.DbObject;
+using Microsoft.EntityFrameworkCore;
+using SteamPlaytimeTracker.Services;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Steam;
+using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.IO;
+using System.Diagnostics;
+using OutParsing;
+using System.IO;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class HomeViewModel : Core.ViewModel
 {
-	private static readonly Lock _lock = new();
-
 	private static readonly string _tmpStorePath = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
 		"Steam Playtime Tracker",
@@ -45,8 +41,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
 	{
-		NavigationService.NavigateTo<SteamAppViewModel>();
-		((SteamAppViewModel)NavigationService.CurrentView).SelectedApp = (SteamApp)o!;
+		NavigationService.NavigateTo<SteamAppViewModel>(o!);
 	}, o => o is SteamApp);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public INavigationService NavigationService => _navigationService;
@@ -75,12 +70,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 		}
 		await AppendLocalApps().ConfigureAwait(false);
-		SteamApps = new(await _steamDb.SteamAppEntries.Select(x => CreateSteamApp(x)).ToListAsync().ConfigureAwait(false));
+		SteamApps = new(await _steamDb.SteamAppEntries.Select(x => x.SteamApp.FromDTO()).ToListAsync().ConfigureAwait(false));
+
 		base.OnConstructed();
 	}
-	private static SteamApp CreateSteamApp(SteamAppEntry app) => app.SteamApp.FromDTO();
 	private async Task AppendLocalApps()
 	{
+		var segmentsLookup = PlaytimeProvider.GetPlayimeSegmentsAsync();
+
 		// Force loading of all steam apps, prevents null ref during entiresAppid due to the referenced Apps not being loaded (hence null, idk a better way to fix)
 		await _steamDb.AllSteamApps.LoadAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 		var localApps = await GetLocalApps(_lifetimeProvider.CancellationToken).ToListAsync().ConfigureAwait(false);
@@ -92,85 +89,51 @@ internal sealed class HomeViewModel : Core.ViewModel
 			await _steamDb.SteamAppEntries.AddRangeAsync(notFoundInEntriesApps.Select(x => new SteamAppEntry()
 			{
 				SteamApp = x.ToDTO(),
-				PlaytimeSegments = GetSegments(x),
+				PlaytimeSegments = segmentsLookup[x.Id],
 			}), _lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(true);
 		}
 		var segments = new Dictionary<uint, List<PlaytimeSliceDTO>>();
 		var segmentsToUpdate = entriesAppId.Set.AsEnumerable().Where(x =>
 		{
-			var segment = GetSegments(x.SteamApp.FromDTO());
+			var segment = segmentsLookup[x.SteamApp.AppId];
 			segments.TryAdd(x.SteamApp.AppId, segment);
-			return x.PlaytimeSegments != segment;
+			return x.PlaytimeSegments.Count != segment.Count || 
+				!x.PlaytimeSegments.SequenceEqual(segment, EqualityComparer<PlaytimeSliceDTO>.Create((self, other) =>
+			{
+				if(self == null || other == null)
+				{
+					return false;
+				}
+				return self.FromDTO() == other.FromDTO();
+			}, x => x.GetHashCode()));
 		});
 		if(segmentsToUpdate.Any())
 		{
 			foreach(var app in segmentsToUpdate)
 			{
 				var segment = segments[app.SteamApp.AppId];
-				var uniqueSegments = segment.Except(app.PlaytimeSegments);
+				var uniqueSegments = segment.Except(app.PlaytimeSegments, EqualityComparer<PlaytimeSliceDTO>.Create((self, other) =>
+				{
+					if(self == null || other == null)
+					{
+						return false;
+					}
+					return self.FromDTO() == other.FromDTO();
+				}, x => x.GetHashCode()));
 				app.PlaytimeSegments.AddRange(uniqueSegments);
 			}
 			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 		}
 	}
-	private static List<PlaytimeSliceDTO> GetSegments(SteamApp app)
-	{
-		var primarySearchFile = ApplicationPath.GetPath("MainTimeSliceCheck");
-		if(!File.Exists(primarySearchFile))
-		{
-			return [];
-		}
-		if(File.Exists(_tmpStorePath))
-		{
-			File.Delete(_tmpStorePath);
-		}
-		File.Copy(primarySearchFile, _tmpStorePath);
-
-		var playSegmentStart = new Queue<(string Date, uint AppId)>(capacity: 16);
-		var segments = new List<PlaytimeSliceDTO>(capacity: 120);
-		foreach(var line in File.ReadAllLines(_tmpStorePath))
-		{
-			if(OutParser.TryParse(line, "[{startDate}] AppID {appIdS} adding PID {pidIdS} as a tracked process {appPath}",
-				out string startDate, out uint appIdS, out int pidIdS, out string appPath) && appIdS == app.Id)
-			{
-				playSegmentStart.Enqueue((startDate, appIdS));
-				continue;
-			}
-			if(OutParser.TryParse(line, "[{endDate}] AppID {appId} no longer tracking PID {pidId}, exit code {exitCode}",
-				out string endDate, out uint appId, out int pidId, out int exitCode) && appId == app.Id)
-			{
-				if(!playSegmentStart.TryDequeue(out (string, uint) dequeue))
-				{
-					continue;
-				}
-				var startDateString = dequeue.Item1;
-				var startDateOffset = DateTimeOffset.ParseExact(
-					startDateString,
-					"yyyy-MM-dd HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.AssumeLocal);
-				var endDateOffset = DateTimeOffset.ParseExact(
-					endDate,
-					"yyyy-MM-dd HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.AssumeLocal);
-				var dateDelta = endDateOffset - startDateOffset;
-				segments.Add(new PlaytimeSliceDTO(startDateOffset, dateDelta, appId));
-			}
-		}
-		File.Delete(_tmpStorePath);
-		return segments;
-	}
 	private async IAsyncEnumerable<SteamApp> GetLocalApps([EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
-		var dicLookupTask = _steamDb.AllSteamApps.GroupBy(x => x.AppId).Select(x => x.First()).ToDictionaryAsync(x => x.AppId, cancellationToken).ConfigureAwait(false);
 		var primarySearchFile = ApplicationPath.GetPath("MainTimeSliceCheck");
 		if(!File.Exists(primarySearchFile))
 		{
 			// In Future add fallback to alternate files and process them
 			// Another method like GetOnlineApps will ask steam for the the apps a user owns
-			// and gets the info steam provide like total playtime to present the most basic info
+			// and gets the info steam provide like total playtime to present the most basic info (last 2 weeks, and total)
 			yield break;
 		}
 		if(File.Exists(_tmpStorePath))
@@ -179,8 +142,11 @@ internal sealed class HomeViewModel : Core.ViewModel
 		}
 		File.Copy(primarySearchFile, _tmpStorePath);
 
-		var lookup = await dicLookupTask;
-		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, cancellationToken))
+		var lookup = await _steamDb.AllSteamApps
+			.GroupBy(x => x.AppId).Select(x => x.First())
+			.ToDictionaryAsync(x => x.AppId, cancellationToken).ConfigureAwait(false);
+		var seen = new HashSet<uint>();
+		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, cancellationToken).ConfigureAwait(false))
 		{
 			if(cancellationToken.IsCancellationRequested)
 			{
@@ -193,6 +159,10 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 			if(!OutParser.TryParse(line, "[{date}] AppID {appId} adding PID {pidId} as a tracked process {appPath}",
 				out string date, out uint appId, out int pidId, out string appPath))
+			{
+				continue;
+			}
+			if(!seen.Add(appId))
 			{
 				continue;
 			}
