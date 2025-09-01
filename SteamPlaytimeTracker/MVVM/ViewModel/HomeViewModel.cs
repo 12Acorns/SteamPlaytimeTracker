@@ -1,42 +1,81 @@
-﻿using SteamPlaytimeTracker.DbObject.Conversions;
-using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.SelfConfig;
-using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
-using SteamPlaytimeTracker.DbObject;
-using Microsoft.EntityFrameworkCore;
-using SteamPlaytimeTracker.Services;
-using SteamPlaytimeTracker.Utility;
-using SteamPlaytimeTracker.Steam;
+﻿using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.DbObject;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.Steam;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.Steam.Data.Capsule;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Utility.Comparer;
+using SteamPlaytimeTracker.Utility.Equality;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
-using OutParsing;
-using System.IO;
+using System.Globalization;
+using System.Windows.Data;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class HomeViewModel : Core.ViewModel
 {
-	private static readonly string _tmpStorePath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-		"Steam Playtime Tracker",
-		"tmp.txt");
-
 	private readonly IAsyncLifetimeService _lifetimeProvider;
-	private readonly INavigationService _navigationService;
+	private readonly IAppService _appService;
 	private readonly AppConfig _appConfig;
 	private readonly DbAccess _steamDb;
-	private ObservableCollection<SteamApp> _steamCapsules = [];
 
-	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, AppConfig appConfig, DbAccess steamDb)
+	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, AppConfig appConfig, DbAccess steamDb)
 	{
-		_navigationService = navigationService;
+		NavigationService = navigationService;
 		_lifetimeProvider = lifetimeProvider;
+		_appService = appService;
 		_appConfig = appConfig;
 		_steamDb = steamDb;
+
 		SwitchToSettingsMenuCommand = new RelayCommand(o => NavigationService.NavigateTo<SettingsViewModel>());
-		SteamApps = [];
+		PlaytimeOrderImagePath = "/resources/Playtime-Order-Icon_First-Last.png";
+		NameOrderImagePath = "/resources/Name-Order-Icon_First-Last.png";
+		PlaytimeOrderButtonCommand = new(_ =>
+		{
+			var sortAscending = PlaytimeOrderImagePath == "/resources/Playtime-Order-Icon_First-Last.png";
+			PlaytimeOrderImagePath = sortAscending
+				? "/resources/Playtime-Order-Icon_Last-First.png"
+				: "/resources/Playtime-Order-Icon_First-Last.png";
+			CapsuleSortType = CapsuleSortType.Playtime;
+			if(!sortAscending)
+			{
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: true);
+				CapsuleSortType |= CapsuleSortType.Ascending;
+			}
+			else
+			{
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: false);
+			}
+		});
+		NameOrderButtonCommand = new(_ =>
+		{
+			var sortAscending = NameOrderImagePath == "/resources/Name-Order-Icon_First-Last.png";
+			NameOrderImagePath = sortAscending
+				? "/resources/Name-Order-Icon_Last-First.png"
+				: "/resources/Name-Order-Icon_First-Last.png";
+			CapsuleSortType = CapsuleSortType.Name;
+			if(!sortAscending)
+			{
+				CapsuleSortType |= CapsuleSortType.Ascending;
+				SteamAppsView.CustomSort = new AppNameComparer(false);
+			}
+			else
+			{
+				SteamAppsView.CustomSort = new AppNameComparer(true);
+			}
+		});
+		CapsuleSortType = CapsuleSortType.Name | CapsuleSortType.Ascending;
 	}
 
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
@@ -44,144 +83,121 @@ internal sealed class HomeViewModel : Core.ViewModel
 		NavigationService.NavigateTo<SteamAppViewModel>(o!);
 	}, o => o is SteamApp);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
-	public INavigationService NavigationService => _navigationService;
-
+	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
+	public RelayCommand NameOrderButtonCommand { get; set; }
+	public INavigationService NavigationService { get; set; }
 	public ObservableCollection<SteamApp> SteamApps
 	{
-		get => _steamCapsules;
+		get => field;
 		set
 		{
-			_steamCapsules = value;
+			field = value;
+			OnPropertyChanged();
+		}
+	} = [];
+	public ListCollectionView SteamAppsView
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = default!;
+
+	public string PlaytimeOrderImagePath
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	}
+	public string NameOrderImagePath
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	}
+	public CapsuleSortType CapsuleSortType
+	{
+		get => field;
+		private set
+		{
+			field = value;
+			var sortWayText = (field & CapsuleSortType.Ascending) is 0 ? "Descending" : "Ascending";
+			CurrentSortType = $"Sort: {(CapsuleSortType)((int)field & 1)} | {sortWayText}";
+			OnPropertyChanged();
+		}
+	} = CapsuleSortType.Name | CapsuleSortType.Ascending;
+	public string CurrentSortType
+	{
+		get => field;
+		set
+		{
+			field = value;
 			OnPropertyChanged();
 		}
 	}
 
 	public override async void OnConstructed()
 	{
-		if(!await _steamDb.AllSteamApps.AnyAsync().ConfigureAwait(false))
+		if(!await _steamDb.SteamApps.AnyAsync().ConfigureAwait(false))
 		{
 			var res = await SteamRequest.GetAppListAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			if(res.IsT0)
 			{
 				var response = res.AsT0;
-				await _steamDb.AllSteamApps.AddRangeAsync(response.Apps.SteamApps.Select(x => x.ToDTO()), _lifetimeProvider.CancellationToken).ConfigureAwait(false);
-				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
+				_steamDb.SteamApps.AddRange(response.Apps.SteamApps);
 				_appConfig.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			}
 		}
-		await AppendLocalApps().ConfigureAwait(false);
-		SteamApps = new(await _steamDb.SteamAppEntries.Select(x => x.SteamApp.FromDTO()).ToListAsync().ConfigureAwait(false));
-
+		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
+		var toAdd = (await _steamDb.LocalApps.Include(x => x.SteamApp).Select(x => x.SteamApp).ToListAsync().ConfigureAwait(false))
+			.OrderBy(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+		SteamApps = new(toAdd);
+		SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 		base.OnConstructed();
 	}
-	private async Task AppendLocalApps()
+	private async Task AppendLocalAppsAndSaveToDb()
 	{
-		var segmentsLookup = PlaytimeProvider.GetPlayimeSegmentsAsync();
+		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
 
-		// Force loading of all steam apps, prevents null ref during entiresAppid due to the referenced Apps not being loaded (hence null, idk a better way to fix)
-		await _steamDb.AllSteamApps.LoadAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		var localApps = await GetLocalApps(_lifetimeProvider.CancellationToken).ToListAsync().ConfigureAwait(false);
-		var entriesAppId = (await _steamDb.SteamAppEntries.ToHashSetAsync(AlternateAppLookup.Instance)).GetAlternateLookup<SteamApp>();
-		var notFoundInEntriesApps = localApps.Where(x => !entriesAppId.Contains(x));
-		if(notFoundInEntriesApps.Any())
+		var localApps = await _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
+		var steamAppEntriesSet = (await _steamDb.LocalApps
+			.Include(x => x.SteamApp)
+			.Include(x => x.PlaytimeSlices)
+			.AsNoTracking()
+			.ToHashSetAsync(AlternateAppLookup.Instance).ConfigureAwait(false))
+			.GetAlternateLookup<SteamApp>();
+
+		foreach(var notFoundEntry in localApps.Where(x => !steamAppEntriesSet.Contains(x)))
 		{
 			// Tmp, eventually move to own class and call that here
-			await _steamDb.SteamAppEntries.AddRangeAsync(notFoundInEntriesApps.Select(x => new SteamAppEntry()
+			_steamDb.LocalApps.Add(new SteamAppEntry()
 			{
-				SteamApp = x.ToDTO(),
-				PlaytimeSegments = segmentsLookup[x.Id],
-			}), _lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(true);
+				SteamApp = notFoundEntry,
+				PlaytimeSlices = fileSegmentsLookup[notFoundEntry.AppId],
+			});
 		}
-		var segments = new Dictionary<uint, List<PlaytimeSliceDTO>>();
-		var segmentsToUpdate = entriesAppId.Set.AsEnumerable().Where(x =>
+		var entriesEnumerable = steamAppEntriesSet.Set.AsEnumerable();
+		foreach(var app in entriesEnumerable)
 		{
-			var segment = segmentsLookup[x.SteamApp.AppId];
-			segments.TryAdd(x.SteamApp.AppId, segment);
-			return x.PlaytimeSegments.Count != segment.Count || 
-				!x.PlaytimeSegments.SequenceEqual(segment, EqualityComparer<PlaytimeSliceDTO>.Create((self, other) =>
-			{
-				if(self == null || other == null)
-				{
-					return false;
-				}
-				return self.FromDTO() == other.FromDTO();
-			}, x => x.GetHashCode()));
-		});
-		if(segmentsToUpdate.Any())
-		{
-			foreach(var app in segmentsToUpdate)
-			{
-				var segment = segments[app.SteamApp.AppId];
-				var uniqueSegments = segment.Except(app.PlaytimeSegments, EqualityComparer<PlaytimeSliceDTO>.Create((self, other) =>
-				{
-					if(self == null || other == null)
-					{
-						return false;
-					}
-					return self.FromDTO() == other.FromDTO();
-				}, x => x.GetHashCode()));
-				app.PlaytimeSegments.AddRange(uniqueSegments);
-			}
-			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		}
-	}
-	private async IAsyncEnumerable<SteamApp> GetLocalApps([EnumeratorCancellation] CancellationToken cancellationToken = default)
-	{
-		var primarySearchFile = ApplicationPath.GetPath("MainTimeSliceCheck");
-		if(!File.Exists(primarySearchFile))
-		{
-			// In Future add fallback to alternate files and process them
-			// Another method like GetOnlineApps will ask steam for the the apps a user owns
-			// and gets the info steam provide like total playtime to present the most basic info (last 2 weeks, and total)
-			yield break;
-		}
-		if(File.Exists(_tmpStorePath))
-		{
-			File.Delete(_tmpStorePath);
-		}
-		File.Copy(primarySearchFile, _tmpStorePath);
-
-		var lookup = await _steamDb.AllSteamApps
-			.GroupBy(x => x.AppId).Select(x => x.First())
-			.ToDictionaryAsync(x => x.AppId, cancellationToken).ConfigureAwait(false);
-		var seen = new HashSet<uint>();
-		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, cancellationToken).ConfigureAwait(false))
-		{
-			if(cancellationToken.IsCancellationRequested)
-			{
-				File.Delete(_tmpStorePath);
-				yield break;
-			}
-			if(line == string.Empty)
+			var segments = fileSegmentsLookup[app.SteamApp.AppId];
+			if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
 			{
 				continue;
 			}
-			if(!OutParser.TryParse(line, "[{date}] AppID {appId} adding PID {pidId} as a tracked process {appPath}",
-				out string date, out uint appId, out int pidId, out string appPath))
-			{
-				continue;
-			}
-			if(!seen.Add(appId))
-			{
-				continue;
-			}
-			var appName = "n/a";
-			if(lookup.TryGetValue(appId, out var dto))
-			{
-				appName = dto.AppName;
-			}
-			else
-			{
-				continue;
-			}
-			if(cancellationToken.IsCancellationRequested)
-			{
-				File.Delete(_tmpStorePath);
-				yield break;
-			}
-			yield return new SteamApp(appId, appName);
+			var uniqueSegments = segments.Except(app.PlaytimeSlices, PlaytimeSliceEquality.Instance);
+			app.PlaytimeSlices.AddRange(uniqueSegments);
+			_steamDb.Update(app);
+			_steamDb.PlaytimeSlices.AddRange(app.PlaytimeSlices);
 		}
-		File.Delete(_tmpStorePath);
+		await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 	}
 }

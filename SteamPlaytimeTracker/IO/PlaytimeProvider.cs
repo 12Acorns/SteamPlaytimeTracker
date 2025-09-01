@@ -1,4 +1,5 @@
-﻿using SteamPlaytimeTracker.DbObject;
+﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
+using SteamPlaytimeTracker.DbObject;
 using System.Globalization;
 using OutParsing;
 using System.IO;
@@ -12,22 +13,13 @@ internal static class PlaytimeProvider
 		"Steam Playtime Tracker",
 		"tmp.txt");
 
-	public static Dictionary<uint, List<PlaytimeSliceDTO>> GetPlayimeSegmentsAsync() => GetSegmentsFromPrimary()
+	public static Dictionary<uint, List<PlaytimeSlice>> GetPlayimeSegments() => GetSegmentsFromPrimary()
 		.ToDictionary(static x => x.Key, static x => x.ToList());
 
-	private static IEnumerable<IGrouping<uint, PlaytimeSliceDTO>> GetSegmentsFromPrimary()
+	// Lord forgive, I promose I will refactor anothertime
+	// May the tech debt be forgiving 🙏
+	private static IEnumerable<IGrouping<uint, PlaytimeSlice>> GetSegmentsFromPrimary() => HandleTmpFileLifetime(ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), () =>
 	{
-		var primarySearchFile = ApplicationPath.GetPath("MainTimeSliceCheck");
-		if(!File.Exists(primarySearchFile))
-		{
-			return [];
-		}
-		if(File.Exists(_tmpStorePath))
-		{
-			File.Delete(_tmpStorePath);
-		}
-		File.Copy(primarySearchFile, _tmpStorePath);
-
 		var dates = new List<(string Date, uint AppId, bool IsEnd)>();
 
 		var segments = new List<PlaytimeSliceDTO>(capacity: 120);
@@ -53,7 +45,7 @@ internal static class PlaytimeProvider
 						dates.RemoveAt(dates.Count - 1);
 					}
 					break;
-				} 
+				}
 				continue;
 			}
 			if(OutParser.TryParse(line, "[{endDate}] AppID {appId} no longer tracking PID {pidId}, exit code {exitCode}",
@@ -63,7 +55,7 @@ internal static class PlaytimeProvider
 			}
 		}
 		File.Delete(_tmpStorePath);
-		
+
 		if(dates.Count % 2 != 0)
 		{
 			while(dates.Count > 0)
@@ -99,7 +91,7 @@ internal static class PlaytimeProvider
 					index++;
 				}
 				localSegments.Add(first);
-				
+
 				index++;
 			}
 			var distinct = localSegments.DistinctBy(static x => x.Date).ToList();
@@ -121,7 +113,7 @@ internal static class PlaytimeProvider
 					idx--;
 				}
 				idx--;
-			}	
+			}
 			groupedSegments.Add(distinct);
 		}
 		// I believe select many maintains order
@@ -143,7 +135,41 @@ internal static class PlaytimeProvider
 				CultureInfo.InvariantCulture,
 				DateTimeStyles.AssumeLocal);
 			var dateDelta = endDateOffset - startDateOffset;
-			return new PlaytimeSliceDTO(startDateOffset, dateDelta, x[0].AppId);
+			return new PlaytimeSlice { SessionStart = startDateOffset, SessionLength = dateDelta, AppId = x[0].AppId };
 		})).SelectMany(static x => x).GroupBy(static x => x.AppId);
+	});
+	private static T HandleTmpFileLifetime<T>(string path, Func<T> func)
+	{
+		try
+		{
+			if(File.Exists(_tmpStorePath))
+			{
+				File.Delete(_tmpStorePath);
+			}
+			File.Copy(path, _tmpStorePath);
+		}
+		catch(Exception ex)
+		{
+			if(File.Exists(_tmpStorePath))
+			{
+				File.Delete(_tmpStorePath);
+			}
+			LoggingService.Logger.Error(ex, "Failed to copy file: {0}");
+			throw;
+		}
+		LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
+
+		try
+		{
+			return func();
+		}
+		finally
+		{
+			if(File.Exists(_tmpStorePath))
+			{
+				File.Delete(_tmpStorePath);
+			}
+			LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
+		}
 	}
 }

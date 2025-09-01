@@ -1,9 +1,9 @@
 ﻿using SteamPlaytimeTracker.Core;
 
-namespace SteamPlaytimeTracker.Services;
+namespace SteamPlaytimeTracker.Services.Navigation;
 
 internal interface INavigationService
 {
 	public ViewModel CurrentView { get; }
-	void NavigateTo<T>(params ReadOnlySpan<object> @params) where T : ViewModel;
+	void NavigateTo<T>(params object[] @params) where T : ViewModel;
 }

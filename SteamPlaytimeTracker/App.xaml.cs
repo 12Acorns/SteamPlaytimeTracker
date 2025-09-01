@@ -1,16 +1,20 @@
-﻿using Config.Net;
+﻿using Microsoft.Extensions.DependencyInjection;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.Utility.Cache;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.MVVM.View;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Serilog;
-using Serilog.Core;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.MVVM.ViewModel;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Services;
 using System.Windows;
+using Serilog.Core;
+using Config.Net;
+using Serilog;
+using SteamPlaytimeTracker.Utility.Comparer;
 
 namespace SteamPlaytimeTracker;
 
@@ -58,10 +62,12 @@ public partial class App : Application
 		serviceCollection.AddSingleton<SettingsViewModel>();
 		serviceCollection.AddSingleton<SteamAppViewModel>();
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
+		serviceCollection.AddSingleton<IAppService, AppService>();
+		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 
-		serviceCollection.AddSingleton<Func<Type, ReadOnlySpan<object>, ViewModel>>(provider => (viewModelType, @params) =>
+		serviceCollection.AddSingleton<Func<Type, object[], ViewModel>>(provider => (viewModelType, @params) =>
 		{
 			var model = (ViewModel)provider.GetRequiredService(viewModelType);
 			if(!model.IsConstructed)
@@ -77,6 +83,9 @@ public partial class App : Application
 
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		var db = _serviceProvider.GetRequiredService<DbAccess>();
+		db.Database.EnsureCreated();
+
 		var mainWindow = _serviceProvider.GetRequiredService<HomeWindow>();
 		mainWindow.Show();
 		base.OnStartup(e);

@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SteamPlaytimeTracker.Utility;
 
-internal class AlternateAppLookup : IEqualityComparer<SteamAppEntry>, IAlternateEqualityComparer<SteamApp, SteamAppEntry>
+internal sealed class AlternateAppLookup : IEqualityComparer<SteamAppEntry>, IAlternateEqualityComparer<SteamApp, SteamAppEntry>
 {
 	internal static AlternateAppLookup Instance { get; } = new();
 
@@ -19,7 +19,7 @@ internal class AlternateAppLookup : IEqualityComparer<SteamAppEntry>, IAlternate
 		{
 			return false;
 		}
-		return alternate.Id == other.SteamApp.AppId;
+		return alternate.AppId == other.SteamApp.AppId;
 	}
 	public bool Equals(SteamAppEntry? x, SteamAppEntry? y)
 	{
@@ -30,6 +30,6 @@ internal class AlternateAppLookup : IEqualityComparer<SteamAppEntry>, IAlternate
 		return x.SteamApp.AppId == y.SteamApp.AppId;
 	}
 
-	public int GetHashCode(SteamApp alternate) => (int)alternate.Id;
+	public int GetHashCode(SteamApp alternate) => (int)alternate.AppId;
 	public int GetHashCode([DisallowNull] SteamAppEntry obj) => (int)obj.SteamApp.AppId;
 }

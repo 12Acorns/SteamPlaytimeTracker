@@ -1,10 +1,18 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
-public readonly record struct SteamApp(
-	[property: JsonPropertyName("appid")] uint Id,
-	[property: JsonPropertyName("name")] string Name)
+public sealed class SteamApp
 {
-	public string ImageUrl => $"https://steamcdn-a.akamaihd.net/steam/apps/{Id}/library_600x900_2x.jpg";
+	[Key] 
+	public int Id { get; set; }
+	[JsonPropertyName("appid")] public required uint AppId { get; set; }
+	[JsonPropertyName("name")] public required string Name { get; set; }
+
+	[NotMapped]
+	public string ImageUrl => $"https://steamcdn-a.akamaihd.net/steam/apps/{AppId}/library_600x900_2x.jpg";
+
+	public override int GetHashCode() => HashCode.Combine(AppId, Name);
 }

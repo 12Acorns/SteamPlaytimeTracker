@@ -1,5 +1,5 @@
 ﻿using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services;
+using SteamPlaytimeTracker.Services.Navigation;
 using System.IO;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;

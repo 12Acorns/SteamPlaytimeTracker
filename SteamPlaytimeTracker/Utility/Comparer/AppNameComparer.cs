@@ -1,0 +1,24 @@
+﻿using SteamPlaytimeTracker.Steam.Data.App;
+using System.Collections;
+
+namespace SteamPlaytimeTracker.Utility.Comparer;
+
+internal sealed class AppNameComparer : IComparer, IComparer<string>
+{
+	private readonly int _return = 1;
+
+	public AppNameComparer(bool descending) => _return = descending ? -1 : 1;
+
+	public int Compare(string? x, string? y) => StringComparer.InvariantCultureIgnoreCase.Compare(x, y) * _return;
+	public int Compare(object? x, object? y)
+	{
+		if(x == y) return 0;
+		if(x == null) return -_return;
+		if(y == null) return _return;
+		if(x is not SteamApp appLeft || y is not SteamApp appRight)
+		{
+			throw new Exception($"Either argument passed to comparer is not of type {nameof(SteamApp)}");
+		}
+		return Compare(appLeft.Name, appRight.Name);
+	}
+}

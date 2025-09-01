@@ -17,18 +17,44 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <!-- Header bar -->
-        <Grid>
+        <Grid Margin="1,1,0,1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60"/>
                 <ColumnDefinition Width="0.95*"/>
                 <ColumnDefinition Width="0.05*" MinWidth="60" />
             </Grid.ColumnDefinitions>
-            <usercontrols:ExtendedButton Grid.Column="1" Content="Settings" 
+            <usercontrols:ExtendedButton Grid.Column="2" Content="Settings" 
                     Background="Transparent" Foreground="LightGray" HoverBackground="{StaticResource translucentGray}"
-                    Command="{Binding SwitchToSettingsMenuCommand}" Margin="0,0,5,0"  />
+                    Command="{Binding SwitchToSettingsMenuCommand}" Margin="0,0,4,0"  />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30" />
+                    <ColumnDefinition Width="30" />
+                </Grid.ColumnDefinitions>
+
+                <usercontrols:ExtendedButton Background="Transparent" BorderThickness="0"
+                                             Command="{Binding PlaytimeOrderButtonCommand}">
+                    <Image Source="{Binding PlaytimeOrderImagePath}" 
+                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                           MinHeight="20"
+                           MinWidth="20"/>
+                </usercontrols:ExtendedButton>
+                <usercontrols:ExtendedButton Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                             Command="{Binding NameOrderButtonCommand}">
+                    <Image Source="{Binding NameOrderImagePath}" 
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        MinHeight="20"
+                        MinWidth="20"/>
+                </usercontrols:ExtendedButton>
+            </Grid>
+            <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" 
+                       HorizontalAlignment="Left" VerticalAlignment="Center"
+                       Foreground="LightGray"
+                       FontSize="18"/>
         </Grid>
-        <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamApps}"
+        <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
+                 ItemContainerStyle="{StaticResource LBI_NoOutline}"
                  VirtualizingStackPanel.IsVirtualizing="True"
-                 VirtualizingStackPanel.VirtualizationMode="Recycling"
                  ScrollViewer.CanContentScroll="True"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -44,7 +70,7 @@
                     <ucsteam:SteamCapsule Width="120" Height="180" 
                                           Title="{Binding Name}"
                                           ImageUrl="{Binding ImageUrl}"
-                                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand, 
+                                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand,
                                                 RelativeSource={RelativeSource AncestorType=ListBox}}"
                                           CommandParameter="{Binding}">
                     </ucsteam:SteamCapsule>

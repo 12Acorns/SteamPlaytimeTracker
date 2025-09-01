@@ -11,6 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="resources\Name-Order-Icon.png" />
+    <None Remove="resources\Name-Order-IconCenter_First-Last.png" />
+    <None Remove="resources\Name-Order-IconCenter_Last-First.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Config.Net" Version="5.2.1" />
     <PackageReference Include="FastEnum" Version="2.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
@@ -28,5 +34,27 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3" />
+    <PackageReference Include="System.Runtime.Caching" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="resources\Playtime-Order-Icon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Playtime-Order-Icon_First-Last.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Playtime-Order-Icon_Last-First.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Name-Order-Icon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Name-Order-Icon_First-Last.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Name-Order-Icon_Last-First.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 </Project>

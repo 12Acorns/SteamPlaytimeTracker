@@ -9,11 +9,14 @@ using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
 using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.Services;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Steam;
 using SteamPlaytimeTracker.Steam.Data.App;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -27,13 +30,15 @@ internal class SteamAppViewModel : Core.ViewModel
 
 	private readonly List<EventHandler<MouseButtonEventArgs>> _trackedEvents = [];
 	private readonly INavigationService _navigationService;
+	private readonly IAppService _appService;
 	private readonly DbAccess _db;
 
 	private bool _override = true;
 
-	public SteamAppViewModel(INavigationService navigationService, DbAccess db)
+	public SteamAppViewModel(INavigationService navigationService, IAppService appService, DbAccess db)
 	{
 		_navigationService = navigationService;
+		_appService = appService;
 		_db = db;
 		SwitchBackToHomeViewCommand = new RelayCommand(o => NavigationService.NavigateTo<HomeViewModel>());
 		Plot = new();
@@ -82,7 +87,7 @@ internal class SteamAppViewModel : Core.ViewModel
 		get => field;
 		set
 		{
-			if(value > EndDate && !_override)
+			if(value > EndDate && !_override && ShowEndDatePicker)
 			{
 				field = EndDate - TimeSpan.FromDays(1);
 			}
@@ -90,7 +95,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			RefreshPlots();
+			_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
 			OnPropertyChanged();
 		}
 	}
@@ -107,7 +112,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			RefreshPlots();
+			_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
 			OnPropertyChanged();
 		}
 	}
@@ -165,12 +170,12 @@ internal class SteamAppViewModel : Core.ViewModel
 			OnPropertyChanged();
 			if(!_override)
 			{
-				RefreshPlots();
+				_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
 			}
 		}
 	}
 
-	public override void OnLoad(params scoped ReadOnlySpan<object> args)
+	public override async void OnLoad(params object[] args)
 	{
 		if(args.Length < 1 || args[0] is not SteamApp app)
 		{
@@ -178,27 +183,28 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 
 		SelectedApp = app;
-		InitDateRange();
+		await InitDateRange().ConfigureAwait(false);
 		InitPlot();
 
-		CreatePlots();
+		await CreatePlots().ConfigureAwait(false);
 
-		TotalPlaytimeText =$"Total Playtime: '{_db.SteamAppEntries
-			.Where(x => x.SteamApp.AppId == SelectedApp.Id)
-			.First()
-				.PlaytimeSegments
-				.Sum(x => TimeSpan.FromTicks(x.SessionTimeTicks).TotalHours):n2}' hours";
+		var entry = await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false) ?? throw new NullReferenceException();
+
+		var hours = entry.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
+		// n2 = 2 decimal places
+		TotalPlaytimeText = $"Total Playtime: '{hours:n2}' hours";
 	}
 
-	private void CreatePlots()
+	private async ValueTask CreatePlots()
 	{
 		ShowEndDatePicker = true;
 		Plot.Plot.Title(show: true);
+		var game = await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false) ?? throw new NullReferenceException();
 		BarPlot barPlot = SelectedGraphingOption.Id.Id switch
 		{
-			GraphViewSelectionId.YearPlaytimeId => CreateYearPlaytimeBars(),
-			GraphViewSelectionId.MonthPlaytimeId => CreateMonthPlaytimeBars(),
-			GraphViewSelectionId.DayPlaytimeId => CreateDayPlaytimeBars(),
+			GraphViewSelectionId.YearPlaytimeId => CreateYearPlaytimeBars(game),
+			GraphViewSelectionId.MonthPlaytimeId => CreateMonthPlaytimeBars(game),
+			GraphViewSelectionId.DayPlaytimeId => CreateDayPlaytimeBars(game),
 			_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 		};
 
@@ -210,22 +216,23 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	private void AddEventHandleToPlot(BarPlot barPlot)
 	{
-		(DateTime Start, DateTime End) InitAndGetStartAndEnd()
-		{
-			InitDateRange();
-			return (StartDate, EndDate);
-		}
 		static (DateTime Start, DateTime End) GetStartAndEndOfYear(string yearString)
 		{
 			var startOfSpecifiedDate = DateTime.ParseExact(yearString, "yyyy", CultureInfo.InvariantCulture);
-			var endOfSpecifiedDate = new DateTime(startOfSpecifiedDate.Year, 12, 31, 23, 59, 59, 999);
+			var endOfSpecifiedDate = new DateTime(startOfSpecifiedDate.Year + 1, 1, 1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
 		static (DateTime Start, DateTime End) GetStartAndEndOfMonth(string monthName)
 		{
 			var startOfSpecifiedDate = DateTime.ParseExact(monthName, "MMMM", CultureInfo.InvariantCulture);
-			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth();
+			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
 
+			return (startOfSpecifiedDate, endOfSpecifiedDate);
+		}
+		static (DateTime Start, DateTime End) GetStartAndEndOfMonthFromMonthNum(int month)
+		{
+			var startOfSpecifiedDate = new DateTime(DateTime.Now.Year, month, 1);
+			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
 
@@ -244,25 +251,18 @@ internal class SteamAppViewModel : Core.ViewModel
 					var pipeIdx = bar.Label.IndexOf(' ');
 					var dateSpecified = bar.Label[..pipeIdx];
 
-					var (startOfSpecifiedDate, endOfSpecifiedDate) = SelectedGraphingOption.Id.Id switch
+
+					_override = true;
+					(StartDate, EndDate) = SelectedGraphingOption.Id.Id switch
 					{
 						GraphViewSelectionId.YearPlaytimeId => GetStartAndEndOfYear(dateSpecified),
 						GraphViewSelectionId.MonthPlaytimeId => GetStartAndEndOfMonth(dateSpecified),
-						GraphViewSelectionId.DayPlaytimeId => InitAndGetStartAndEnd(),
+						GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
 						_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 					};
-					_override = true;
-					StartDate = startOfSpecifiedDate;
-					EndDate = endOfSpecifiedDate;
 					_override = false;
 
-					SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == SelectedGraphingOption.Id.Id switch
-					{
-						GraphViewSelectionId.YearPlaytimeId => GraphViewSelectionId.MonthPlaytimeId,
-						GraphViewSelectionId.MonthPlaytimeId => GraphViewSelectionId.DayPlaytimeId,
-						GraphViewSelectionId.DayPlaytimeId => GraphViewSelectionId.DayPlaytimeId,
-						_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
-					});
+					SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
 
 					e.Handled = true;
 				}
@@ -271,13 +271,17 @@ internal class SteamAppViewModel : Core.ViewModel
 			HomeWindow.OnMouseDownA += OnClickBarEvent;
 		}
 	}
-	private void RefreshPlots()
+	private async ValueTask RefreshPlots()
 	{
 		RemoveEventHandlesFromPlot();
 
 		Plot.Plot.Clear();
-		CreatePlots();
+		RefreshDateRange();
+		await CreatePlots().ConfigureAwait(false);
 		Plot.Plot.Axes.AutoScale();
+	}
+	private void RefreshDateRange()
+	{
 	}
 	private void RemoveEventHandlesFromPlot()
 	{
@@ -287,21 +291,20 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 		_trackedEvents.Clear();
 	}
-	private BarPlot CreateYearPlaytimeBars()
+	private BarPlot CreateYearPlaytimeBars(SteamAppEntry game)
 	{
-		var game = _db.SteamAppEntries.FirstOrDefault(x => x.SteamApp.AppId == SelectedApp.Id);
 		if(game is null)
 		{
 			return new BarPlot([]);
 		}
-		var start = new DateTime(StartDate.Year, 1, 1, 0, 0, 0, 0).Ticks;
-		var end = new DateTime(EndDate.Year, 12, 31, 23, 59, 59, 999).Ticks;
+		var start = new DateTime(StartDate.Year, 1, 1).Ticks;
+		var end = new DateTime(EndDate.Year + 1, 1, 1).Ticks;
 		int currBarPlotXPos = 0;
-		var playtimeByYear = game.PlaytimeSegments.Where(x => x.StartTimeTicks >= start && x.StartTimeTicks <= end)
-			.GroupBy(x => new DateTime(x.StartTimeTicks).ToString("yyyy", CultureInfo.InvariantCulture))
+		var playtimeByYear = game.PlaytimeSlices.Where(x => x.SessionStart.Ticks >= start && x.SessionStart.Ticks < end)
+			.GroupBy(x => x.SessionStart.ToString("yyyy", CultureInfo.InvariantCulture))
 			.Select(x =>
 			{
-				var playtimeHours = x.Sum(x => TimeSpan.FromTicks(x.SessionTimeTicks).TotalHours);
+				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
 				return new Bar()
 				{
 					Value = playtimeHours,
@@ -318,9 +321,8 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		return Plot.Plot.Add.Bars(playtimeByYear.ToList());
 	}
-	private BarPlot CreateMonthPlaytimeBars()
+	private BarPlot CreateMonthPlaytimeBars(SteamAppEntry game)
 	{
-		var game = _db.SteamAppEntries.FirstOrDefault(x => x.SteamApp.AppId == SelectedApp.Id);
 		if(game is null)
 		{
 			return new BarPlot([]);
@@ -330,11 +332,11 @@ internal class SteamAppViewModel : Core.ViewModel
 		var end = EndDate.Ticks;
 
 		int currBarPlotXPos = 0;
-		var playtimeByMonth = game.PlaytimeSegments.Where(x => x.StartTimeTicks >= start && x.StartTimeTicks <= end)
-			.GroupBy(x => new DateTime(x.StartTimeTicks).ToString("MMMM", CultureInfo.InvariantCulture))
+		var playtimeByMonth = game.PlaytimeSlices.Where(x => x.SessionStart.Ticks >= start && x.SessionStart.Ticks < end)
+			.GroupBy(x => new DateTime(x.SessionStart.Ticks).ToString("MMMM", CultureInfo.InvariantCulture))
 			.Select(x =>
 			{
-				var playtimeHours = x.Sum(x => TimeSpan.FromTicks(x.SessionTimeTicks).TotalHours);
+				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
 				return new Bar()
 				{
 					Value = playtimeHours,
@@ -351,9 +353,8 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		return Plot.Plot.Add.Bars(playtimeByMonth.ToList());
 	}
-	private BarPlot CreateDayPlaytimeBars()
+	private BarPlot CreateDayPlaytimeBars(SteamAppEntry game)
 	{
-		var game = _db.SteamAppEntries.FirstOrDefault(x => x.SteamApp.AppId == SelectedApp.Id);
 		if(game is null)
 		{
 			return new BarPlot([]);
@@ -363,11 +364,11 @@ internal class SteamAppViewModel : Core.ViewModel
 		var end = start.LastDayOfMonth();
 
 		int currBarPlotXPos = 0;
-		var playtimeByDay = game.PlaytimeSegments.Where(x => x.StartTimeTicks >= start.Ticks && x.StartTimeTicks <= end.Ticks)
-			.GroupBy(x => new DateTime(x.StartTimeTicks).ToString("dd", CultureInfo.InvariantCulture))
+		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart <= end)
+			.GroupBy(x => x.SessionStart.ToString("dd", CultureInfo.InvariantCulture))
 			.Select(x =>
 			{
-				var playtimeHours = x.Sum(x => TimeSpan.FromTicks(x.SessionTimeTicks).TotalHours);
+				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
 				return new Bar()
 				{
 					Value = playtimeHours,
@@ -408,11 +409,11 @@ internal class SteamAppViewModel : Core.ViewModel
 			AntiAlias = false
 		};
 	}
-	private void InitDateRange()
+	private async ValueTask InitDateRange()
 	{
-		var app = _db.SteamAppEntries.Where(x => x.SteamApp.AppId == SelectedApp.Id).First();
-		StartDate = new DateTime(app.PlaytimeSegments.MinBy(x => x.StartTimeTicks)!.StartTimeTicks);
-		EndDate = new DateTime(app.PlaytimeSegments.MaxBy(x => x.StartTimeTicks)!.StartTimeTicks);
+		var app = (await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false)) ?? throw new NullReferenceException();
+		StartDate = new DateTime(app.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks);
+		EndDate = new DateTime(app.PlaytimeSlices.MaxBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks) + TimeSpan.FromDays(1);
 
 		MinStartDate = StartDate;
 		MaxEndDate = EndDate;

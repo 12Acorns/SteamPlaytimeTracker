@@ -5,7 +5,8 @@ using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Steam;
 using System.Diagnostics;
 using System.IO;
@@ -72,8 +73,8 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			{
 				try
 				{
-					var entries = await _steamDb.AllSteamApps.ToHashSetAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
-					await _steamDb.AllSteamApps.AddRangeAsync(response.Apps.SteamApps.Select(x => x.ToDTO()).Where(x => !entries.Contains(x))).ConfigureAwait(false);
+					var entries = await _steamDb.SteamApps.ToHashSetAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
+					await _steamDb.SteamApps.AddRangeAsync(response.Apps.SteamApps.Where(x => !entries.Contains(x))).ConfigureAwait(false);
 					await _steamDb.SaveChangesAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
 					_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
 				}

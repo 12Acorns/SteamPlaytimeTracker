@@ -1,4 +1,4 @@
-﻿namespace SteamPlaytimeTracker.Services;
+﻿namespace SteamPlaytimeTracker.Services.Lifetime;
 
 internal interface IAsyncLifetimeService
 {

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SteamPlaytimeTracker;
 
@@ -10,9 +11,11 @@ using SteamPlaytimeTracker;
 namespace SteamPlaytimeTracker.Migrations
 {
     [DbContext(typeof(DbAccess))]
-    partial class DbAccessModelSnapshot : ModelSnapshot
+    [Migration("20250826213611_SlimmedTables")]
+    partial class SlimmedTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -23,12 +26,7 @@ namespace SteamPlaytimeTracker.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SteamAppId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("SteamAppId");
 
                     b.ToTable("LocalApps");
                 });
@@ -48,7 +46,13 @@ namespace SteamPlaytimeTracker.Migrations
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "name");
 
+                    b.Property<int>("SteamAppEntryId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("SteamAppEntryId")
+                        .IsUnique();
 
                     b.ToTable("SteamApps");
                 });
@@ -75,31 +79,30 @@ namespace SteamPlaytimeTracker.Migrations
                     b.ToTable("PlaytimeSlices");
                 });
 
-            modelBuilder.Entity("SteamPlaytimeTracker.DbObject.SteamAppEntry", b =>
+            modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.App.SteamApp", b =>
                 {
-                    b.HasOne("SteamPlaytimeTracker.Steam.Data.App.SteamApp", "SteamApp")
-                        .WithMany()
-                        .HasForeignKey("SteamAppId")
+                    b.HasOne("SteamPlaytimeTracker.DbObject.SteamAppEntry", null)
+                        .WithOne("SteamApp")
+                        .HasForeignKey("SteamPlaytimeTracker.Steam.Data.App.SteamApp", "SteamAppEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("SteamApp");
                 });
 
             modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.Playtime.PlaytimeSlice", b =>
                 {
-                    b.HasOne("SteamPlaytimeTracker.DbObject.SteamAppEntry", "SteamAppEntry")
-                        .WithMany("PlaytimeSlices")
+                    b.HasOne("SteamPlaytimeTracker.DbObject.SteamAppEntry", null)
+                        .WithMany("PlaytimeSegments")
                         .HasForeignKey("SteamAppEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("SteamAppEntry");
                 });
 
             modelBuilder.Entity("SteamPlaytimeTracker.DbObject.SteamAppEntry", b =>
                 {
-                    b.Navigation("PlaytimeSlices");
+                    b.Navigation("PlaytimeSegments");
+
+                    b.Navigation("SteamApp")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

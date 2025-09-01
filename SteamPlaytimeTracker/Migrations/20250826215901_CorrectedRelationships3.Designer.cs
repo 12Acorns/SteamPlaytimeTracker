@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SteamPlaytimeTracker;
 
@@ -10,9 +11,11 @@ using SteamPlaytimeTracker;
 namespace SteamPlaytimeTracker.Migrations
 {
     [DbContext(typeof(DbAccess))]
-    partial class DbAccessModelSnapshot : ModelSnapshot
+    [Migration("20250826215901_CorrectedRelationships3")]
+    partial class CorrectedRelationships3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
@@ -89,7 +92,7 @@ namespace SteamPlaytimeTracker.Migrations
             modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.Playtime.PlaytimeSlice", b =>
                 {
                     b.HasOne("SteamPlaytimeTracker.DbObject.SteamAppEntry", "SteamAppEntry")
-                        .WithMany("PlaytimeSlices")
+                        .WithMany("PlaytimeSegments")
                         .HasForeignKey("SteamAppEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -99,7 +102,7 @@ namespace SteamPlaytimeTracker.Migrations
 
             modelBuilder.Entity("SteamPlaytimeTracker.DbObject.SteamAppEntry", b =>
                 {
-                    b.Navigation("PlaytimeSlices");
+                    b.Navigation("PlaytimeSegments");
                 });
 #pragma warning restore 612, 618
         }

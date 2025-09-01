@@ -8,6 +8,7 @@
              d:DesignHeight="160" d:DesignWidth="100">
     <Grid>
         <usercontrols:ExtendedButton x:Name="btn_Capsule" Background="Transparent" BorderThickness="0" HoverBackground="Transparent"
+                                     HoverBorder="White" PressedBorder="Blue"
                                      Command="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      CommandParameter="{Binding CommandParameter, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <Image Source="{Binding ImageUrl, RelativeSource={RelativeSource AncestorType=UserControl}}" Stretch="UniformToFill" />
@@ -16,12 +17,12 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="0.6*" />
                 <RowDefinition Height="0.08*" />
-                <RowDefinition Height="0.1*"/>
+                <RowDefinition Height="0.1*" />
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="White" 
                    HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" 
                    FontSize="12" Padding="0" />
-            <Rectangle Grid.Row="1" Panel.ZIndex="-1">
+            <Rectangle Grid.Row="1" Panel.ZIndex="-1" Focusable="False">
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                         <GradientStop Color="Transparent" Offset="0.0" />
