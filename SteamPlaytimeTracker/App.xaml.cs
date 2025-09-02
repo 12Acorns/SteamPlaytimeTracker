@@ -23,6 +23,7 @@ public partial class App : Application
 	private readonly ServiceProvider _serviceProvider;
 
 	public static event EventHandler<SessionEndingCancelEventArgs>? OnSessionEndingA;
+	public static ServiceProvider ServiceProvider { get; private set; } = default!;
 
 	public App()
 	{
@@ -79,6 +80,7 @@ public partial class App : Application
 		});
 
 		_serviceProvider = serviceCollection.BuildServiceProvider();
+		ServiceProvider = _serviceProvider;
 	}
 
 	protected override void OnStartup(StartupEventArgs e)

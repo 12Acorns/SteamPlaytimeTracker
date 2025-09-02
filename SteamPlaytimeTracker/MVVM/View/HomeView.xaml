@@ -8,6 +8,7 @@
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
              xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
              xmlns:app="clr-namespace:SteamPlaytimeTracker.Steam.Data.App"
+             xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              mc:Ignorable="d" 
              Background="{StaticResource defaultGray}"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -54,14 +55,14 @@
         </Grid>
         <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
                  ItemContainerStyle="{StaticResource LBI_NoOutline}"
-                 VirtualizingStackPanel.IsVirtualizing="True"
-                 ScrollViewer.CanContentScroll="True"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 BorderThickness="0">
+                 ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0"
+                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                 VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.VirtualizationMode="Recycling">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel x:Name="wrapPanel" HorizontalAlignment="Center" VerticalAlignment="Top" Orientation="Horizontal" />
+                    <vwp:VirtualizingWrapPanel x:Name="wrapPanel" 
+                                               HorizontalAlignment="Center" VerticalAlignment="Top" Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>

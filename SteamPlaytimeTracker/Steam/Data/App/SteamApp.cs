@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
+[DebuggerDisplay("{Id} | {Name} | {AppId}")]
 public sealed class SteamApp
 {
 	[Key] 

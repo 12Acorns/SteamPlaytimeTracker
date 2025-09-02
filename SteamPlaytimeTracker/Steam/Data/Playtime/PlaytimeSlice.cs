@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using SteamPlaytimeTracker.DbObject;
+using System.Diagnostics;
 
 namespace SteamPlaytimeTracker.Steam.Data.Playtime;
 
+[DebuggerDisplay("{Id} | {SessionStart} | {SessionLength} | {AppId}")]
 internal sealed class PlaytimeSlice
 {
 	[Key] public int Id { get; set; }
@@ -20,4 +22,6 @@ internal sealed class PlaytimeSlice
 		@this.SessionStart == other.SessionStart &&
 		@this.SessionLength == other.SessionLength;
 	public static bool operator !=(PlaytimeSlice? @this, PlaytimeSlice? other) => !(@this == other);
+
+	public override int GetHashCode() => HashCode.Combine(SessionStart, SessionLength);
 }

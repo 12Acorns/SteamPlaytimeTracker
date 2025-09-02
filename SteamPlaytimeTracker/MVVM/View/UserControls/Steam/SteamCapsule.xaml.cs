@@ -1,24 +1,32 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows.Media.Imaging;
+using SteamPlaytimeTracker.Core;
+using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows;
-using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Utility.Cache;
+using Microsoft.Extensions.DependencyInjection;
+using SteamPlaytimeTracker.Extensions;
 
 namespace SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 
 public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 {
 	private static readonly DependencyProperty _imageUrlProperty =
-		DependencyProperty.Register(nameof(ImageUrl), typeof(string), typeof(SteamCapsule));
+		DependencyProperty.Register(nameof(ImageUrl), typeof(string), typeof(SteamCapsule),
+			new PropertyMetadata(OnImageUrlChanged));
 	private static readonly DependencyProperty _titleProperty =
 		DependencyProperty.Register(nameof(Title), typeof(string), typeof(SteamCapsule));
 	private static readonly DependencyProperty _command =
 		DependencyProperty.Register(nameof(Command), typeof(RelayCommand), typeof(SteamCapsule));
-	private static readonly DependencyProperty CommandParameterProperty =
+	private static readonly DependencyProperty _commandParameterProperty =
 		DependencyProperty.Register(nameof(CommandParameter), typeof(object), typeof(SteamCapsule));
+
+	private readonly ICacheManager _imageCache;
 
 	public SteamCapsule()
 	{
 		InitializeComponent();
+		_imageCache = App.ServiceProvider.GetRequiredService<ICacheManager>();
 	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -40,7 +48,41 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 	}
 	public object CommandParameter
 	{
-		get => GetValue(CommandParameterProperty);
-		set => SetValue(CommandParameterProperty, value);
+		get => GetValue(_commandParameterProperty);
+		set => SetValue(_commandParameterProperty, value);
+	}
+
+	public BitmapImage CapsuleImage
+	{
+		get => field;
+		set
+		{
+			field = value;
+			PropertyChanged.OnPropertyChanged(this);
+		}
+	}
+
+	private static void OnImageUrlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		var capsule = (SteamCapsule)d;
+		var url = (string)e.NewValue;
+		if(capsule._imageCache.TryGet<BitmapImage>(url, out var bmp))
+			capsule.CapsuleImage = bmp;
+		else
+		{
+			bmp = LoadBitmap(url);
+			capsule._imageCache[url, TimeSpan.FromHours(2)] = bmp;
+			capsule.CapsuleImage = bmp;
+		}
+	}
+	private static BitmapImage LoadBitmap(string url)
+	{
+		var bmp = new BitmapImage();
+		bmp.BeginInit();
+		bmp.UriSource = new Uri(url, UriKind.Absolute);
+		bmp.CacheOption = BitmapCacheOption.OnDemand;
+		bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+		bmp.EndInit();
+		return bmp;
 	}
 }

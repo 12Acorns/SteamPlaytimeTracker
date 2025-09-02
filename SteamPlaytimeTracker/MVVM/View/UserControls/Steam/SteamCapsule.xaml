@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam" xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam" 
+             xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
+             d:DataContext="{d:DesignInstance Type=local:SteamCapsule}"
              mc:Ignorable="d" 
              d:DesignHeight="160" d:DesignWidth="100">
     <Grid>
@@ -11,7 +13,7 @@
                                      HoverBorder="White" PressedBorder="Blue"
                                      Command="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                      CommandParameter="{Binding CommandParameter, RelativeSource={RelativeSource AncestorType=UserControl}}">
-            <Image Source="{Binding ImageUrl, RelativeSource={RelativeSource AncestorType=UserControl}}" Stretch="UniformToFill" />
+            <Image Source="{Binding CapsuleImage, RelativeSource={RelativeSource AncestorType=UserControl}}" Stretch="UniformToFill" />
         </usercontrols:ExtendedButton>
         <Grid>
             <Grid.RowDefinitions>
