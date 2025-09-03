@@ -8,6 +8,7 @@
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
              xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
              xmlns:app="clr-namespace:SteamPlaytimeTracker.Steam.Data.App"
+             xmlns:dbo="clr-namespace:SteamPlaytimeTracker.DbObject"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              mc:Ignorable="d" 
              Background="{StaticResource defaultGray}"
@@ -67,10 +68,10 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <!-- DataContext is SteamApp, so when doing bindings reference the properties/fields in SteamApp - NOT SteamCapsule! -->
-                <DataTemplate DataType="{x:Type app:SteamApp}">
+                <DataTemplate DataType="{x:Type dbo:SteamAppEntry}">
                     <ucsteam:SteamCapsule Width="120" Height="180" 
-                                          Title="{Binding Name}"
-                                          ImageUrl="{Binding ImageUrl}"
+                                          Title="{Binding SteamApp.Name}"
+                                          ImageUrl="{Binding SteamApp.ImageUrl}"
                                           Command="{Binding DataContext.NavigateToPlayTimeViewCommand,
                                                 RelativeSource={RelativeSource AncestorType=ListBox}}"
                                           CommandParameter="{Binding}">

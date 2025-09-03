@@ -45,14 +45,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 			CapsuleSortType = CapsuleSortType.Playtime;
 			if(!sortAscending)
 			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: true);
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: true);
 				CapsuleSortType |= CapsuleSortType.Ascending;
 			}
 			else
 			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: false);
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: false);
 			}
 		});
+
 		NameOrderButtonCommand = new(_ =>
 		{
 			var sortAscending = NameOrderImagePath == "/resources/Name-Order-Icon_First-Last.png";
@@ -81,7 +82,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
 	public INavigationService NavigationService { get; set; }
-	public ObservableCollection<SteamApp> SteamApps
+	public ObservableCollection<SteamAppEntry> SteamApps
 	{
 		get => field;
 		set
@@ -153,8 +154,8 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 		}
 		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
-		var toAdd = (await _steamDb.LocalApps.Include(x => x.SteamApp).Select(x => x.SteamApp).ToListAsync().ConfigureAwait(false))
-			.OrderBy(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+		var toAdd = (await _steamDb.LocalApps.Include(x => x.SteamApp).Include(x => x.PlaytimeSlices).ToListAsync().ConfigureAwait(false))
+			.OrderBy(x => x.SteamApp.Name, StringComparer.InvariantCultureIgnoreCase);
 		SteamApps = new(toAdd);
 		SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 		SteamAppsView.IsLiveSorting = true;
