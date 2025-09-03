@@ -11,6 +11,4 @@ public interface ICacheManager
 	bool IsSet(string key);
 	void Remove(string key);
 	void Clear();
-
-	public abstract object this[string key] { get; set; }
 }

@@ -11,6 +11,7 @@ internal static class SteamRequest
 {
 	private const string SteamApiDomainUrl = "https://api.steampowered.com";
 	private const string GetAppListUrl = $"{SteamApiDomainUrl}/ISteamApps/GetAppList/v2/";
+	private const string SingleAppDetails = $"{SteamApiDomainUrl}";
 
 	private static readonly HttpClient _client = new();
 	private static readonly Logger _logger = LoggingService.Logger;
@@ -41,4 +42,5 @@ internal static class SteamRequest
 			return AppListResponseStatus.UnkownError;
 		}
 	}
+	//public static 
 }

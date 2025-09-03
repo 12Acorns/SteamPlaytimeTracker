@@ -10,7 +10,7 @@ public sealed class SteamApp
 {
 	[Key] 
 	public int Id { get; set; }
-	[JsonPropertyName("appid")] public required uint AppId { get; set; }
+	[JsonPropertyName("steam_appid")] public required uint AppId { get; set; }
 	[JsonPropertyName("name")] public required string Name { get; set; }
 
 	[NotMapped]

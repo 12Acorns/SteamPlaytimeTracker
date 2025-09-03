@@ -66,7 +66,8 @@ public partial class App : Application
 		serviceCollection.AddSingleton<SteamAppViewModel>();
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
-		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
+		serviceCollection.AddKeyedSingleton<ICacheManager, CacheManager>(GlobalData.MemoryCacheKey);
+		serviceCollection.AddKeyedSingleton<IAsyncCacheManager, HybridCacheManager>(GlobalData.HybridCacheKey);
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 
