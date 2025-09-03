@@ -32,6 +32,11 @@ internal sealed class DbAccess : DbContext
 			.WithOne(e => e.SteamAppEntry)
 			.HasForeignKey("SteamAppEntryId")
 			.IsRequired();
+		modelBuilder.Entity<SteamAppEntry>()
+			.HasOne(e => e.SteamApp)
+			.WithOne()
+			.HasForeignKey<SteamAppEntry>("SteamAppId")
+			.IsRequired();
 	}
 
 	private static DbContextOptions<DbAccess> RefreshConnection()

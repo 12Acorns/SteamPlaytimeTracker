@@ -10,7 +10,6 @@ internal sealed class SteamAppEntry
 {
 	[Key]
 	public int Id { get; set; }
-	public int SteamAppId { get; set; }
 	public required SteamApp SteamApp { get; set; }
 	public List<PlaytimeSlice> PlaytimeSlices { get; set; } = [];
 

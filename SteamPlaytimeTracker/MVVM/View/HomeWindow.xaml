@@ -11,9 +11,7 @@
         Title="Application View" Height="450" Width="800"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        AllowsTransparency="False"
-        UseLayoutRounding="True"
-        WindowChrome.IsHitTestVisibleInChrome="True"
+        AllowsTransparency="True"
         PreviewMouseDown="Window_PreviewMouseDown"
         Closing="Window_Closing">
     <Window.Resources>
@@ -21,7 +19,7 @@
     </Window.Resources>
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="25" CornerRadius="0" 
+        <WindowChrome CaptionHeight="25" CornerRadius="0" GlassFrameThickness="0" 
                       ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}"/>
     </WindowChrome.WindowChrome>
     <Grid>
@@ -43,7 +41,8 @@
             <TextBlock Grid.Column="1" Text="Main Window" Foreground="LightGray" VerticalAlignment="Center" />
             <usercontrols:ExtendedButton Grid.Column="2" Background="Transparent" Foreground="LightGray" BorderThickness="0"
                                          HoverBackground="AliceBlue" PressedBackground="Blue"
-                                         Command="{Binding MinimizeCommand}">
+                                         Command="{Binding MinimizeCommand}"
+                                         WindowChrome.IsHitTestVisibleInChrome="True">
                 <Path Data="{StaticResource WindowMinimizeText}" StrokeThickness="1" 
                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
                       Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 
@@ -51,7 +50,8 @@
             </usercontrols:ExtendedButton>
             <usercontrols:ExtendedButton Grid.Column="3" Background="Transparent" Foreground="LightGray" BorderThickness="0"
                                          
-                                         Command="{Binding ToggleSizeCommand}">
+                                         Command="{Binding ToggleSizeCommand}"
+                                         WindowChrome.IsHitTestVisibleInChrome="True">
                 <Path Data="{StaticResource WindowFullScreenToggleText}" StrokeThickness="1"
                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
                       Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 
@@ -59,7 +59,8 @@
             </usercontrols:ExtendedButton>
             <usercontrols:ExtendedButton Grid.Column="4" Background="Transparent" Foreground="LightGray" BorderThickness="0"
                                          
-                                         Command="{Binding QuitApplicationCommand}">
+                                         Command="{Binding QuitApplicationCommand}"
+                                         WindowChrome.IsHitTestVisibleInChrome="True">
                 <Path Data="{DynamicResource WindowCloseText}" StrokeThickness="1"
                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}" 
                       Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 

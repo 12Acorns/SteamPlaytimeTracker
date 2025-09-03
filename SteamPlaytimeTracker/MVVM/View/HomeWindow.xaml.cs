@@ -11,9 +11,15 @@ public partial class HomeWindow : Window
 	public HomeWindow()
 	{
 		InitializeComponent();
+		//ResizeMode = ResizeMode.CanResize;
 	}
 
 
 	private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e) => OnMouseDownA?.Invoke(sender, e);
 	private void Window_Closing(object sender, CancelEventArgs e) => App.Application_Closing(sender, e);
+
+	private void Window_ContentRendered(object sender, EventArgs e)
+	{
+		InvalidateVisual();
+	}
 }
