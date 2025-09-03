@@ -19,6 +19,7 @@ public sealed class CacheManager : ICacheManager
 		value = default!;
 		return false;
 	}
+	public void Set(string key, object data, int cacheTimeMinutes = ICacheManager.DefaultCacheTime) => Set(key, data, TimeSpan.FromMinutes(cacheTimeMinutes));
 	public void Set(string key, object data, TimeSpan cacheTime)
 	{
 		if(data == null)
@@ -28,7 +29,8 @@ public sealed class CacheManager : ICacheManager
 
 		CacheItemPolicy policy = new()
 		{
-			AbsoluteExpiration = DateTime.Now + cacheTime
+			AbsoluteExpiration = DateTimeOffset.UtcNow + cacheTime,
+			Priority = CacheItemPriority.Default
 		};
 
 		_cache.Add(new CacheItem(key, data), policy);
@@ -45,14 +47,10 @@ public sealed class CacheManager : ICacheManager
 		}
 	}
 
+
 	public object this[string key]
 	{
 		get => Get<object>(key);
-		set => ((ICacheManager)this).Set(key, value);
-	}
-	public object this[string key, TimeSpan cacheTime]
-	{
-		get => this[key]; 
-		set => Set(key, value, cacheTime);
+		set => Set(key, value);
 	}
 }

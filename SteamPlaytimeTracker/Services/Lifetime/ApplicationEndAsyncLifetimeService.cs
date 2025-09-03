@@ -18,6 +18,14 @@ internal sealed class ApplicationEndAsyncLifetimeService : IAsyncLifetimeService
 			}
 			await _source.CancelAsync().ConfigureAwait(false);
 		};
+		App.OnSessionClose += async (sender, e) =>
+		{
+			if(e.Cancel)
+			{
+				return;
+			}
+			await _source.CancelAsync().ConfigureAwait(false);
+		};
 	}
 
 	public CancellationToken CancellationToken { get; }

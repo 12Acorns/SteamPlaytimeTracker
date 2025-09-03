@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="resources\Default-Tex.png" />
     <None Remove="resources\Name-Order-Icon.png" />
     <None Remove="resources\Name-Order-IconCenter_First-Last.png" />
     <None Remove="resources\Name-Order-IconCenter_Last-First.png" />
@@ -39,6 +40,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="resources\Default-Tex.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="resources\Playtime-Order-Icon.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

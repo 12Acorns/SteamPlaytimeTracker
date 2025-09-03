@@ -20,7 +20,6 @@
         </DataTemplate>
 
         <!-- Static Resources -->
-            <!-- Colours -->
         <SolidColorBrush x:Key="translucentGray">#40AAAAAA</SolidColorBrush>
         <SolidColorBrush x:Key="defaultGray">#252525</SolidColorBrush>
 

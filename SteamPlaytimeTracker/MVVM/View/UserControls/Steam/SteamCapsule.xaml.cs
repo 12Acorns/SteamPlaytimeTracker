@@ -71,7 +71,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		else
 		{
 			bmp = LoadBitmap(url);
-			capsule._imageCache[url, TimeSpan.FromHours(2)] = bmp;
+			capsule._imageCache.Set(url, bmp, TimeSpan.FromHours(2));
 			capsule.CapsuleImage = bmp;
 		}
 	}

@@ -10,11 +10,11 @@ using SteamPlaytimeTracker.MVVM.View;
 using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
+using System.ComponentModel;
 using System.Windows;
 using Serilog.Core;
 using Config.Net;
 using Serilog;
-using SteamPlaytimeTracker.Utility.Comparer;
 
 namespace SteamPlaytimeTracker;
 
@@ -22,7 +22,9 @@ public partial class App : Application
 {
 	private readonly ServiceProvider _serviceProvider;
 
+	public static event EventHandler<CancelEventArgs>? OnSessionClose;
 	public static event EventHandler<SessionEndingCancelEventArgs>? OnSessionEndingA;
+
 	public static ServiceProvider ServiceProvider { get; private set; } = default!;
 
 	public App()
@@ -93,8 +95,6 @@ public partial class App : Application
 		base.OnStartup(e);
 	}
 
-	private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e)
-	{
-		OnSessionEndingA?.Invoke(this, e);
-	}
+	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);
+	private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e) => OnSessionEndingA?.Invoke(this, e);
 }
