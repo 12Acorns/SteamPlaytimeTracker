@@ -30,6 +30,10 @@
     <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="OneOf.Monads" Version="1.21.0" />
     <PackageReference Include="OutParser" Version="1.1.1" />
+    <PackageReference Include="Polly" Version="8.6.3" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+    <PackageReference Include="Polly.Extensions" Version="8.6.3" />
+    <PackageReference Include="Polly.RateLimiting" Version="8.6.3" />
     <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />

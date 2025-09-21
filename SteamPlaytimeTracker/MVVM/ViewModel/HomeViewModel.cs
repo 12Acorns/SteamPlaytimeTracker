@@ -77,7 +77,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
 	{
 		NavigationService.NavigateTo<SteamAppViewModel>(o!);
-	}, o => o is SteamApp);
+	}, o => o is SteamAppEntry);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
@@ -142,6 +142,8 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 	public override async void OnConstructed()
 	{
+		if(_appConfig.AppData.UseExperimentalAppFetch)
+
 		if(!await _steamDb.SteamApps.AnyAsync().ConfigureAwait(false))
 		{
 			var res = await SteamRequest.GetAppListAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
@@ -149,7 +151,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			{
 				var response = res.AsT0;
 				_steamDb.SteamApps.AddRange(response.Apps.SteamApps);
-				_appConfig.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+				_appConfig.AppData.SteamInstallData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
 				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			}
 		}

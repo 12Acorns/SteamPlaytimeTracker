@@ -1,5 +1,4 @@
 ﻿using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Utility.Cache;
 
 namespace SteamPlaytimeTracker.SelfConfig;
 
@@ -11,5 +10,4 @@ public sealed class AppConfig
 	}
 
 	public IAppData AppData { get; }
-	public IList<ICacheEntry> CacheEntries { get; } = [];
 }

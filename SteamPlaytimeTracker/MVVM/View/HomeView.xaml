@@ -55,29 +55,18 @@
                        FontSize="18"/>
         </Grid>
         <ListBox Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
-                 ItemContainerStyle="{StaticResource LBI_NoOutline}"
+                 ItemContainerStyle="{StaticResource LBI_NoOutline}" Foreground="Transparent"
                  ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0"
                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                 VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.VirtualizationMode="Recycling">
+                 VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.VirtualizationMode="Recycling"
+                 ItemTemplate="{StaticResource SteamAppEntryDataTemplate}">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <vwp:VirtualizingWrapPanel x:Name="wrapPanel" 
                                                HorizontalAlignment="Center" VerticalAlignment="Top" Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
-            <ListBox.ItemTemplate>
-                <!-- DataContext is SteamApp, so when doing bindings reference the properties/fields in SteamApp - NOT SteamCapsule! -->
-                <DataTemplate DataType="{x:Type dbo:SteamAppEntry}">
-                    <ucsteam:SteamCapsule Width="120" Height="180" 
-                                          Title="{Binding SteamApp.Name}"
-                                          ImageUrl="{Binding SteamApp.ImageUrl}"
-                                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand,
-                                                RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                          CommandParameter="{Binding SteamApp}">
-                    </ucsteam:SteamCapsule>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
         </ListBox>
     </Grid>
 </UserControl>

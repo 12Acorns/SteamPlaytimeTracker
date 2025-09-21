@@ -2,20 +2,16 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
-using SteamPlaytimeTracker.Steam.Data.Playtime;
-using SteamPlaytimeTracker.DbObject;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
-[DebuggerDisplay("{Id} | {Name} | {AppId}")]
+[DebuggerDisplay("{Name} | {AppId}")]
 public sealed class SteamApp
 {
-	[Key] 
+	[Key]
 	public int Id { get; set; }
 	[JsonPropertyName("appid")] public required uint AppId { get; set; }
 	[JsonPropertyName("name")] public required string Name { get; set; }
-
-	//internal List<PlaytimeSlice> PlaytimeSlices { get; set; } = [];
 
 	[NotMapped]
 	public string ImageUrl => $"https://steamcdn-a.akamaihd.net/steam/apps/{AppId}/library_600x900_2x.jpg";

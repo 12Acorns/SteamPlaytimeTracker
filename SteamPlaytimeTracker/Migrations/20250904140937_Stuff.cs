@@ -1,0 +1,37 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace SteamPlaytimeTracker.Migrations
+{
+    /// <inheritdoc />
+    public partial class Stuff : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_LocalApps_SteamAppId",
+                table: "LocalApps");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalApps_SteamAppId",
+                table: "LocalApps",
+                column: "SteamAppId",
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_LocalApps_SteamAppId",
+                table: "LocalApps");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LocalApps_SteamAppId",
+                table: "LocalApps",
+                column: "SteamAppId");
+        }
+    }
+}

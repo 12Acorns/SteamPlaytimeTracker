@@ -5,6 +5,7 @@ using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.SelfConfig.Data;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Steam;
@@ -34,8 +35,8 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		_logger = logger;
 		_config = config;
 		_steamDb = steamDb;
-		AutoRefreshSteamApps = _config.AppData.CheckForSteamAppsPeriodically;
-		SteamInstallPath = _config.AppData.SteamInstallationFolder;
+		AutoRefreshSteamApps = _config.AppData.SteamInstallData.CheckForSteamAppsPeriodically;
+		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
@@ -49,13 +50,18 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			var settingsView = (SettingsView)o!;
 			if(VerifySettings(settingsView.fsv_SteamInstall.tf_AppInstall.Text))
 			{
-				_navigationService!.NavigateTo<HomeViewModel>();
-				_config.AppData.SteamInstallationFolder = settingsView.fsv_SteamInstall.tf_AppInstall.Text;
-				_config.AppData.CheckForSteamAppsPeriodically = settingsView.tgl_AutoFetchSteamApps.IsChecked!.Value;
+				_config.AppData.SteamInstallData.SteamInstallationFolder = settingsView.fsv_SteamInstall.tf_AppInstall.Text;
+				_config.AppData.SteamInstallData.CheckForSteamAppsPeriodically = settingsView.tgl_AutoFetchSteamApps.IsChecked!.Value;
 
-				ApplicationPath.AddOrUpdatePath(GlobalData.MainTimeSliceCheckLookupName, GlobalData.MainSliceCheckLocalPath);
+				ApplicationPath.AddOrUpdatePath(GlobalData.MainTimeSliceCheckLookupName, 
+					Path.Combine(_config.AppData.SteamInstallData.SteamInstallationFolder, GlobalData.MainSliceCheckLocalPath), 
+					ApplicationPathOption.CustomGlobal);
+
+				_config.AppData.UseExperimentalAppFetch = settingsView.ts_UseExperimentalFetch.tgl_Button.IsChecked!.Value;
 
 				_logger.Information("Successfully saved AppData", _config.AppData);
+
+				_navigationService!.NavigateTo<HomeViewModel>();
 			}
 		}, _ => !_dbBeingUpdated);
 		QuerySteamGamesCommand = new RelayCommand(async o =>
@@ -76,7 +82,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					var entries = await _steamDb.SteamApps.ToHashSetAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
 					await _steamDb.SteamApps.AddRangeAsync(response.Apps.SteamApps.Where(x => !entries.Contains(x))).ConfigureAwait(false);
 					await _steamDb.SaveChangesAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
-					_config.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
+					_config.AppData.SteamInstallData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
 				}
 				catch(Exception ex)
 				{
@@ -89,7 +95,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					_dbBeingUpdated = false;
 				}
 			}, (_) => { }, (_) => { });
-		}, _ => !_dbBeingUpdated);
+		}, _ => !_dbBeingUpdated && !_config.AppData.UseExperimentalAppFetch);
 	}
 
 	public RelayCommand QuerySteamGamesCommand { get; set; }

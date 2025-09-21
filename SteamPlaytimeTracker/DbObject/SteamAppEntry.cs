@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace SteamPlaytimeTracker.DbObject;
 
-[DebuggerDisplay("{Id} | {SteamApp} | {PlaytimeSlices.Count}")]
+[DebuggerDisplay("{SteamApp} || {PlaytimeSlices.Count}")]
 internal sealed class SteamAppEntry
 {
 	[Key]

@@ -6,8 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
         xmlns:userControls="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
-        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel"
-        mc:Ignorable="d"
+        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" xmlns:settings="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
+             mc:Ignorable="d"
         d:DesignHeight="450" d:DesignWidth="800"
         Background="{StaticResource defaultGray}">
     <Grid>
@@ -22,7 +22,7 @@
                     InstallIndicator="Steam Installation Location:" InstallPlaceholder="Steam Install Here..." 
                     InstallFolderTitle="Select Steam Installation Folder" InstallFolderNotSelectedWarning="Steam Install not Selected" 
                     FolderPath="{Binding DataContext.SteamInstallPath, Mode=TwoWay, ElementName=settingsView}" />
-                <Grid>
+                <Grid Name="Auto_Fetch_Apps">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="156" />
                         <ColumnDefinition Width="0.8*" />
@@ -32,6 +32,8 @@
                     <ToggleButton x:Name="tgl_AutoFetchSteamApps" Grid.Column="2" HorizontalAlignment="Center" Width="25" Height="25" 
                         IsChecked="{Binding DataContext.AutoRefreshSteamApps, ElementName=settingsView}"/>
                 </Grid>
+                <settings:ToggleSettingUC x:Name="ts_UseExperimentalFetch" Text="App Fetch [Foreground=Aquamarine](Experimental)[Foreground=LightGray]:" 
+                                          Foreground="LightGray" Background="Transparent" />
             </ItemsControl>
         </ScrollViewer>
 

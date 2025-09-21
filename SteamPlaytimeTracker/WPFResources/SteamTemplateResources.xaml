@@ -1,0 +1,15 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+                    xmlns:dbo="clr-namespace:SteamPlaytimeTracker.DbObject" 
+                    xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam">
+    
+    <DataTemplate x:Key="SteamAppEntryDataTemplate" DataType="{x:Type dbo:SteamAppEntry}">
+        <ucsteam:SteamCapsule Width="120" Height="180"
+                          Title="{Binding SteamApp.Name}"
+                          ImageUrl="{Binding SteamApp.ImageUrl}"
+                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand,
+                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                          CommandParameter="{Binding}">
+        </ucsteam:SteamCapsule>
+    </DataTemplate>
+</ResourceDictionary>

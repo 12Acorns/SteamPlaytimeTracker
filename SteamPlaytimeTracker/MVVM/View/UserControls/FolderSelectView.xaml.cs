@@ -66,7 +66,7 @@ public partial class FolderSelectView : UserControl, INotifyPropertyChanged
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	private void btn_OpenInstallFolder_Click(object sender, System.Windows.RoutedEventArgs e)
+	private void btn_OpenInstallFolder_Click(object sender, RoutedEventArgs e)
 	{
 		var openFolder = new OpenFolderDialog()
 		{
