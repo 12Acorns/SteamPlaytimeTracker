@@ -32,19 +32,18 @@
                     <ToggleButton x:Name="tgl_AutoFetchSteamApps" Grid.Column="2" HorizontalAlignment="Center" Width="25" Height="25" 
                         IsChecked="{Binding DataContext.AutoRefreshSteamApps, ElementName=settingsView}"/>
                 </Grid>
-                <settings:ToggleSettingUC x:Name="ts_UseExperimentalFetch" Text="App Fetch [Foreground=Aquamarine](Experimental)[Foreground=LightGray]:" 
-                                          Foreground="LightGray" Background="Transparent" />
             </ItemsControl>
         </ScrollViewer>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.25*" MinWidth="120" MaxWidth="180" />
-                <ColumnDefinition Width="*" MinWidth="80" />
+                <ColumnDefinition Width="0.75*" MinWidth="120" MaxWidth="450" />
+                <ColumnDefinition Width="0.25*" MinWidth="80" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Name="btn_QuerySteamGames" Content="Query Steam Games"
-                Command="{Binding QuerySteamGamesCommand}"/>
+            <Border Background="LightGray" BorderThickness="1" BorderBrush="#FF707070">
+                
+            </Border>
             <Button Grid.Column="1" Name="btn_ConfirmSettings" Content="Confirm"
                 Command="{Binding ConfirmSettingsCommand}" 
                 CommandParameter="{Binding ElementName=settingsView}"/>

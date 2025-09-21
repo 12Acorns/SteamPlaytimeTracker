@@ -57,45 +57,11 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					Path.Combine(_config.AppData.SteamInstallData.SteamInstallationFolder, GlobalData.MainSliceCheckLocalPath), 
 					ApplicationPathOption.CustomGlobal);
 
-				_config.AppData.UseExperimentalAppFetch = settingsView.ts_UseExperimentalFetch.tgl_Button.IsChecked!.Value;
-
 				_logger.Information("Successfully saved AppData", _config.AppData);
 
 				_navigationService!.NavigateTo<HomeViewModel>();
 			}
 		}, _ => !_dbBeingUpdated);
-		QuerySteamGamesCommand = new RelayCommand(async o =>
-		{
-			if(_dbBeingUpdated)
-			{
-				MessageBox.Show("Please wait until the database is updated before querying Steam games.", "Database Update in Progress",
-					MessageBoxButton.OK, MessageBoxImage.Warning);
-				return;
-			}
-
-			_dbBeingUpdated = true;
-			var res = await SteamRequest.GetAppListAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
-			res.Switch(async response =>
-			{
-				try
-				{
-					var entries = await _steamDb.SteamApps.ToHashSetAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
-					await _steamDb.SteamApps.AddRangeAsync(response.Apps.SteamApps.Where(x => !entries.Contains(x))).ConfigureAwait(false);
-					await _steamDb.SaveChangesAsync(_lifetimeService.CancellationToken).ConfigureAwait(false);
-					_config.AppData.SteamInstallData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
-				}
-				catch(Exception ex)
-				{
-					_logger.Error(ex, "Error while updating Steam App List");
-					MessageBox.Show("An error occurred while updating the Steam App List. Please check the logs for more details.", "Error",
-						MessageBoxButton.OK, MessageBoxImage.Error);
-				}
-				finally
-				{
-					_dbBeingUpdated = false;
-				}
-			}, (_) => { }, (_) => { });
-		}, _ => !_dbBeingUpdated && !_config.AppData.UseExperimentalAppFetch);
 	}
 
 	public RelayCommand QuerySteamGamesCommand { get; set; }

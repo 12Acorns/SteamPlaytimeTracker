@@ -142,19 +142,6 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 	public override async void OnConstructed()
 	{
-		if(_appConfig.AppData.UseExperimentalAppFetch)
-
-		if(!await _steamDb.SteamApps.AnyAsync().ConfigureAwait(false))
-		{
-			var res = await SteamRequest.GetAppListAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			if(res.IsT0)
-			{
-				var response = res.AsT0;
-				_steamDb.SteamApps.AddRange(response.Apps.SteamApps);
-				_appConfig.AppData.SteamInstallData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
-				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			}
-		}
 		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
 		var toAdd = (await _steamDb.LocalApps.Include(x => x.SteamApp).Include(x => x.PlaytimeSlices).ToListAsync().ConfigureAwait(false))
 			.OrderBy(x => x.SteamApp.Name, StringComparer.InvariantCultureIgnoreCase);

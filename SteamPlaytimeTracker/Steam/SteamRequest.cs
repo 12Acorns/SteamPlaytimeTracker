@@ -1,15 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+﻿using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using Serilog.Core;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Steam.Data.App;
-using System.Dynamic;
+using SteamPlaytimeTracker.Utility.Cache;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 
 namespace SteamPlaytimeTracker.Steam;
 
@@ -20,6 +20,10 @@ internal static class SteamRequest
 	private const string GetAppListUrl = $"{SteamApiDomainUrl}/ISteamApps/GetAppList/v2/";
 	private const string SingleAppDetails = $"{SteamStoreDomainUrl}/api/appdetails?appids=";
 
+	private static readonly JsonSerializerOptions _serializerOptions = new()
+	{
+		UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+	};
 	private static readonly HttpClient _client = new();
 	private static readonly Logger _logger = LoggingService.Logger;
 
@@ -52,37 +56,47 @@ internal static class SteamRequest
 			return ParseResult.UnkownError;
 		}
 	}
-	public static async Task<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>> GetAppDetails(uint appId, CancellationToken token = default)
+	public static async ValueTask<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>> GetAppDetails(uint appId, CancellationToken token = default)
 	{
 		if(token == default)
 		{
 			token = ApplicationEndAsyncLifetimeService.Default.CancellationToken;
 		}
-		try
+		var cache = App.ServiceProvider.GetService<ICacheManager>();
+		if(cache == null)
 		{
-			var response = await _client.GetAsync(SingleAppDetails + appId, token).ConfigureAwait(false);
-			if(!response.IsSuccessStatusCode)
-			{
-				_logger.Error("Failed to fetch app details from Steam API. Status code: {0}. Responce: {1}", 
-					response.StatusCode, response.ToString());
-				return response.StatusCode;
-			}
-			var contentStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-			_logger.Information("Successfully fetched steam app list data.");
-
-			var jObject = await JsonNode.ParseAsync(contentStream, cancellationToken: token).ConfigureAwait(false);
-			var child = jObject![appId.ToString()];
-			return child.Deserialize<AppDetailsContainer>();
-		}
-		catch(JsonException jEx)
-		{
-			_logger.Error(jEx, "ERROR: {0}. Failed to parse app details from Steam API.", ParseResult.FailedToParse);
-			return ParseResult.FailedToParse;
-		}
-		catch(Exception ex)
-		{
-			_logger.Error(ex, "ERROR: {0}. Failed to fetch app details from Steam API.", ParseResult.UnkownError);
+			_logger.Error("Failed to get ICacheManager from ServiceProvider.");
 			return ParseResult.UnkownError;
 		}
+
+		return await cache.GetAsync<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>>(appId.ToString(), 15, async () =>
+		{
+			try
+			{
+				var response = await _client.GetAsync(SingleAppDetails + appId, token).ConfigureAwait(false);
+				if(!response.IsSuccessStatusCode)
+				{
+					_logger.Error("Failed to fetch app details from Steam API. Status code: {0}. Responce: {1}",
+						response.StatusCode, response.ToString());
+					return response.StatusCode;
+				}
+				var contentStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+				_logger.Information("Successfully fetched steam app list data.");
+
+				var jObject = await JsonNode.ParseAsync(contentStream, cancellationToken: token).ConfigureAwait(false);
+				var child = jObject![appId.ToString()];
+				return child.Deserialize<AppDetailsContainer>(_serializerOptions);
+			}
+			catch(JsonException jEx)
+			{
+				_logger.Error(jEx, "ERROR: {0}. Failed to parse app details from Steam API.", ParseResult.FailedToParse);
+				return ParseResult.FailedToParse;
+			}
+			catch(Exception ex)
+			{
+				_logger.Error(ex, "ERROR: {0}. Failed to fetch app details from Steam API.", ParseResult.UnkownError);
+				return ParseResult.UnkownError;
+			}
+		});
 	}
 }

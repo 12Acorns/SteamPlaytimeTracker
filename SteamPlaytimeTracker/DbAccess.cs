@@ -20,7 +20,7 @@ internal sealed class DbAccess : DbContext
 		RefreshConnection(),
 		LoggingService.Logger) { }
 
-	public DbSet<PlaytimeSlice> PlaytimeSlices { get; set; }
+	public DbSet<PlaytimeSlice> PlaytimeSlices { get; private set; }
 	public DbSet<SteamAppEntry> LocalApps { get; private set; }
 	public DbSet<SteamApp> SteamApps { get; private set; }
 
