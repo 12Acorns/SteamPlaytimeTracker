@@ -2,31 +2,27 @@
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Extensions;
 using System.Collections;
+using SteamPlaytimeTracker.DbObject;
 
 namespace SteamPlaytimeTracker.Utility.Comparer;
 
-internal sealed class AppPlaytimeComparer : IComparer, IComparer<SteamApp>
+internal sealed class AppPlaytimeComparer : IComparer, IComparer<SteamAppEntry>
 {
-	private readonly IAppService _appService;
 	private readonly int _return = 1;
 
-	public AppPlaytimeComparer(IAppService appService, bool descending)
+	public AppPlaytimeComparer(bool descending)
 	{
-		_appService = appService;
 		_return = descending ? -1 : 1;
 	}
-	public AppPlaytimeComparer(IAppService appService) => _appService = appService;
 
-	public int Compare(SteamApp? x, SteamApp? y)
+	public int Compare(SteamAppEntry? x, SteamAppEntry? y)
 	{
 		if(x == y) return 0;
 		if(x == null) return - _return;
 		if(y == null) return _return;
 
-		var lRes = _appService.GetEntryAsync(x.AppId).AsTask().Result();
-		var rRes = _appService.GetEntryAsync(y.AppId).AsTask().Result();
-		var playtimeLeft = lRes!.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
-		var playtimeRight = rRes!.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
+		var playtimeLeft = x.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
+		var playtimeRight = y.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
 		if(playtimeLeft > playtimeRight)
 		{
 			return _return;
@@ -42,9 +38,9 @@ internal sealed class AppPlaytimeComparer : IComparer, IComparer<SteamApp>
 		if(x == y) return 0;
 		if(x == null) return -_return;
 		if(y == null) return _return;
-		if(x is not SteamApp appLeft || y is not SteamApp appRight)
+		if(x is not SteamAppEntry appLeft || y is not SteamAppEntry appRight)
 		{
-			throw new Exception($"Either argument passed to comparer is not of type {nameof(SteamApp)}");
+			throw new Exception($"Either argument passed to comparer is not of type {nameof(SteamAppEntry)}");
 		}
 		return Compare(appLeft, appRight);
 	}

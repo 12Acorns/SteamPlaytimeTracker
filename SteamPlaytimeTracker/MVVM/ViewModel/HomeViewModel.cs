@@ -6,14 +6,12 @@ using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.Steam;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Capsule;
 using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows.Data;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
@@ -45,14 +43,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 			CapsuleSortType = CapsuleSortType.Playtime;
 			if(!sortAscending)
 			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: true);
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: true);
 				CapsuleSortType |= CapsuleSortType.Ascending;
 			}
 			else
 			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(_appService, descending: false);
+				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: false);
 			}
 		});
+
 		NameOrderButtonCommand = new(_ =>
 		{
 			var sortAscending = NameOrderImagePath == "/resources/Name-Order-Icon_First-Last.png";
@@ -76,12 +75,12 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
 	{
 		NavigationService.NavigateTo<SteamAppViewModel>(o!);
-	}, o => o is SteamApp);
+	}, o => o is SteamAppEntry);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
 	public INavigationService NavigationService { get; set; }
-	public ObservableCollection<SteamApp> SteamApps
+	public ObservableCollection<SteamAppEntry> SteamApps
 	{
 		get => field;
 		set
@@ -141,20 +140,9 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 	public override async void OnConstructed()
 	{
-		if(!await _steamDb.SteamApps.AnyAsync().ConfigureAwait(false))
-		{
-			var res = await SteamRequest.GetAppListAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			if(res.IsT0)
-			{
-				var response = res.AsT0;
-				_steamDb.SteamApps.AddRange(response.Apps.SteamApps);
-				_appConfig.AppData.LastCheckedSteamApps = Stopwatch.GetTimestamp();
-				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			}
-		}
 		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
-		var toAdd = (await _steamDb.LocalApps.Include(x => x.SteamApp).Select(x => x.SteamApp).ToListAsync().ConfigureAwait(false))
-			.OrderBy(x => x.Name, StringComparer.InvariantCultureIgnoreCase);
+		var toAdd = (await _steamDb.LocalApps.Include(x => x.StoreDetails).Include(x => x.PlaytimeSlices).ToListAsync().ConfigureAwait(false))
+			.OrderBy(x => x.SteamApp.Name, StringComparer.InvariantCultureIgnoreCase);
 		SteamApps = new(toAdd);
 		SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 		SteamAppsView.IsLiveSorting = true;
@@ -166,21 +154,24 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 		var localApps = await _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 		var steamAppEntriesSet = (await _steamDb.LocalApps
-			.Include(x => x.SteamApp)
+			.Include(x => x.StoreDetails)
 			.Include(x => x.PlaytimeSlices)
 			.AsNoTracking()
 			.ToHashSetAsync(AlternateAppLookup.Instance).ConfigureAwait(false))
-			.GetAlternateLookup<SteamApp>();
+			.GetAlternateLookup<SteamStoreAppData>();
 
 		bool hasNewEntry = false;
-		foreach(var notFoundEntry in localApps.Where(x => !steamAppEntriesSet.Contains(x)))
+		foreach(var notFoundEntry in localApps.Where(app => !steamAppEntriesSet.Contains(app)))
 		{
-			// Tmp, eventually move to own class and call that here
+			notFoundEntry.Id = (int)notFoundEntry.StoreData.AppId;
+			notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
+			var appToAdd = new SteamStoreApp(notFoundEntry);
 			_steamDb.LocalApps.Add(new SteamAppEntry()
 			{
-				SteamApp = notFoundEntry,
-				PlaytimeSlices = fileSegmentsLookup[notFoundEntry.AppId],
+				StoreDetails = appToAdd,
+				PlaytimeSlices = fileSegmentsLookup[notFoundEntry.StoreData.AppId]
 			});
+			_steamDb.SteamStoreApps.Add(appToAdd);
 			hasNewEntry = true;
 		}
 		if(hasNewEntry)

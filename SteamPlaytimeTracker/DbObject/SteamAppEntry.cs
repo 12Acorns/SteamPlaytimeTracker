@@ -1,17 +1,29 @@
-﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
 using System.ComponentModel.DataAnnotations;
 using SteamPlaytimeTracker.Steam.Data.App;
 using System.Diagnostics;
 
 namespace SteamPlaytimeTracker.DbObject;
 
-[DebuggerDisplay("{Id} | {SteamApp} | {PlaytimeSlices.Count}")]
+[DebuggerDisplay("{SteamApp} || {PlaytimeSlices.Count}")]
 internal sealed class SteamAppEntry
 {
-	//public int Id { get; set; }
 	[Key]
-	public int SteamAppId { get; set; }
-	public required SteamApp SteamApp { get; set; }
+	public int Id { get; set; }
+	public SteamStoreApp? StoreDetails { get; set; }
+	[NotMapped] public SteamApp? SteamApp
+	{
+		get
+		{
+			if(StoreDetails is null)
+			{
+				return default;
+			}
+			return new() { Id = StoreDetails.Id, AppId = StoreDetails.AppData.StoreData.AppId, Name = StoreDetails.AppData.StoreData.Name ?? "N/A" };
+		}
+	}
+	//public required SteamApp SteamApp { get; set; }
 	public List<PlaytimeSlice> PlaytimeSlices { get; set; } = [];
 
 	public override int GetHashCode()

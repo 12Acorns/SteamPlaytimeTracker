@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="SteamPlaytimeTracker.MVVM.View.UserControls.Settings.ToggleSettingUC"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=local:ToggleSettingUC}"
+             d:DesignHeight="40" d:DesignWidth="400">
+    <Grid Name="Use_Experimental_App_Fetch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="156" />
+            <ColumnDefinition Width="0.8*" />
+            <ColumnDefinition Width="0.15*" MinWidth="60" />
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="tbl_Text" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{Binding Foreground}"
+                   Background="{Binding Background}"/>
+        <ToggleButton x:Name="tgl_Button" Grid.Column="2" HorizontalAlignment="Center" Width="25" Height="25" 
+            Command="{Binding ToggleCommand}" />
+    </Grid>
+</UserControl>

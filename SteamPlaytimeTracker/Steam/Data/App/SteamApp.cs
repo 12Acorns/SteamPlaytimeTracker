@@ -1,16 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
+using System.ComponentModel.DataAnnotations;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
-[DebuggerDisplay("{Id} | {Name} | {AppId}")]
-public sealed class SteamApp
+[DebuggerDisplay("{Name} | {AppId}")]
+public sealed record class SteamApp
 {
-	[Key] 
-	public int Id { get; set; }
-	[JsonPropertyName("steam_appid")] public required uint AppId { get; set; }
+	[Key] public int Id { get; set; }
+	[JsonPropertyName("appid")] public required uint AppId { get; set; }
 	[JsonPropertyName("name")] public required string Name { get; set; }
 
 	[NotMapped]

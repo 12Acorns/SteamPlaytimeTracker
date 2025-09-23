@@ -7,7 +7,7 @@ internal readonly record struct AppListResponse
 	[JsonPropertyName("applist")]
 	public readonly required AppList Apps { get; init; }
 }
-internal enum AppListResponseStatus
+internal enum ParseResult
 {
 	FailedToParse,
 	UnkownError

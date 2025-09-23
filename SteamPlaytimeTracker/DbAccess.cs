@@ -1,10 +1,9 @@
-﻿using SteamPlaytimeTracker.Steam.Data.App;
+﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
+using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.IO;
 using Serilog;
-using SteamPlaytimeTracker.Steam.Data.Playtime;
-using System.Diagnostics;
 
 namespace SteamPlaytimeTracker;
 
@@ -21,9 +20,10 @@ internal sealed class DbAccess : DbContext
 		RefreshConnection(),
 		LoggingService.Logger) { }
 
-	public DbSet<PlaytimeSlice> PlaytimeSlices { get; set; }
+	public DbSet<PlaytimeSlice> PlaytimeSlices { get; private set; }
 	public DbSet<SteamAppEntry> LocalApps { get; private set; }
 	public DbSet<SteamApp> SteamApps { get; private set; }
+	public DbSet<SteamStoreApp> SteamStoreApps { get; private set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -32,6 +32,11 @@ internal sealed class DbAccess : DbContext
 			.WithOne(e => e.SteamAppEntry)
 			.HasForeignKey("SteamAppEntryId")
 			.IsRequired();
+		modelBuilder.Entity<SteamAppEntry>()
+			.HasOne(e => e.StoreDetails)
+			.WithOne()
+			.HasForeignKey<SteamAppEntry>("SteamStoreAppId")
+			.IsRequired(false);
 	}
 
 	private static DbContextOptions<DbAccess> RefreshConnection()

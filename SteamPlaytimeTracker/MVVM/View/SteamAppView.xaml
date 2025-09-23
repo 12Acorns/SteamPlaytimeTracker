@@ -3,11 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" 
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
              xmlns:steam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
              xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF" 
-             xmlns:data="clr-namespace:SteamPlaytimeTracker.Graphing.Data"
+             xmlns:data="clr-namespace:SteamPlaytimeTracker.Graphing.Data" 
+             xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" d:DataContext="{d:DesignInstance Type=viewmodel:SteamAppViewModel}"
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="{StaticResource defaultGray}">
@@ -41,8 +42,8 @@
                     <RowDefinition Height="0.6*" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding SelectedApp.ImageUrl}" Margin="5,5,5,0" />
-                <TextBlock Grid.Row="1" Text="{Binding SelectedApp.Name}" 
+                <Image Source="{Binding SelectedApp.SteamApp.ImageUrl}" Margin="5,5,5,0" />
+                <TextBlock Grid.Row="1" Text="{Binding SelectedApp.SteamApp.Name}" 
                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" 
                            TextWrapping="Wrap" FontSize="18" Padding="5,0,5,0" />
             </Grid>
@@ -66,7 +67,7 @@
                             <RowDefinition Height="0.31*" MinHeight="26"/>
                             <RowDefinition Height="0.69*"/>
                         </Grid.RowDefinitions>
-                        <ComboBox HorizontalContentAlignment="Center" VerticalContentAlignment="Center" 
+                        <ComboBox HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                   ItemsSource="{Binding AvailableGraphingOptions}"
                                   SelectedItem="{Binding SelectedGraphingOption, Mode=TwoWay}"
                                   SelectedValuePath="IsSelectedByDefault"

@@ -1,14 +1,18 @@
-﻿using SteamPlaytimeTracker.Steam.Data.App;
+﻿using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Steam;
 using SteamPlaytimeTracker.IO;
 using OutParsing;
+using System.Net;
 using System.IO;
 using Serilog;
+using OneOf;
 
 namespace SteamPlaytimeTracker.Services.Steam;
 
@@ -24,12 +28,14 @@ internal sealed class AppService : IAppService
 	private readonly DbAccess _db;
 	private readonly ILogger _logger;
 	private readonly ICacheManager _cacheManager;
+	private readonly IAsyncLifetimeService _lifetimeService;
 
-	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager)
+	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager, IAsyncLifetimeService lifetimeService)
 	{
 		_db = db;
 		_logger = logger;
 		_cacheManager = cacheManager;
+		_lifetimeService = lifetimeService;
 	}
 
 	public async ValueTask<SteamAppEntry?> GetEntryAsync(uint appId, CancellationToken token)
@@ -38,7 +44,7 @@ internal sealed class AppService : IAppService
 		{
 			return await _cacheManager.Get<ValueTask<SteamAppEntry?>>(appId.ToString(), async () => 
 				await _db.LocalApps
-						.Include(x => x.SteamApp)
+						.Include(x => x.StoreDetails)
 						.Include(x => x.PlaytimeSlices)
 						.FirstOrDefaultAsync(x => x.SteamApp.AppId == appId, token).ConfigureAwait(false))
 					.ConfigureAwait(false);
@@ -50,9 +56,9 @@ internal sealed class AppService : IAppService
 		}
 	}
 
-	public async ValueTask<IEnumerable<SteamApp>> GetLocalAppsAsync(CancellationToken token)
+	public async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsAsync(CancellationToken token)
 	{
-		return await _cacheManager.Get<ValueTask<IEnumerable<SteamApp>>>("LocalApps", LocalAppCacheDurationMinutes, async () =>
+		return await _cacheManager.Get("LocalApps", LocalAppCacheDurationMinutes, async () =>
 		{
 			if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 			{
@@ -61,13 +67,13 @@ internal sealed class AppService : IAppService
 			return [];
 		}).ConfigureAwait(false);
 	}
-	private async ValueTask<IEnumerable<SteamApp>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async () =>
+	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async () =>
 	{
-		var lookup = await _db.SteamApps
-			.GroupBy(x => x.AppId).Select(x => x.First())
-			.ToDictionaryAsync(x => x.AppId, token).ConfigureAwait(false);
-		var seen = new HashSet<uint>();
-		var results = new ConcurrentBag<SteamApp>();
+		//var lookup = await _db.SteamApps
+		//	.DistinctBy(x => x.AppId)
+		//	.ToDictionaryAsync(x => x.AppId, token).ConfigureAwait(false);
+		var seen = new ConcurrentDictionary<uint, byte>();
+		var resultTasks = new ConcurrentBag<Task<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>>();
 		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, token).ConfigureAwait(false))
 		{
 			if(token.IsCancellationRequested)
@@ -75,7 +81,7 @@ internal sealed class AppService : IAppService
 				_logger.Information("Cancellation requested, stopping reading local apps.");
 				break;
 			}
-			if(line == string.Empty)
+			if(string.IsNullOrWhiteSpace(line))
 			{
 				continue;
 			}
@@ -84,27 +90,27 @@ internal sealed class AppService : IAppService
 			{
 				continue;
 			}
-			if(!seen.Add(appId))
+			// Already processed this app
+			if(!seen.TryAdd(appId, 0))
 			{
 				continue;
 			}
-			var appName = "n/a";
-			if(lookup.TryGetValue(appId, out var app))
+			// In future save app details to own dbset
+			resultTasks.Add(SteamRequest.GetAppDetails(appId, _lifetimeService.CancellationToken).AsTask());
+		};
+		var results = await Task.WhenAll(resultTasks).ConfigureAwait(false);
+		return results.Where(x =>
+		{
+			x.Switch(_ => { }, _ => { }, httpResponse =>
 			{
-				appName = app.Name;
-			}
-			else
-			{
-				continue;
-			}
-			if(token.IsCancellationRequested)
-			{
-				_logger.Information("Cancellation requested, stopping reading local apps.");
-				break;
-			}
-			results.Add(new SteamApp { AppId = appId, Name = appName });
-		}
-		return results;
+				if(httpResponse is HttpStatusCode.TooManyRequests)
+				{
+					_logger.Warning("Too many requests when fetching app details.");
+					_logger.Information("Adding app to re-fetch queue");
+				}
+			});
+			return x.IsT0 && x.AsT0.Success && !string.IsNullOrWhiteSpace(x.AsT0.StoreData.Name);
+		}).Select(x => x.AsT0);
 	}).ConfigureAwait(false);
 	private async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string path, Func<ValueTask<T>> asyncFunc)
 	{

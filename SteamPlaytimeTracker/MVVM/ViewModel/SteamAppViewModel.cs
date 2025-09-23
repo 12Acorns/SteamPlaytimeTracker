@@ -1,22 +1,15 @@
 ﻿using ScottPlot;
-using ScottPlot.Colormaps;
 using ScottPlot.Plottables;
 using ScottPlot.WPF;
 using SkiaSharp.Views.WPF;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
-using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.Steam.Data.App;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
-using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -29,18 +22,17 @@ internal class SteamAppViewModel : Core.ViewModel
 	private static readonly ScottPlot.Color _defaultGrayScottColour = ScottPlot.Color.FromSKColor(_defaultGray.Color.ToSKColor());
 
 	private readonly List<EventHandler<MouseButtonEventArgs>> _trackedEvents = [];
-	private readonly INavigationService _navigationService;
-	private readonly IAppService _appService;
-	private readonly DbAccess _db;
 
 	private bool _override = true;
 
-	public SteamAppViewModel(INavigationService navigationService, IAppService appService, DbAccess db)
+	public SteamAppViewModel(INavigationService navigationService)
 	{
-		_navigationService = navigationService;
-		_appService = appService;
-		_db = db;
-		SwitchBackToHomeViewCommand = new RelayCommand(o => NavigationService.NavigateTo<HomeViewModel>());
+		NavigationService = navigationService;
+		SwitchBackToHomeViewCommand = new RelayCommand(o =>
+		{
+			CleanUp();
+			NavigationService.NavigateTo<HomeViewModel>();
+		});
 		Plot = new();
 
 		AvailableGraphingOptions = [
@@ -51,8 +43,8 @@ internal class SteamAppViewModel : Core.ViewModel
 		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
 	}
 
-	public INavigationService NavigationService => _navigationService;
-	public RelayCommand SwitchBackToHomeViewCommand { get; set; }
+	public INavigationService NavigationService { get; }
+	public RelayCommand SwitchBackToHomeViewCommand { get; }
 
 	public WpfPlot Plot { get; }
 	public string TotalPlaytimeText
@@ -95,7 +87,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
+			RefreshPlots();
 			OnPropertyChanged();
 		}
 	}
@@ -112,7 +104,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
+			RefreshPlots();
 			OnPropertyChanged();
 		}
 	}
@@ -143,7 +135,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	}
-	public SteamApp SelectedApp
+	public SteamAppEntry SelectedApp
 	{
 		get => field;
 		set
@@ -170,41 +162,38 @@ internal class SteamAppViewModel : Core.ViewModel
 			OnPropertyChanged();
 			if(!_override)
 			{
-				_ = RefreshPlots().AsTask().Wait(TimeSpan.FromMilliseconds(300));
+				RefreshPlots();
 			}
 		}
 	}
 
-	public override async void OnLoad(params object[] args)
+	public override void OnLoad(params object[] args)
 	{
-		if(args.Length < 1 || args[0] is not SteamApp app)
+		if(args.Length < 1 || args[0] is not SteamAppEntry app)
 		{
 			throw new ArgumentException("Expected a SteamApp object as the first argument.");
 		}
 
 		SelectedApp = app;
-		await InitDateRange().ConfigureAwait(false);
+
+		InitDateRange();
 		InitPlot();
+		CreatePlots();
 
-		await CreatePlots().ConfigureAwait(false);
-
-		var entry = await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false) ?? throw new NullReferenceException();
-
-		var hours = entry.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
+		var hours = SelectedApp.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
 		// n2 = 2 decimal places
 		TotalPlaytimeText = $"Total Playtime: '{hours:n2}' hours";
 	}
 
-	private async ValueTask CreatePlots()
+	private void CreatePlots()
 	{
 		ShowEndDatePicker = true;
 		Plot.Plot.Title(show: true);
-		var game = await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false) ?? throw new NullReferenceException();
 		BarPlot barPlot = SelectedGraphingOption.Id.Id switch
 		{
-			GraphViewSelectionId.YearPlaytimeId => CreateYearPlaytimeBars(game),
-			GraphViewSelectionId.MonthPlaytimeId => CreateMonthPlaytimeBars(game),
-			GraphViewSelectionId.DayPlaytimeId => CreateDayPlaytimeBars(game),
+			GraphViewSelectionId.YearPlaytimeId => CreateYearPlaytimeBars(SelectedApp),
+			GraphViewSelectionId.MonthPlaytimeId => CreateMonthPlaytimeBars(SelectedApp),
+			GraphViewSelectionId.DayPlaytimeId => CreateDayPlaytimeBars(SelectedApp),
 			_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 		};
 
@@ -246,42 +235,44 @@ internal class SteamAppViewModel : Core.ViewModel
 				}
 				var posM = (Vector)Mouse.GetPosition(Plot) * Plot.DisplayScale;
 				var pos = Plot.Plot.GetCoordinates(new Pixel(posM.X, posM.Y));
-				if(bar.Rect.Contains(pos.X, pos.Y))
+				if(!bar.Rect.Contains(pos.X, pos.Y))
 				{
-					var pipeIdx = bar.Label.IndexOf(' ');
-					var dateSpecified = bar.Label[..pipeIdx];
-
-
-					_override = true;
-					(StartDate, EndDate) = SelectedGraphingOption.Id.Id switch
-					{
-						GraphViewSelectionId.YearPlaytimeId => GetStartAndEndOfYear(dateSpecified),
-						GraphViewSelectionId.MonthPlaytimeId => GetStartAndEndOfMonth(dateSpecified),
-						GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
-						_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
-					};
-					_override = false;
-
-					SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
-
-					e.Handled = true;
+					return;
 				}
+
+				var pipeIdx = bar.Label.IndexOf(' ');
+				var dateSpecified = bar.Label[..pipeIdx];
+
+				_override = true;
+				(StartDate, EndDate) = SelectedGraphingOption.Id.Id switch
+				{
+					GraphViewSelectionId.YearPlaytimeId => GetStartAndEndOfYear(dateSpecified),
+					GraphViewSelectionId.MonthPlaytimeId => GetStartAndEndOfMonth(dateSpecified),
+					GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
+					_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
+				};
+				_override = false;
+
+				SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
+
+				e.Handled = true;
 			}
 			_trackedEvents.Add(OnClickBarEvent);
 			HomeWindow.OnMouseDownA += OnClickBarEvent;
 		}
 	}
-	private async ValueTask RefreshPlots()
+	private void RefreshPlots()
 	{
 		RemoveEventHandlesFromPlot();
 
 		Plot.Plot.Clear();
 		RefreshDateRange();
-		await CreatePlots().ConfigureAwait(false);
+		CreatePlots();
 		Plot.Plot.Axes.AutoScale();
 	}
 	private void RefreshDateRange()
 	{
+		
 	}
 	private void RemoveEventHandlesFromPlot()
 	{
@@ -299,20 +290,19 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 		var start = new DateTime(StartDate.Year, 1, 1).Ticks;
 		var end = new DateTime(EndDate.Year + 1, 1, 1).Ticks;
-		int currBarPlotXPos = 0;
 		var playtimeByYear = game.PlaytimeSlices.Where(x => x.SessionStart.Ticks >= start && x.SessionStart.Ticks < end)
 			.GroupBy(x => x.SessionStart.ToString("yyyy", CultureInfo.InvariantCulture))
-			.Select(x =>
+			.Select((x, idx) =>
 			{
 				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
 				return new Bar()
 				{
 					Value = playtimeHours,
 					ValueLabel = $"{x.Key} | {playtimeHours:n2}",
-					Position = currBarPlotXPos++,
+					Position = idx,
 					LineWidth = 1.5f,
 					ValueBase = 0,
-					FillColor = ScottPlot.Color.RandomHue(),
+					FillColor = GlobalData.GetYearPlotColour(DateTime.ParseExact(x.Key, "yyyy", CultureInfo.InvariantCulture).Year),
 				};
 			});
 
@@ -331,20 +321,19 @@ internal class SteamAppViewModel : Core.ViewModel
 		var start = StartDate.Ticks;
 		var end = EndDate.Ticks;
 
-		int currBarPlotXPos = 0;
 		var playtimeByMonth = game.PlaytimeSlices.Where(x => x.SessionStart.Ticks >= start && x.SessionStart.Ticks < end)
 			.GroupBy(x => new DateTime(x.SessionStart.Ticks).ToString("MMMM", CultureInfo.InvariantCulture))
-			.Select(x =>
+			.Select((x, idx) =>
 			{
 				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
 				return new Bar()
 				{
 					Value = playtimeHours,
 					ValueLabel = $"{x.Key} | {playtimeHours:n2}",
-					Position = currBarPlotXPos++,
+					Position = idx,
 					LineWidth = 1.5f,
 					ValueBase = 0,
-					FillColor = ScottPlot.Color.RandomHue(),
+					FillColor = GlobalData.GetMonthPlotColour(DateTime.ParseExact(x.Key, "MMMM", CultureInfo.InvariantCulture).Month),
 				};
 			});
 
@@ -363,20 +352,20 @@ internal class SteamAppViewModel : Core.ViewModel
 		var start = new DateTime(StartDate.Year, StartDate.Month, 1);
 		var end = start.LastDayOfMonth();
 
-		int currBarPlotXPos = 0;
 		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart <= end)
 			.GroupBy(x => x.SessionStart.ToString("dd", CultureInfo.InvariantCulture))
-			.Select(x =>
+			.Select((x, idx) =>
 			{
 				var playtimeHours = x.Sum(x => x.SessionLength.TotalHours);
+				var dayDateTime = x.FirstOrDefault()?.SessionStart ?? DateTimeOffset.UtcNow;
 				return new Bar()
 				{
 					Value = playtimeHours,
 					ValueLabel = $"{x.Key} | {playtimeHours:n2}",
-					Position = currBarPlotXPos++,
+					Position = idx,
 					LineWidth = 1.5f,
 					ValueBase = 0,
-					FillColor = ScottPlot.Color.RandomHue(),
+					FillColor = GlobalData.GetDayPlotColour(dayDateTime.DateTime),
 				};
 			});
 		Plot.Plot.Title(start.ToString("MMMM", CultureInfo.InvariantCulture), 24);
@@ -409,15 +398,20 @@ internal class SteamAppViewModel : Core.ViewModel
 			AntiAlias = false
 		};
 	}
-	private async ValueTask InitDateRange()
+	private void InitDateRange()
 	{
-		var app = (await _appService.GetEntryAsync(SelectedApp.AppId).ConfigureAwait(false)) ?? throw new NullReferenceException();
-		StartDate = new DateTime(app.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks);
-		EndDate = new DateTime(app.PlaytimeSlices.MaxBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks) + TimeSpan.FromDays(1);
+		StartDate = new DateTime(SelectedApp.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks);
+		EndDate = new DateTime(SelectedApp.PlaytimeSlices.MaxBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks) + TimeSpan.FromDays(1);
 
 		MinStartDate = StartDate;
 		MaxEndDate = EndDate;
 
 		_override = false;
+	}
+	private void CleanUp()
+	{
+		RemoveEventHandlesFromPlot();
+		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
+		Plot.Plot.Clear();
 	}
 }

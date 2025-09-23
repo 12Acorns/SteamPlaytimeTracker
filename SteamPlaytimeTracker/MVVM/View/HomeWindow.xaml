@@ -3,69 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" 
         xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
+        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel"
+        xmlns:windowchrome="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.WindowChrome"
+        xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
+        d:DataContext="{d:DesignInstance Type=viewmodel:HomeWindowModel}"
         mc:Ignorable="d"
         MinWidth="350"  MinHeight="400"
         Background="{StaticResource defaultGray}"
-        Title="Application View" Height="450" Width="800"
+        WindowStyle="SingleBorderWindow"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="False"
-        UseLayoutRounding="True"
-        WindowChrome.IsHitTestVisibleInChrome="True"
         PreviewMouseDown="Window_PreviewMouseDown"
-        Closing="Window_Closing">
-    <Window.Resources>
-        <ResourceDictionary Source="/WPFResources/HeaderBarResources.xaml"/>
-    </Window.Resources>
-
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="25" CornerRadius="0" 
-                      ResizeBorderThickness="{x:Static SystemParameters.WindowResizeBorderThickness}"/>
-    </WindowChrome.WindowChrome>
+        Closing="Window_Closing" Topmost="True"
+        Title="Application View" Height="450" Width="800">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="25" />
-            <RowDefinition />
-        </Grid.RowDefinitions>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Image Grid.Column="0" Source="{StaticResource ApplicationIcoPath}" 
-                   RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" 
-                   Margin="2" />
-            <TextBlock Grid.Column="1" Text="Main Window" Foreground="LightGray" VerticalAlignment="Center" />
-            <usercontrols:ExtendedButton Grid.Column="2" Background="Transparent" Foreground="LightGray" BorderThickness="0"
-                                         HoverBackground="AliceBlue" PressedBackground="Blue"
-                                         Command="{Binding MinimizeCommand}">
-                <Path Data="{StaticResource WindowMinimizeText}" StrokeThickness="1" 
-                      Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
-                      Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 
-                      Margin="4" />
-            </usercontrols:ExtendedButton>
-            <usercontrols:ExtendedButton Grid.Column="3" Background="Transparent" Foreground="LightGray" BorderThickness="0"
-                                         
-                                         Command="{Binding ToggleSizeCommand}">
-                <Path Data="{StaticResource WindowFullScreenToggleText}" StrokeThickness="1"
-                      Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
-                      Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 
-                      Margin="4" />
-            </usercontrols:ExtendedButton>
-            <usercontrols:ExtendedButton Grid.Column="4" Background="Transparent" Foreground="LightGray" BorderThickness="0"
-                                         
-                                         Command="{Binding QuitApplicationCommand}">
-                <Path Data="{DynamicResource WindowCloseText}" StrokeThickness="1"
-                      Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}" 
-                      Stretch="UniformToFill" StrokeEndLineCap="Round" StrokeStartLineCap="Round" 
-                      Margin="4" />
-            </usercontrols:ExtendedButton>
-        </Grid>
-        <ContentControl Grid.Row="1" Content="{Binding NavigationService.CurrentView}" />
+        <ContentControl Content="{Binding NavigationService.CurrentView}" />
     </Grid>
 </Window>

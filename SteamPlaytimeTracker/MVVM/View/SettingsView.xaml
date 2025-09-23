@@ -6,8 +6,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
         xmlns:userControls="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
-        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel"
-        mc:Ignorable="d"
+        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" xmlns:settings="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
+             mc:Ignorable="d"
         d:DesignHeight="450" d:DesignWidth="800"
         Background="{StaticResource defaultGray}">
     <Grid>
@@ -22,7 +22,7 @@
                     InstallIndicator="Steam Installation Location:" InstallPlaceholder="Steam Install Here..." 
                     InstallFolderTitle="Select Steam Installation Folder" InstallFolderNotSelectedWarning="Steam Install not Selected" 
                     FolderPath="{Binding DataContext.SteamInstallPath, Mode=TwoWay, ElementName=settingsView}" />
-                <Grid>
+                <Grid Name="Auto_Fetch_Apps">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="156" />
                         <ColumnDefinition Width="0.8*" />
@@ -37,12 +37,13 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.25*" MinWidth="120" MaxWidth="180" />
-                <ColumnDefinition Width="*" MinWidth="80" />
+                <ColumnDefinition Width="0.75*" MinWidth="120" MaxWidth="450" />
+                <ColumnDefinition Width="0.25*" MinWidth="80" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Name="btn_QuerySteamGames" Content="Query Steam Games"
-                Command="{Binding QuerySteamGamesCommand}"/>
+            <Border Background="LightGray" BorderThickness="1" BorderBrush="#FF707070">
+                
+            </Border>
             <Button Grid.Column="1" Name="btn_ConfirmSettings" Content="Confirm"
                 Command="{Binding ConfirmSettingsCommand}" 
                 CommandParameter="{Binding ElementName=settingsView}"/>

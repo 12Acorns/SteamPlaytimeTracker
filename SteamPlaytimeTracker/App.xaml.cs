@@ -37,8 +37,10 @@ public partial class App : Application
 			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
 			.Build();
 
+		iConfigData.AppVersion = "0.1.0";
+
 		ApplicationPath.TryAddPath(GlobalData.MainTimeSliceCheckLookupName, ApplicationPathOption.CustomGlobal,
-			iConfigData.SteamInstallationFolder, GlobalData.MainSliceCheckLocalPath);
+			iConfigData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
 		serviceCollection.AddSingleton<HomeWindow>(provider => new HomeWindow()
@@ -66,8 +68,7 @@ public partial class App : Application
 		serviceCollection.AddSingleton<SteamAppViewModel>();
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
-		serviceCollection.AddKeyedSingleton<ICacheManager, CacheManager>(GlobalData.MemoryCacheKey);
-		serviceCollection.AddKeyedSingleton<IAsyncCacheManager, HybridCacheManager>(GlobalData.HybridCacheKey);
+		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 
