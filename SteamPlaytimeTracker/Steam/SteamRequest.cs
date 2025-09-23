@@ -56,7 +56,7 @@ internal static class SteamRequest
 			return ParseResult.UnkownError;
 		}
 	}
-	public static async ValueTask<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>> GetAppDetails(uint appId, CancellationToken token = default)
+	public static async ValueTask<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>> GetAppDetails(uint appId, CancellationToken token = default)
 	{
 		if(token == default)
 		{
@@ -69,7 +69,7 @@ internal static class SteamRequest
 			return ParseResult.UnkownError;
 		}
 
-		return await cache.GetAsync<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>>(appId.ToString(), 15, async () =>
+		return await cache.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(appId.ToString(), 15, async () =>
 		{
 			try
 			{
@@ -85,7 +85,7 @@ internal static class SteamRequest
 
 				var jObject = await JsonNode.ParseAsync(contentStream, cancellationToken: token).ConfigureAwait(false);
 				var child = jObject![appId.ToString()];
-				return child.Deserialize<AppDetailsContainer>(_serializerOptions);
+				return child.Deserialize<SteamStoreAppData>(_serializerOptions)!;
 			}
 			catch(JsonException jEx)
 			{

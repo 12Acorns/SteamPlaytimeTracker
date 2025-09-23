@@ -44,7 +44,7 @@ internal sealed class AppService : IAppService
 		{
 			return await _cacheManager.Get<ValueTask<SteamAppEntry?>>(appId.ToString(), async () => 
 				await _db.LocalApps
-						.Include(x => x.SteamApp)
+						.Include(x => x.StoreDetails)
 						.Include(x => x.PlaytimeSlices)
 						.FirstOrDefaultAsync(x => x.SteamApp.AppId == appId, token).ConfigureAwait(false))
 					.ConfigureAwait(false);
@@ -56,9 +56,9 @@ internal sealed class AppService : IAppService
 		}
 	}
 
-	public async ValueTask<IEnumerable<SteamApp>> GetLocalAppsAsync(CancellationToken token)
+	public async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsAsync(CancellationToken token)
 	{
-		return await _cacheManager.Get<ValueTask<IEnumerable<SteamApp>>>("LocalApps", LocalAppCacheDurationMinutes, async () =>
+		return await _cacheManager.Get("LocalApps", LocalAppCacheDurationMinutes, async () =>
 		{
 			if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 			{
@@ -67,13 +67,13 @@ internal sealed class AppService : IAppService
 			return [];
 		}).ConfigureAwait(false);
 	}
-	private async ValueTask<IEnumerable<SteamApp>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async () =>
+	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async () =>
 	{
 		//var lookup = await _db.SteamApps
 		//	.DistinctBy(x => x.AppId)
 		//	.ToDictionaryAsync(x => x.AppId, token).ConfigureAwait(false);
 		var seen = new ConcurrentDictionary<uint, byte>();
-		var resultTasks = new ConcurrentBag<Task<OneOf<AppDetailsContainer, ParseResult, HttpStatusCode>>>();
+		var resultTasks = new ConcurrentBag<Task<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>>();
 		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, token).ConfigureAwait(false))
 		{
 			if(token.IsCancellationRequested)
@@ -109,8 +109,8 @@ internal sealed class AppService : IAppService
 					_logger.Information("Adding app to re-fetch queue");
 				}
 			});
-			return x.IsT0 && !string.IsNullOrWhiteSpace(x.AsT0.Details.Name);
-		}).Select(x => new SteamApp() { AppId = x.AsT0.Details.Id, Name = x.AsT0.Details.Name });
+			return x.IsT0 && x.AsT0.Success && !string.IsNullOrWhiteSpace(x.AsT0.StoreData.Name);
+		}).Select(x => x.AsT0);
 	}).ConfigureAwait(false);
 	private async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string path, Func<ValueTask<T>> asyncFunc)
 	{

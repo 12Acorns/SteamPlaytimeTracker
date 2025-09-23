@@ -23,6 +23,7 @@ internal sealed class DbAccess : DbContext
 	public DbSet<PlaytimeSlice> PlaytimeSlices { get; private set; }
 	public DbSet<SteamAppEntry> LocalApps { get; private set; }
 	public DbSet<SteamApp> SteamApps { get; private set; }
+	public DbSet<SteamStoreApp> SteamStoreApps { get; private set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -32,10 +33,10 @@ internal sealed class DbAccess : DbContext
 			.HasForeignKey("SteamAppEntryId")
 			.IsRequired();
 		modelBuilder.Entity<SteamAppEntry>()
-			.HasOne(e => e.SteamApp)
+			.HasOne(e => e.StoreDetails)
 			.WithOne()
-			.HasForeignKey<SteamAppEntry>("SteamAppId")
-			.IsRequired();
+			.HasForeignKey<SteamAppEntry>("SteamStoreAppId")
+			.IsRequired(false);
 	}
 
 	private static DbContextOptions<DbAccess> RefreshConnection()
