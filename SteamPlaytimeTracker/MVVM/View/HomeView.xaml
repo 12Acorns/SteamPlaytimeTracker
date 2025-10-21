@@ -58,6 +58,11 @@
                        Foreground="LightGray"
                        FontSize="18"/>
         </Grid>
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="No apps could be found which contained recordable playtime." 
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="LightGray"
+                   FontSize="18"
+                   Visibility="{Binding NoAppsFoundVisibility}"/>
         <ListBox x:Name="lb_SteamEntries" Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
                  ItemContainerStyle="{StaticResource LBI_NoOutline}" Foreground="Transparent"
                  ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"

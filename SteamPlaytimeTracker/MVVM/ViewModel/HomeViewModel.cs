@@ -14,6 +14,7 @@ using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Data;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
@@ -85,6 +86,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
 	public INavigationService NavigationService { get; set; }
+	public Visibility NoAppsFoundVisibility => SteamApps.Count == 0 ? Visibility.Visible : Visibility.Hidden;
 	public ObservableCollection<SteamAppEntry> SteamApps
 	{
 		get => field;
