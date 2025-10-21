@@ -1,4 +1,5 @@
-﻿using SteamPlaytimeTracker.Core;
+﻿using Serilog;
+using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Progress;
@@ -13,7 +14,6 @@ using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
 using System.Collections.ObjectModel;
-using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
@@ -24,12 +24,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private readonly IAppService _appService;
 	private readonly AppConfig _appConfig;
 	private readonly DbAccess _steamDb;
+	private readonly ILogger _logger;
 
-	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, AppConfig appConfig, DbAccess steamDb)
+	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, ILogger logger,
+		AppConfig appConfig, DbAccess steamDb)
 	{
 		NavigationService = navigationService;
 		_lifetimeProvider = lifetimeProvider;
 		_appService = appService;
+		_logger = logger;
 		_appConfig = appConfig;
 		_steamDb = steamDb;
 
@@ -162,6 +165,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		base.OnConstructed();
 		var progress = ProgressSpinnerBar.Create(TimeSpan.FromSeconds(1.5d), (32, 32));
 		progress.ShowInTaskbar = false;
+		_logger.Information("Loading local Steam apps and syncing database...");
 		var loadTask = Task.Run(LoadDataAsync);
 		_ = Task.Run(() =>
 		{
@@ -180,6 +184,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		App.Current.Dispatcher.Invoke(() =>
 		{
 			SteamApps = new ObservableCollection<SteamAppEntry>(toAdd);
+			_logger.Information("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
 			SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 			SteamAppsView.IsLiveSorting = true;
 		});
@@ -188,8 +193,18 @@ internal sealed class HomeViewModel : Core.ViewModel
 	{
 		var localAppsTask = _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).AsTask();
 		var appEntriesTask = _appService.AllEntries().AsTask();
+		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
 
 		await Task.WhenAll(localAppsTask, appEntriesTask).ConfigureAwait(false);
+
+		if(fileSegmentsLookup == null)
+		{
+			_logger.Warning("No playtime segments could be retrieved from the primary source. Aborting sync.");
+			return;
+		}
+
+
+		_logger.Information("Fetching local apps...");
 
 		var localApps = localAppsTask.Result;
 		var appEntries = appEntriesTask.Result
@@ -197,44 +212,58 @@ internal sealed class HomeViewModel : Core.ViewModel
 			.ToHashSet(AlternateAppLookup.Instance)
 			.GetAlternateLookup<SteamStoreAppData>();
 
-		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
 
-		bool hasNewEntry = false;
-		foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntries.Contains(app)))
+		_logger.Information("Adding new local apps to database...");
+
+		try
 		{
-			notFoundEntry.Id = (int)notFoundEntry.StoreData!.AppId;
-			notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
-			var appToAdd = new SteamStoreApp(notFoundEntry);
-			_steamDb.UserApps.Add(new SteamAppEntry()
+			bool hasNewEntry = false;
+			foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntries.Contains(app)))
 			{
-				StoreDetails = appToAdd,
-				PlaytimeSlices = fileSegmentsLookup[notFoundEntry.StoreData.AppId]
-			});
-			_steamDb.SteamStoreApps.Add(appToAdd);
-			hasNewEntry = true;
-		}
-		if(hasNewEntry)
-		{
+				notFoundEntry.Id = (int)notFoundEntry.StoreData!.AppId;
+				notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
+				var appToAdd = new SteamStoreApp(notFoundEntry);
+				_steamDb.UserApps.Add(new SteamAppEntry()
+				{
+					StoreDetails = appToAdd,
+					PlaytimeSlices = fileSegmentsLookup[notFoundEntry.StoreData.AppId]
+				});
+				_steamDb.SteamStoreApps.Add(appToAdd);
+				hasNewEntry = true;
+				_logger.Information("New local app added to database: {AppName} (AppID: {AppId})",
+					notFoundEntry.StoreData.Name, notFoundEntry.StoreData.AppId);
+			}
+			if(hasNewEntry)
+			{
+				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
+			}
+
+			foreach(var app in appEntries.Set.Where(x => x.SteamApp is not null))
+			{
+				var segments = fileSegmentsLookup[app.SteamApp!.AppId];
+				if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
+				{
+					continue;
+				}
+				var uniqueSegments = segments.Except(app.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
+				if(uniqueSegments.Count == 0)
+				{
+					continue;
+				}
+
+				_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
+				app.PlaytimeSlices.AddRange(uniqueSegments);
+				_steamDb.UserApps.Update(app);
+				_logger.Information("Updated playtime segments for app: {AppName} (AppID: {AppId}) with {SegmentCount} new segments.",
+					app.SteamApp.Name, app.SteamApp.AppId, uniqueSegments.Count);
+			}
 			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 		}
-
-		foreach(var app in appEntries.Set.Where(x => x.SteamApp is not null))
+		catch(Exception ex)
 		{
-			var segments = fileSegmentsLookup[app.SteamApp!.AppId];
-			if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
-			{
-				continue;
-			}
-			var uniqueSegments = segments.Except(app.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
-			if(uniqueSegments.Count == 0)
-			{
-				continue;
-			}
-
-			_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
-			app.PlaytimeSlices.AddRange(uniqueSegments);
-			_steamDb.UserApps.Update(app);
+			_logger.Error(ex, "An error occurred while syncing local apps with the database.");
+			return;
 		}
-		await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
+		_logger.Information("Local apps synced with database.");
 	}
 }

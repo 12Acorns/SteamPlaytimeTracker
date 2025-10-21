@@ -26,6 +26,8 @@ internal static class ApplicationPath
 		{
 			path.Option = ApplicationPathOption.LocalAppData;
 		}
+		LoggingService.Logger.Information("ApplicationPath AddOrUpdatePath succeeded. " +
+			"LookupName: {LookupName}, Path: {RelativePath}, PathOption: {PathOption}", lookupName, relativePath, path.Option);
 	}
 
 	public static bool TryAddPath(string lookupName, ApplicationPathOption option, params ReadOnlySpan<string> relativePath) =>
@@ -36,14 +38,19 @@ internal static class ApplicationPath
 	{
 		if(string.IsNullOrWhiteSpace(lookupName) || string.IsNullOrWhiteSpace(relativePath))
 		{
+			LoggingService.Logger.Warning("ApplicationPath TryAddPath failed due to invalid parameters. " +
+				"LookupName: {LookupName}, Path: {RelativePath}, PathOption: {PathOption}", lookupName, relativePath, option);
 			return false;
 		}
+		LoggingService.Logger.Information("ApplicationPath TryAddPath succeeded. " +
+			"LookupName: {LookupName}, Path: {RelativePath}, PathOption: {PathOption}", lookupName, relativePath, option);
 		return _pathMap.TryAdd(lookupName, (relativePath, option));
 	}
 	public static bool TryGetPath(string lookupName, [NotNullWhen(true)] out string globalPath)
 	{
 		if(!_pathMap.TryGetValue(lookupName, out (string RelativePath, ApplicationPathOption Option) binding))
 		{
+			LoggingService.Logger.Warning("ApplicationPath lookup failed for name: {LookupName}", lookupName);
 			globalPath = null!;
 			return false;
 		}
@@ -55,6 +62,7 @@ internal static class ApplicationPath
 		{
 			globalPath = Path.Combine(GetBasePath(binding.Option), binding.RelativePath);
 		}
+		LoggingService.Logger.Information("ApplicationPath lookup succeeded for name: {LookupName}, Path: {GlobalPath}", lookupName, globalPath);
 		return true;
 	}
 	public static string GetPath(string lookupName)

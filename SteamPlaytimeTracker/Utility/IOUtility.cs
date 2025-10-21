@@ -83,7 +83,7 @@ internal static class IOUtility
 			throw;
 		}
 	}
-	public static async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 
+	public static async ValueTask<T?> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 
 		int bufferSize = DefaultBufferSize * 10, CancellationToken cancellationToken = default)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
@@ -97,7 +97,7 @@ internal static class IOUtility
 		catch(Exception ex)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file");
-			throw;
+			return default;
 		}
 		finally
 		{
@@ -115,7 +115,7 @@ internal static class IOUtility
 			}
 		}
 	}
-	public static T HandleTmpFileLifetime<T>(string originalFilePath, Func<string, T> func)
+	public static T? HandleTmpFileLifetime<T>(string originalFilePath, Func<string, T> func)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
 		var tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), tmpFileName);
@@ -128,7 +128,7 @@ internal static class IOUtility
 		catch(Exception ex)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file or execute function provided");
-			throw;
+			return default;
 		}
 		finally
 		{
@@ -137,8 +137,8 @@ internal static class IOUtility
 				if(File.Exists(tmpFilePath))
 				{
 					File.Delete(tmpFilePath);
+					LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
 				}
-				LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
 			}
 			catch(Exception e)
 			{

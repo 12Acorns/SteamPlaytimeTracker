@@ -3,27 +3,33 @@ using SteamPlaytimeTracker.DbObject;
 using System.Globalization;
 using OutParsing;
 using System.IO;
+using SteamPlaytimeTracker.Utility;
 
 namespace SteamPlaytimeTracker.IO;
 
 internal static class PlaytimeProvider
 {
-	private static readonly string _tmpStorePath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-		"Steam Playtime Tracker",
-		"tmp.txt");
-
-	public static Dictionary<uint, List<PlaytimeSlice>> GetPlayimeSegments() => GetSegmentsFromPrimary()
-		.ToDictionary(static x => x.Key, static x => x.ToList());
+	public static Dictionary<uint, List<PlaytimeSlice>> GetPlayimeSegments()
+	{
+		var res = GetSegmentsFromPrimary();
+		if(res == null)
+		{
+			LoggingService.Logger.Warning("No playtime segments could be retrieved from the primary source.");
+			return [];
+		}
+		LoggingService.Logger.Information("Playtime segments successfully retrieved from the primary source.");
+		return res.ToDictionary(static x => x.Key, static x => x.ToList());
+	}
 
 	// Lord forgive, I promose I will refactor anothertime
 	// May the tech debt be forgiving 🙏
-	private static IEnumerable<IGrouping<uint, PlaytimeSlice>> GetSegmentsFromPrimary() => HandleTmpFileLifetime(ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), () =>
+	private static IEnumerable<IGrouping<uint, PlaytimeSlice>>? GetSegmentsFromPrimary() => IOUtility.HandleTmpFileLifetime(
+		ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), filePath =>
 	{
 		var dates = new List<(string Date, uint AppId, bool IsEnd)>();
 
 		var segments = new List<PlaytimeSliceDTO>(capacity: 120);
-		foreach(var line in File.ReadAllLines(_tmpStorePath))
+		foreach(var line in File.ReadAllLines(filePath))
 		{
 			if(OutParser.TryParse(line, "[{startDate}] AppID {appIdS} adding PID {pidIdS} as a tracked process {appPath}",
 				out string startDate, out uint appIdS, out int pidIdS, out string appPath))
@@ -54,7 +60,6 @@ internal static class PlaytimeProvider
 				dates.Add((endDate, appId, true));
 			}
 		}
-		File.Delete(_tmpStorePath);
 
 		if(dates.Count % 2 != 0)
 		{
@@ -138,38 +143,4 @@ internal static class PlaytimeProvider
 			return new PlaytimeSlice { SessionStart = startDateOffset, SessionLength = dateDelta, AppId = x[0].AppId };
 		})).SelectMany(static x => x).GroupBy(static x => x.AppId);
 	});
-	private static T HandleTmpFileLifetime<T>(string path, Func<T> func)
-	{
-		try
-		{
-			if(File.Exists(_tmpStorePath))
-			{
-				File.Delete(_tmpStorePath);
-			}
-			File.Copy(path, _tmpStorePath);
-			LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
-		}
-		catch(Exception ex)
-		{
-			if(File.Exists(_tmpStorePath))
-			{
-				File.Delete(_tmpStorePath);
-			}
-			LoggingService.Logger.Error(ex, "Failed to copy file");
-			throw;
-		}
-
-		try
-		{
-			return func();
-		}
-		finally
-		{
-			if(File.Exists(_tmpStorePath))
-			{
-				File.Delete(_tmpStorePath);
-			}
-			LoggingService.Logger.Information("Removed file from temporary location: {0}", _tmpStorePath);
-		}
-	}
 }

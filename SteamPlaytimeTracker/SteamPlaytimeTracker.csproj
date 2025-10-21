@@ -3,11 +3,24 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
 	<LangVersion>preview</LangVersion>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
 	<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);OutParsing</InterceptorsPreviewNamespaces>
+	<StartupObject>SteamPlaytimeTracker.App</StartupObject>
+	<SignAssembly>False</SignAssembly>
+	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <FileAlignment>512</FileAlignment>
   </PropertyGroup>
 
   <ItemGroup>

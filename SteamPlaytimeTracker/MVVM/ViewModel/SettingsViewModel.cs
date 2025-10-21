@@ -22,8 +22,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 	private string _steamInstallPath = string.Empty;
 	private bool? _autoRefreshSteamApps = true;
 
-	private bool _dbBeingUpdated = false;
-
 	public SettingsViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeService, ILogger logger, AppConfig config, DbAccess steamDb)
 	{
 		_navigationService = navigationService;
@@ -36,13 +34,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
-			if(_dbBeingUpdated)
-			{
-				MessageBox.Show("Please wait until the database is updated before confirming settings.", "Database Update in Progress",
-					MessageBoxButton.OK, MessageBoxImage.Warning);
-				return;
-			}
-
 			var settingsView = (SettingsView)o!;
 			if(VerifySettings(settingsView.fsv_SteamInstall.tf_AppInstall.Text))
 			{
@@ -57,7 +48,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 				_navigationService!.NavigateTo<HomeViewModel>();
 			}
-		}, _ => !_dbBeingUpdated);
+		});
 		OpenLogDirCommand = new RelayCommand(o =>
 		{
 			try
@@ -84,7 +75,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 				MessageBox.Show("Failed to open log directory. See logs for more information.", "Error Opening Log Directory",
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
-		}, _ => true);
+		});
 	}
 
 	public RelayCommand OpenLogDirCommand { get; set; }
