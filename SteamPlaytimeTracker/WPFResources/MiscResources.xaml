@@ -1,0 +1,9 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Storyboard x:Key="defaultSpinnerStoryBoard">
+        <DoubleAnimation Storyboard.TargetName="rotateTransform"
+          Storyboard.TargetProperty="Angle"
+          From="0" To="360" Duration="00:00:01"
+          RepeatBehavior="Forever"/>
+    </Storyboard>
+</ResourceDictionary>

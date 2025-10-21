@@ -1,17 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Serilog;
+﻿using Serilog;
 using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.DbObject.Conversions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.SelfConfig.Data;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Steam;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
+using System.IO;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -62,9 +58,36 @@ internal sealed class SettingsViewModel : Core.ViewModel
 				_navigationService!.NavigateTo<HomeViewModel>();
 			}
 		}, _ => !_dbBeingUpdated);
+		OpenLogDirCommand = new RelayCommand(o =>
+		{
+			try
+			{
+				var logDir = LoggingService.CurrentLogFilePath;
+				if(!Path.IsPathRooted(logDir))
+				{
+					logDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logDir);
+				}
+				if(!Directory.Exists(logDir))
+				{
+					Directory.CreateDirectory(logDir);
+				}
+				Process.Start(new ProcessStartInfo()
+				{
+					FileName = logDir,
+					UseShellExecute = true,
+					Verb = "open"
+				});
+			}
+			catch(Exception ex)
+			{
+				_logger.Error("Failed to open log directory", ex);
+				MessageBox.Show("Failed to open log directory. See logs for more information.", "Error Opening Log Directory",
+					MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}, _ => true);
 	}
 
-	public RelayCommand QuerySteamGamesCommand { get; set; }
+	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 
 	public INavigationService NavigationService => _navigationService;

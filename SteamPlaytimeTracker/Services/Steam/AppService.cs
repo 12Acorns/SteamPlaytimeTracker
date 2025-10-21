@@ -1,29 +1,24 @@
-﻿using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.Utility.Cache;
-using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.DbObject;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
-using SteamPlaytimeTracker.Utility;
-using SteamPlaytimeTracker.Steam;
-using SteamPlaytimeTracker.IO;
-using OutParsing;
-using System.Net;
-using System.IO;
-using Serilog;
+﻿using Microsoft.EntityFrameworkCore;
 using OneOf;
+using OutParsing;
+using Serilog;
+using SteamPlaytimeTracker.DbObject;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Steam;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Utility.Cache;
+using System.Collections.Concurrent;
+using System.IO;
+using System.Net;
 
 namespace SteamPlaytimeTracker.Services.Steam;
 
 internal sealed class AppService : IAppService
 {
 	private const int LocalAppCacheDurationMinutes = 15;
-
-	private static readonly string _tmpStorePath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-		"Steam Playtime Tracker",
-		"tmp.txt");
 
 	private readonly DbAccess _db;
 	private readonly ILogger _logger;
@@ -38,15 +33,26 @@ internal sealed class AppService : IAppService
 		_lifetimeService = lifetimeService;
 	}
 
+	public async ValueTask<List<SteamAppEntry>> AllEntries() => await _db.UserApps
+			.AsNoTracking()
+			.Include(x => x.StoreDetails)
+				.ThenInclude(x => x.AppData)
+				.ThenInclude(x => x.StoreData)
+			.Include(x => x.PlaytimeSlices)
+			.AsSplitQuery()
+			.ToListAsync().ConfigureAwait(false);
 	public async ValueTask<SteamAppEntry?> GetEntryAsync(uint appId, CancellationToken token)
 	{
 		try
 		{
-			return await _cacheManager.Get<ValueTask<SteamAppEntry?>>(appId.ToString(), async () => 
-				await _db.LocalApps
+			return await _cacheManager.GetAsync(appId.ToString(), async () => 
+				await _db.UserApps
+						.AsNoTracking()
 						.Include(x => x.StoreDetails)
+							.ThenInclude(x => x.AppData)
+							.ThenInclude(x => x.StoreData)
 						.Include(x => x.PlaytimeSlices)
-						.FirstOrDefaultAsync(x => x.SteamApp.AppId == appId, token).ConfigureAwait(false))
+						.FirstOrDefaultAsync(x => x.StoreDetails.Id == appId, token).ConfigureAwait(false))
 					.ConfigureAwait(false);
 		}
 		catch(Exception ex)
@@ -58,7 +64,7 @@ internal sealed class AppService : IAppService
 
 	public async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsAsync(CancellationToken token)
 	{
-		return await _cacheManager.Get("LocalApps", LocalAppCacheDurationMinutes, async () =>
+		return await _cacheManager.GetAsync("LocalApps", LocalAppCacheDurationMinutes, async () =>
 		{
 			if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 			{
@@ -67,14 +73,11 @@ internal sealed class AppService : IAppService
 			return [];
 		}).ConfigureAwait(false);
 	}
-	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async () =>
+	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async tmpTile =>
 	{
-		//var lookup = await _db.SteamApps
-		//	.DistinctBy(x => x.AppId)
-		//	.ToDictionaryAsync(x => x.AppId, token).ConfigureAwait(false);
 		var seen = new ConcurrentDictionary<uint, byte>();
 		var resultTasks = new ConcurrentBag<Task<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>>();
-		await foreach(var line in IOUtility.ReadLinesAsync(_tmpStorePath, token).ConfigureAwait(false))
+		await foreach(var line in IOUtility.ReadLinesAsync(tmpTile, cancellationToken: token).ConfigureAwait(false))
 		{
 			if(token.IsCancellationRequested)
 			{
@@ -109,41 +112,32 @@ internal sealed class AppService : IAppService
 					_logger.Information("Adding app to re-fetch queue");
 				}
 			});
-			return x.IsT0 && x.AsT0.Success && !string.IsNullOrWhiteSpace(x.AsT0.StoreData.Name);
+			return x.IsT0 && x.AsT0.Success && !string.IsNullOrWhiteSpace(x.AsT0.StoreData?.Name);
 		}).Select(x => x.AsT0);
 	}).ConfigureAwait(false);
-	private async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string path, Func<ValueTask<T>> asyncFunc)
+	private async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string path, Func<string, ValueTask<T>> asyncFunc)
 	{
+		string tmpFilePath = "";
 		try
 		{
-			if(File.Exists(_tmpStorePath))
-			{
-				File.Delete(_tmpStorePath);
-			}
-			File.Copy(path, _tmpStorePath);
+			tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), Guid.NewGuid().ToString());
+
+			File.Copy(path, tmpFilePath);
+			_logger.Information("Copied file to temporary location: {0}", tmpFilePath);
+			return await asyncFunc(tmpFilePath).ConfigureAwait(false);
 		}
 		catch(Exception ex)
 		{
-			if(File.Exists(_tmpStorePath))
-			{
-				File.Delete(_tmpStorePath);
-			}
-			_logger.Error(ex, "Failed to copy file: {0}");
+			_logger.Error(ex, "Failed to copy file");
 			throw;
-		}
-		_logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
-
-		try
-		{
-			return await asyncFunc().ConfigureAwait(false);
 		}
 		finally
 		{
-			if(File.Exists(_tmpStorePath))
+			if(File.Exists(tmpFilePath))
 			{
-				File.Delete(_tmpStorePath);
+				File.Delete(tmpFilePath);
 			}
-			_logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
+			_logger.Information("Copied file to temporary location: {0}", tmpFilePath);
 		}
 	}
 }

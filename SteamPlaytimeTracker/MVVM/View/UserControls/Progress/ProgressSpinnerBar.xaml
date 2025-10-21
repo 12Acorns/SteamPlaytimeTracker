@@ -1,0 +1,27 @@
+﻿<Window x:Class="SteamPlaytimeTracker.MVVM.View.UserControls.Progress.ProgressSpinnerBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Progress" xmlns:text="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Text"
+             mc:Ignorable="d" 
+             WindowStyle="None"
+             Background="Transparent"
+             AllowsTransparency="True"
+             d:DesignHeight="150" d:DesignWidth="350">
+    <Grid Background="Transparent">
+        <Grid Background="Transparent" >
+            <Rectangle Fill="Black" RadiusX="15" RadiusY="15" />
+            <Rectangle Fill="DarkGray" RadiusX="15" RadiusY="15" Margin="2" />
+        </Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0.8*" />
+                <RowDefinition Height="0.2*" />
+            </Grid.RowDefinitions>
+            <ContentControl Content="{Binding Spinner}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <text:OutlinedTextBlock Grid.Row="1" x:Name="tbk_LoadingText" Text="Loading..." HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    FontSize="16" FontWeight="Bold" Stroke="Black" StrokeThickness="1" Fill="White" />
+        </Grid>
+    </Grid>
+</Window>

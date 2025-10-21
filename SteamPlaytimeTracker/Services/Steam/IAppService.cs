@@ -5,6 +5,7 @@ namespace SteamPlaytimeTracker.Services.Steam;
 
 internal interface IAppService
 {
+	public ValueTask<List<SteamAppEntry>> AllEntries();
 	public ValueTask<SteamAppEntry?> GetEntryAsync(uint appId, CancellationToken token = default);
 	public ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsAsync(CancellationToken token = default);
 }

@@ -1,5 +1,5 @@
-﻿using ScottPlot;
-using ScottPlot.TickGenerators.TimeUnits;
+﻿global using static SteamPlaytimeTracker.Utility.VisualTreeUtility;
+using ScottPlot;
 using System.IO;
 
 namespace SteamPlaytimeTracker;
@@ -11,6 +11,7 @@ internal static partial class GlobalData
 	public const string AppDataStoreLookupName = "AppDataStorePath";
 	public const string ConfigPathLookupName = "ConfigPath";
 	public const string DbLookupName = "Db";
+	public const string TmpFolderName = "SteamPlaytimeTracker";
 
 	public static readonly string MainSliceCheckLocalPath = Path.Combine("logs", "gameprocess_log.txt");
 }

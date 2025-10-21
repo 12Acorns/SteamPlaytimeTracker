@@ -19,17 +19,17 @@ internal sealed class AlternateAppLookup : IEqualityComparer<SteamAppEntry>, IAl
 		{
 			return false;
 		}
-		return alternate.StoreData.AppId == other.SteamApp.AppId;
+		return alternate.StoreData.AppId == other.SteamApp?.AppId;
 	}
 	public bool Equals(SteamAppEntry? x, SteamAppEntry? y)
 	{
-		if(x is null || y is null)
+		if(x is null || y is null || !x.StoreDetails.Exists || !y.StoreDetails.Exists)
 		{
 			return false;
 		}
-		return x.SteamApp.AppId == y.SteamApp.AppId;
+		return x.StoreDetails!.AppData.Id == y.StoreDetails!.AppData.Id;
 	}
 
 	public int GetHashCode(SteamStoreAppData alternate) => (int)alternate.StoreData.AppId;
-	public int GetHashCode([DisallowNull] SteamAppEntry obj) => (int)obj.SteamApp.AppId;
+	public int GetHashCode([DisallowNull] SteamAppEntry obj) => obj.StoreDetails?.Id ?? obj.Id;
 }

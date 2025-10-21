@@ -10,13 +10,29 @@
         d:DataContext="{d:DesignInstance Type=viewmodel:HomeWindowModel}"
         mc:Ignorable="d"
         MinWidth="350"  MinHeight="400"
-        Background="{StaticResource defaultGray}"
-        WindowStyle="SingleBorderWindow"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
         WindowStartupLocation="CenterScreen"
         PreviewMouseDown="Window_PreviewMouseDown"
-        Closing="Window_Closing" Topmost="True"
+        ResizeMode="CanResize"
+        SizeChanged="Window_SizeChanged"
+        Closing="Window_Closing" Topmost="False"
         Title="Application View" Height="450" Width="800">
-    <Grid>
-        <ContentControl Content="{Binding NavigationService.CurrentView}" />
-    </Grid>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CornerRadius="8" CaptionHeight="25" ResizeBorderThickness="8" />
+    </WindowChrome.WindowChrome>
+    <Border Background="{StaticResource defaultGray}" BorderThickness="0" CornerRadius="8" Padding="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <windowchrome:WindowChromeBar />
+            <ContentControl Grid.Row="1" Content="{Binding NavigationService.CurrentView}" />
+        </Grid>
+        <Border.Effect>
+            <DropShadowEffect Opacity="0.65" BlurRadius="5"/>
+        </Border.Effect>
+    </Border>
 </Window>

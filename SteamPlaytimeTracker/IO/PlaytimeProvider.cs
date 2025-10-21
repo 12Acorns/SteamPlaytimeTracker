@@ -147,6 +147,7 @@ internal static class PlaytimeProvider
 				File.Delete(_tmpStorePath);
 			}
 			File.Copy(path, _tmpStorePath);
+			LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
 		}
 		catch(Exception ex)
 		{
@@ -154,10 +155,9 @@ internal static class PlaytimeProvider
 			{
 				File.Delete(_tmpStorePath);
 			}
-			LoggingService.Logger.Error(ex, "Failed to copy file: {0}");
+			LoggingService.Logger.Error(ex, "Failed to copy file");
 			throw;
 		}
-		LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
 
 		try
 		{
@@ -169,7 +169,7 @@ internal static class PlaytimeProvider
 			{
 				File.Delete(_tmpStorePath);
 			}
-			LoggingService.Logger.Information("Copied file to temporary location: {0}", _tmpStorePath);
+			LoggingService.Logger.Information("Removed file from temporary location: {0}", _tmpStorePath);
 		}
 	}
 }

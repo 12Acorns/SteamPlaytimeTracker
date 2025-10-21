@@ -13,6 +13,8 @@
                 <ResourceDictionary Source="/WPFResources/HeaderBarResources.xaml" />
                 <ResourceDictionary Source="/WPFResources/StyleResources.xaml" />
                 <ResourceDictionary Source="/WPFResources/SteamTemplateResources.xaml" />
+                <ResourceDictionary Source="/WPFResources/MiscResources.xaml" />
+                <ResourceDictionary Source="/WPFResources/ScrollTypeResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
             
             <DataTemplate DataType="{x:Type viewModel:HomeViewModel}">

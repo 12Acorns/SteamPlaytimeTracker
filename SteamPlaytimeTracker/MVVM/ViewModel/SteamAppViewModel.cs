@@ -40,7 +40,6 @@ internal class SteamAppViewModel : Core.ViewModel
 			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, "Month Playtime", true),
 			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, "Day Playtime", false)
 		];
-		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
 	}
 
 	public INavigationService NavigationService { get; }
@@ -87,7 +86,6 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			RefreshPlots();
 			OnPropertyChanged();
 		}
 	}
@@ -104,7 +102,6 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
-			RefreshPlots();
 			OnPropertyChanged();
 		}
 	}
@@ -175,6 +172,7 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 
 		SelectedApp = app;
+		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
 
 		InitDateRange();
 		InitPlot();
@@ -189,7 +187,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	{
 		ShowEndDatePicker = true;
 		Plot.Plot.Title(show: true);
-		BarPlot barPlot = SelectedGraphingOption.Id.Id switch
+		var barPlot = SelectedGraphingOption.Id.Id switch
 		{
 			GraphViewSelectionId.YearPlaytimeId => CreateYearPlaytimeBars(SelectedApp),
 			GraphViewSelectionId.MonthPlaytimeId => CreateMonthPlaytimeBars(SelectedApp),
@@ -272,7 +270,28 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	private void RefreshDateRange()
 	{
-		
+		var selectedOption = SelectedGraphingOption.Id.Id;
+		var minDate = SelectedApp.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart;
+		var maxDate = SelectedApp.PlaytimeSlices.MaxBy(x => x.SessionStart.Ticks)!.SessionStart;
+		if(selectedOption is GraphViewSelectionId.YearPlaytimeId)
+		{
+			MinStartDate = new DateTime(minDate.Year, 1, 1);
+			MaxEndDate = new DateTime(maxDate.Year + 1, 1, 1);
+		}
+		else if(selectedOption is GraphViewSelectionId.MonthPlaytimeId)
+		{
+			MinStartDate = new DateTime(minDate.Year, minDate.Month, 1);
+			MaxEndDate = new DateTime(maxDate.Year, maxDate.Month, 1).FirstDayOfNextMonth();
+		}
+		else if(selectedOption is GraphViewSelectionId.DayPlaytimeId)
+		{
+			MinStartDate = new DateTime(minDate.Year, minDate.Month, 1);
+			MaxEndDate = new DateTime(maxDate.Year, maxDate.Month, 1).FirstDayOfNextMonth();
+		}
+		_override = true;
+		StartDate = MinStartDate;
+		EndDate = MaxEndDate;
+		_override = false;
 	}
 	private void RemoveEventHandlesFromPlot()
 	{
@@ -390,7 +409,8 @@ internal class SteamAppViewModel : Core.ViewModel
 		Plot.Plot.Axes.Left.TickLabelStyle.FontSize = 20;
 		Plot.Plot.SetStyle(new PlotStyle()
 		{
-			AxisColor = ScottPlot.Colors.White
+			AxisColor = ScottPlot.Colors.White,
+			GridMajorLineColor = ScottPlot.Colors.Transparent,
 		});
 		Plot.Plot.FigureBackground = new BackgroundStyle()
 		{
@@ -400,18 +420,18 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	private void InitDateRange()
 	{
+		_override = true;
 		StartDate = new DateTime(SelectedApp.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks);
 		EndDate = new DateTime(SelectedApp.PlaytimeSlices.MaxBy(x => x.SessionStart.Ticks)!.SessionStart.Ticks) + TimeSpan.FromDays(1);
+		_override = false;
 
 		MinStartDate = StartDate;
 		MaxEndDate = EndDate;
 
-		_override = false;
 	}
 	private void CleanUp()
 	{
 		RemoveEventHandlesFromPlot();
-		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
 		Plot.Plot.Clear();
 	}
 }

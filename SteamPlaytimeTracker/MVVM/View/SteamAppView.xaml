@@ -69,7 +69,7 @@
                         </Grid.RowDefinitions>
                         <ComboBox HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                   ItemsSource="{Binding AvailableGraphingOptions}"
-                                  SelectedItem="{Binding SelectedGraphingOption, Mode=TwoWay}"
+                                  SelectedItem="{Binding SelectedGraphingOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="IsSelectedByDefault"
                                   SelectedValue="True"
                                   Margin="2">
@@ -83,12 +83,6 @@
                                 <Style TargetType="ComboBoxItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Center" />
                                     <Setter Property="VerticalContentAlignment" Value="Center" />
-
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelectedByDefault}" Value="True">
-                                            <Setter Property="IsSelected" Value="True" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
                                 </Style>
                             </ComboBox.ItemContainerStyle>
                         </ComboBox>

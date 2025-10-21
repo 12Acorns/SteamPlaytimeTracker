@@ -31,27 +31,7 @@ namespace SteamPlaytimeTracker.Migrations
                     b.HasIndex("SteamStoreAppId")
                         .IsUnique();
 
-                    b.ToTable("LocalApps");
-                });
-
-            modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.App.SteamApp", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<uint>("AppId")
-                        .HasColumnType("INTEGER")
-                        .HasAnnotation("Relational:JsonPropertyName", "appid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT")
-                        .HasAnnotation("Relational:JsonPropertyName", "name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SteamApps");
+                    b.ToTable("UserApps");
                 });
 
             modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.App.SteamAppStoreDetails", b =>
@@ -93,12 +73,13 @@ namespace SteamPlaytimeTracker.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("AppDataId")
+                    b.Property<int>("SteamStoreAppDataId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppDataId");
+                    b.HasIndex("SteamStoreAppDataId")
+                        .IsUnique();
 
                     b.ToTable("SteamStoreApps");
                 });
@@ -108,7 +89,7 @@ namespace SteamPlaytimeTracker.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("StoreDataId")
+                    b.Property<int>("SteamAppStoreDetailsId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("Success")
@@ -117,7 +98,8 @@ namespace SteamPlaytimeTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StoreDataId");
+                    b.HasIndex("SteamAppStoreDetailsId")
+                        .IsUnique();
 
                     b.ToTable("SteamStoreAppData");
                 });
@@ -156,8 +138,8 @@ namespace SteamPlaytimeTracker.Migrations
             modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.App.SteamStoreApp", b =>
                 {
                     b.HasOne("SteamPlaytimeTracker.Steam.Data.App.SteamStoreAppData", "AppData")
-                        .WithMany()
-                        .HasForeignKey("AppDataId")
+                        .WithOne()
+                        .HasForeignKey("SteamPlaytimeTracker.Steam.Data.App.SteamStoreApp", "SteamStoreAppDataId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -167,8 +149,8 @@ namespace SteamPlaytimeTracker.Migrations
             modelBuilder.Entity("SteamPlaytimeTracker.Steam.Data.App.SteamStoreAppData", b =>
                 {
                     b.HasOne("SteamPlaytimeTracker.Steam.Data.App.SteamAppStoreDetails", "StoreData")
-                        .WithMany()
-                        .HasForeignKey("StoreDataId")
+                        .WithOne()
+                        .HasForeignKey("SteamPlaytimeTracker.Steam.Data.App.SteamStoreAppData", "SteamAppStoreDetailsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

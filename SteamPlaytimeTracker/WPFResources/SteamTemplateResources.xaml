@@ -4,7 +4,8 @@
                     xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam">
     
     <DataTemplate x:Key="SteamAppEntryDataTemplate" DataType="{x:Type dbo:SteamAppEntry}">
-        <ucsteam:SteamCapsule Width="120" Height="180"
+        <ucsteam:SteamCapsule Width="{Binding DataContext.UniformWidth, RelativeSource={RelativeSource AncestorType=ListBox}}" 
+                              Height="{Binding DataContext.UniformHeight, RelativeSource={RelativeSource AncestorType=ListBox}}"
                           Title="{Binding SteamApp.Name}"
                           ImageUrl="{Binding SteamApp.ImageUrl}"
                           Command="{Binding DataContext.NavigateToPlayTimeViewCommand,

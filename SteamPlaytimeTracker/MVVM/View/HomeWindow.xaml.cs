@@ -16,4 +16,8 @@ public partial class HomeWindow : Window
 
 	private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e) => OnMouseDownA?.Invoke(sender, e);
 	private void Window_Closing(object sender, CancelEventArgs e) => App.Application_Closing(sender, e);
+	private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+	{
+		BorderThickness = WindowState is WindowState.Maximized ? new Thickness(6) : new Thickness(0);
+	}
 }

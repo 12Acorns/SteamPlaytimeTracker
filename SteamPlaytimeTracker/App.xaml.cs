@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Windows;
 using Serilog.Core;
 using Config.Net;
+using System.IO;
 using Serilog;
 
 namespace SteamPlaytimeTracker;
@@ -32,6 +33,7 @@ public partial class App : Application
 		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
 		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
 		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
+		ApplicationPath.TryAddPath(GlobalData.TmpFolderName, Directory.CreateTempSubdirectory("Steam Playtime Tracker").FullName, ApplicationPathOption.CustomGlobal);
 
 		var iConfigData = new ConfigurationBuilder<IAppData>()
 			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
@@ -60,7 +62,7 @@ public partial class App : Application
 			DataContext = provider.GetRequiredService<SteamAppViewModel>()
 		});
 		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(iConfigData));
-		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"));
+		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"), ServiceLifetime.Transient);
 
 		serviceCollection.AddSingleton<HomeWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
@@ -85,12 +87,24 @@ public partial class App : Application
 
 		_serviceProvider = serviceCollection.BuildServiceProvider();
 		ServiceProvider = _serviceProvider;
+
+		OnSessionClose += (sender, e) =>
+		{
+			if(e.Cancel)
+			{
+				return;
+			}
+			if(ApplicationPath.TryGetPath(GlobalData.TmpFolderName, out var tmpDirectory) && Directory.Exists(tmpDirectory))
+			{
+				Directory.Delete(tmpDirectory, true);
+			}
+		};
 	}
 
 	protected override void OnStartup(StartupEventArgs e)
 	{
 		var db = _serviceProvider.GetRequiredService<DbAccess>();
-		db.Database.EnsureCreated();
+		db.Database.Migrate();
 
 		var mainWindow = _serviceProvider.GetRequiredService<HomeWindow>();
 		mainWindow.Show();

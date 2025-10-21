@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace SteamPlaytimeTracker.Steam;
 
@@ -22,8 +23,10 @@ internal static class SteamRequest
 
 	private static readonly JsonSerializerOptions _serializerOptions = new()
 	{
-		UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
+		UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
+		
 	};
+	private static readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 	private static readonly HttpClient _client = new();
 	private static readonly Logger _logger = LoggingService.Logger;
 
@@ -76,12 +79,12 @@ internal static class SteamRequest
 				var response = await _client.GetAsync(SingleAppDetails + appId, token).ConfigureAwait(false);
 				if(!response.IsSuccessStatusCode)
 				{
-					_logger.Error("Failed to fetch app details from Steam API. Status code: {0}. Responce: {1}",
-						response.StatusCode, response.ToString());
+					_logger.Error("Failed to fetch app details from Steam API. Status code: {0}. Responce: {1}. Id: {2}",
+						response.StatusCode, response.ToString(), appId);
 					return response.StatusCode;
 				}
 				var contentStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-				_logger.Information("Successfully fetched steam app list data.");
+				_logger.Information("Successfully fetched steam app store data.");
 
 				var jObject = await JsonNode.ParseAsync(contentStream, cancellationToken: token).ConfigureAwait(false);
 				var child = jObject![appId.ToString()];

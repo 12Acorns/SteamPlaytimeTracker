@@ -11,6 +11,9 @@ namespace SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 
 public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 {
+	public const int BaseWidth = 120;
+	public const double HeightScaleFactor = 1.5d;
+
 	private static readonly DependencyProperty _imageUrlProperty =
 		DependencyProperty.Register(nameof(ImageUrl), typeof(string), typeof(SteamCapsule),
 			new PropertyMetadata(OnImageUrlChanged));
@@ -80,7 +83,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		var bmp = new BitmapImage();
 		bmp.BeginInit();
 		bmp.UriSource = new Uri(url, UriKind.Absolute);
-		bmp.CacheOption = BitmapCacheOption.OnDemand;
+		bmp.CacheOption = BitmapCacheOption.Default;
 		bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
 		bmp.EndInit();
 		return bmp;

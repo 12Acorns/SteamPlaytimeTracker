@@ -11,10 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="MVVM\View\SplashScreen1.png" />
     <None Remove="resources\Default-Tex.png" />
     <None Remove="resources\Name-Order-Icon.png" />
     <None Remove="resources\Name-Order-IconCenter_First-Last.png" />
     <None Remove="resources\Name-Order-IconCenter_Last-First.png" />
+    <None Remove="resources\Progress-Spinner-Mask.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,23 +51,30 @@
     <Resource Include="resources\Default-Tex.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Playtime-Order-Icon.png">
+    <Resource Include="resources\Progress-Spinner-Mask.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Playtime-Order-Icon_First-Last.png">
+    <Resource Include="resources\Sorting\Playtime-Order-Icon.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Playtime-Order-Icon_Last-First.png">
+    <Resource Include="resources\Sorting\Playtime-Order-Icon_First-Last.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Name-Order-Icon.png">
+    <Resource Include="resources\Sorting\Playtime-Order-Icon_Last-First.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Name-Order-Icon_First-Last.png">
+    <Resource Include="resources\Sorting\Name-Order-Icon.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="resources\Name-Order-Icon_Last-First.png">
+    <Resource Include="resources\Sorting\Name-Order-Icon_First-Last.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="resources\Sorting\Name-Order-Icon_Last-First.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="resources\SplashScreen\" />
   </ItemGroup>
 </Project>

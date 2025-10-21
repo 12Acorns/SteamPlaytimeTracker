@@ -21,8 +21,7 @@ internal sealed class DbAccess : DbContext
 		LoggingService.Logger) { }
 
 	public DbSet<PlaytimeSlice> PlaytimeSlices { get; private set; }
-	public DbSet<SteamAppEntry> LocalApps { get; private set; }
-	public DbSet<SteamApp> SteamApps { get; private set; }
+	public DbSet<SteamAppEntry> UserApps { get; private set; }
 	public DbSet<SteamStoreApp> SteamStoreApps { get; private set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,6 +36,16 @@ internal sealed class DbAccess : DbContext
 			.WithOne()
 			.HasForeignKey<SteamAppEntry>("SteamStoreAppId")
 			.IsRequired(false);
+		modelBuilder.Entity<SteamStoreApp>()
+			.HasOne(e => e.AppData)
+			.WithOne()
+			.HasForeignKey<SteamStoreApp>("SteamStoreAppDataId")
+			.IsRequired();
+		modelBuilder.Entity<SteamStoreAppData>()
+			.HasOne(e => e.StoreData)
+			.WithOne()
+			.HasForeignKey<SteamStoreAppData>("SteamAppStoreDetailsId")
+			.IsRequired();
 	}
 
 	private static DbContextOptions<DbAccess> RefreshConnection()

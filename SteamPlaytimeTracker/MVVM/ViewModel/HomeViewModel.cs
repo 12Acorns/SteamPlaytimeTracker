@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SteamPlaytimeTracker.Core;
+﻿using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.MVVM.View.UserControls.Progress;
+using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Navigation;
@@ -12,6 +13,7 @@ using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
 using System.Collections.ObjectModel;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
@@ -32,14 +34,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 		_steamDb = steamDb;
 
 		SwitchToSettingsMenuCommand = new RelayCommand(o => NavigationService.NavigateTo<SettingsViewModel>());
-		PlaytimeOrderImagePath = "/resources/Playtime-Order-Icon_First-Last.png";
-		NameOrderImagePath = "/resources/Name-Order-Icon_First-Last.png";
+		PlaytimeOrderImagePath = "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
+		NameOrderImagePath = "/resources/Sorting/Name-Order-Icon_First-Last.png";
 		PlaytimeOrderButtonCommand = new(_ =>
 		{
-			var sortAscending = PlaytimeOrderImagePath == "/resources/Playtime-Order-Icon_First-Last.png";
+			var sortAscending = PlaytimeOrderImagePath == "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
 			PlaytimeOrderImagePath = sortAscending
-				? "/resources/Playtime-Order-Icon_Last-First.png"
-				: "/resources/Playtime-Order-Icon_First-Last.png";
+				? "/resources/Sorting/Playtime-Order-Icon_Last-First.png"
+				: "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
 			CapsuleSortType = CapsuleSortType.Playtime;
 			if(!sortAscending)
 			{
@@ -54,10 +56,10 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 		NameOrderButtonCommand = new(_ =>
 		{
-			var sortAscending = NameOrderImagePath == "/resources/Name-Order-Icon_First-Last.png";
+			var sortAscending = NameOrderImagePath == "/resources/Sorting/Name-Order-Icon_First-Last.png";
 			NameOrderImagePath = sortAscending
-				? "/resources/Name-Order-Icon_Last-First.png"
-				: "/resources/Name-Order-Icon_First-Last.png";
+				? "/resources/Sorting/Name-Order-Icon_Last-First.png"
+				: "/resources/Sorting/Name-Order-Icon_First-Last.png";
 			CapsuleSortType = CapsuleSortType.Name;
 			if(!sortAscending)
 			{
@@ -98,7 +100,24 @@ internal sealed class HomeViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	} = default!;
-
+	public double UniformWidth
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = SteamCapsule.BaseWidth;
+	public double UniformHeight
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = (int)(SteamCapsule.BaseWidth * SteamCapsule.HeightScaleFactor);
 	public string PlaytimeOrderImagePath
 	{
 		get => field;
@@ -138,35 +157,55 @@ internal sealed class HomeViewModel : Core.ViewModel
 		}
 	} = string.Empty;
 
-	public override async void OnConstructed()
+	public override void OnConstructed()
 	{
-		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
-		var toAdd = (await _steamDb.LocalApps.Include(x => x.StoreDetails).Include(x => x.PlaytimeSlices).ToListAsync().ConfigureAwait(false))
-			.OrderBy(x => x.SteamApp.Name, StringComparer.InvariantCultureIgnoreCase);
-		SteamApps = new(toAdd);
-		SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
-		SteamAppsView.IsLiveSorting = true;
 		base.OnConstructed();
+		var progress = ProgressSpinnerBar.Create(TimeSpan.FromSeconds(1.5d), (32, 32));
+		progress.ShowInTaskbar = false;
+		var loadTask = Task.Run(LoadDataAsync);
+		_ = Task.Run(() =>
+		{
+			while(!loadTask.IsCompleted)
+			{
+
+			}
+			App.Current.Dispatcher.Invoke(progress.Close);
+		});
+		progress.ShowDialog();
+	}
+	private async Task LoadDataAsync()
+	{
+		await AppendLocalAppsAndSaveToDb();
+		var toAdd = (await _appService.AllEntries()).OrderBy(x => x.SteamApp!.Name);
+		App.Current.Dispatcher.Invoke(() =>
+		{
+			SteamApps = new ObservableCollection<SteamAppEntry>(toAdd);
+			SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
+			SteamAppsView.IsLiveSorting = true;
+		});
 	}
 	private async Task AppendLocalAppsAndSaveToDb()
 	{
-		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
+		var localAppsTask = _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).AsTask();
+		var appEntriesTask = _appService.AllEntries().AsTask();
 
-		var localApps = await _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		var steamAppEntriesSet = (await _steamDb.LocalApps
-			.Include(x => x.StoreDetails)
-			.Include(x => x.PlaytimeSlices)
-			.AsNoTracking()
-			.ToHashSetAsync(AlternateAppLookup.Instance).ConfigureAwait(false))
+		await Task.WhenAll(localAppsTask, appEntriesTask).ConfigureAwait(false);
+
+		var localApps = localAppsTask.Result;
+		var appEntries = appEntriesTask.Result
+			.Where(x => x.StoreDetails is not null && x.StoreDetails.Exists)
+			.ToHashSet(AlternateAppLookup.Instance)
 			.GetAlternateLookup<SteamStoreAppData>();
 
+		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
+
 		bool hasNewEntry = false;
-		foreach(var notFoundEntry in localApps.Where(app => !steamAppEntriesSet.Contains(app)))
+		foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntries.Contains(app)))
 		{
-			notFoundEntry.Id = (int)notFoundEntry.StoreData.AppId;
+			notFoundEntry.Id = (int)notFoundEntry.StoreData!.AppId;
 			notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
 			var appToAdd = new SteamStoreApp(notFoundEntry);
-			_steamDb.LocalApps.Add(new SteamAppEntry()
+			_steamDb.UserApps.Add(new SteamAppEntry()
 			{
 				StoreDetails = appToAdd,
 				PlaytimeSlices = fileSegmentsLookup[notFoundEntry.StoreData.AppId]
@@ -179,10 +218,9 @@ internal sealed class HomeViewModel : Core.ViewModel
 			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 		}
 
-		var entriesEnumerable = steamAppEntriesSet.Set.AsEnumerable();
-		foreach(var app in entriesEnumerable)
+		foreach(var app in appEntries.Set.Where(x => x.SteamApp is not null))
 		{
-			var segments = fileSegmentsLookup[app.SteamApp.AppId];
+			var segments = fileSegmentsLookup[app.SteamApp!.AppId];
 			if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
 			{
 				continue;
@@ -195,7 +233,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 			_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
 			app.PlaytimeSlices.AddRange(uniqueSegments);
-			_steamDb.LocalApps.Update(app);
+			_steamDb.UserApps.Update(app);
 		}
 		await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 	}
