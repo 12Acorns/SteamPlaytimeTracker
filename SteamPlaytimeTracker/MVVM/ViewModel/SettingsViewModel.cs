@@ -1,36 +1,31 @@
-﻿using Serilog;
+﻿using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Services.Navigation;
 using System.Diagnostics;
 using System.Windows;
 using System.IO;
+using Serilog;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
-	private readonly IAsyncLifetimeService _lifetimeService;
 	private readonly INavigationService _navigationService;
 	private readonly AppConfig _config;
-	private readonly DbAccess _steamDb;
 	private readonly ILogger _logger;
 
 	private string _steamInstallPath = string.Empty;
 	private bool? _autoRefreshSteamApps = true;
 
-	public SettingsViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeService, ILogger logger, AppConfig config, DbAccess steamDb)
+	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config)
 	{
 		_navigationService = navigationService;
-		_lifetimeService = lifetimeService;
 		_logger = logger;
 		_config = config;
-		_steamDb = steamDb;
 		AutoRefreshSteamApps = _config.AppData.SteamInstallData.CheckForSteamAppsPeriodically;
-		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
+		SteamInstallPath = GetPathIfExistsElseEmpty(_config.AppData.SteamInstallData.SteamInstallationFolder);
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
@@ -46,7 +41,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 				_logger.Information("Successfully saved AppData", _config.AppData);
 
-				_navigationService!.NavigateTo<HomeViewModel>();
+				_navigationService.NavigateTo<HomeViewModel>();
 			}
 		});
 		OpenLogDirCommand = new RelayCommand(o =>
@@ -71,7 +66,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			}
 			catch(Exception ex)
 			{
-				_logger.Error("Failed to open log directory", ex);
+				_logger.Error(ex, "Failed to open log directory");
 				MessageBox.Show("Failed to open log directory. See logs for more information.", "Error Opening Log Directory",
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
@@ -101,30 +96,63 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		}
 	}
 
-	private static bool VerifySettings(string path, bool showMsgBox = false)
+	private bool VerifySettings(string path, bool showMsgBox = false)
 	{
-		if(!Directory.Exists(path))
+		try
 		{
+			if(!Directory.Exists(path))
+			{
+				if(showMsgBox)
+				{
+					MessageBox.Show("Steam directory not found. Please enter your steam installation directory.", "Invalid Location Set!",
+						MessageBoxButton.OK, MessageBoxImage.Warning);
+				}
+				return false;
+			}
+			if(!File.Exists(Path.Combine(path, "steam.exe")))
+			{
+				if(showMsgBox)
+				{
+					MessageBox.Show("Steam executable not found under entered directory. Ensure the correct steam installation directory has been " +
+						"entered", "No Steam Executable Found!", MessageBoxButton.OK, MessageBoxImage.Warning);
+				}
+				return false;
+			}
 			if(showMsgBox)
 			{
-				MessageBox.Show("Steam directory not found. Please enter your steam installation directory.", "Invalid Location Set!",
-					MessageBoxButton.OK, MessageBoxImage.Warning);
+				MessageBox.Show("Successfully saved settings.", "Success :D", MessageBoxButton.OK, MessageBoxImage.Information);
+			}
+			return true;
+		}
+		catch(Exception e)
+		{
+			_logger.Error(e, "Error verifying settings for Steam installation path: {Path}", path);
+			if(showMsgBox)
+			{
+				MessageBox.Show("An error occurred while verifying the entered Steam installation directory. See logs for more information.",
+					"Error Verifying Settings!", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 			return false;
 		}
-		if(!File.Exists(Path.Combine(path, "steam.exe")))
+	}
+	private string GetPathIfExistsElseEmpty(string? directory)
+	{
+		if(string.IsNullOrEmpty(directory))
 		{
-			if(showMsgBox)
+			return string.Empty;
+		}
+		try
+		{
+			if(!Directory.Exists(directory))
 			{
-				MessageBox.Show("Steam executable not found under entered directory. Ensure the correct steam installation directory has been " +
-					"entered", "No Steam Executable Found!", MessageBoxButton.OK, MessageBoxImage.Warning);
+				return string.Empty;
 			}
-			return false;
+			return directory;
 		}
-		if(showMsgBox)
+		catch(Exception e)
 		{
-			MessageBox.Show("Successfully saved settings.", "Success :D", MessageBoxButton.OK, MessageBoxImage.Information);
+			_logger.Error(e, "Error checking directory existence: {Directory}", directory);
+			return string.Empty;
 		}
-		return true;
 	}
 }

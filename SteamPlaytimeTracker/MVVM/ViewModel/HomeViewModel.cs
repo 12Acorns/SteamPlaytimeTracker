@@ -122,7 +122,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			field = value;
 			OnPropertyChanged();
 		}
-	} = (int)(SteamCapsule.BaseWidth * SteamCapsule.HeightScaleFactor);
+	} = SteamCapsule.BaseWidth * SteamCapsule.HeightScaleFactor;
 	public string PlaytimeOrderImagePath
 	{
 		get => field;

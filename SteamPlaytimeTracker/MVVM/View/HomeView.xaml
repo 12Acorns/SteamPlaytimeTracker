@@ -56,7 +56,7 @@
             <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" 
                        HorizontalAlignment="Left" VerticalAlignment="Center"
                        Foreground="LightGray"
-                       FontSize="18"/>
+                       FontSize="18" />
         </Grid>
         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="No apps could be found which contained recordable playtime." 
                    HorizontalAlignment="Center" VerticalAlignment="Center"
