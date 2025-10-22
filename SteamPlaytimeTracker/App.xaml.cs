@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Core;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.ViewModel;
 using SteamPlaytimeTracker.SelfConfig;
@@ -29,6 +30,7 @@ public partial class App : Application
 
 	public App()
 	{
+		ApplicationPath.TryAddPath(GlobalData.LocalizationLookupName, ApplicationPathOption.ExeLocation, "locale");
 		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
 		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
 		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
@@ -110,6 +112,10 @@ public partial class App : Application
 				logger.Information("Deleted temporary directory: {TmpDirectory}", tmpDirectory);
 			}
 		};
+
+		var locales = LocalizationManager.GetAvailableLocales();
+
+		int a = 0;
 	}
 
 	protected override void OnStartup(StartupEventArgs e)

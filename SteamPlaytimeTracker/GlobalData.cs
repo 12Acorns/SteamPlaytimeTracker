@@ -9,9 +9,12 @@ internal static partial class GlobalData
 {
 	public const string MainTimeSliceCheckLookupName = "MainTimeSliceCheck";
 	public const string AppDataStoreLookupName = "AppDataStorePath";
+	public const string LocalizationLookupName = "LocaleEntries";
 	public const string ConfigPathLookupName = "ConfigPath";
 	public const string DbLookupName = "Db";
 	public const string TmpFolderName = "SteamPlaytimeTracker";
+	public const string LocalesFolderName = "locales";
+	public const string LocaleMapFileName = "locales.json";
 
 	public static readonly string MainSliceCheckLocalPath = Path.Combine("logs", "gameprocess_log.txt");
 }

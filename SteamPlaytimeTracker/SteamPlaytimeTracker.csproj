@@ -13,6 +13,15 @@
 	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
+  <Target Name="CopyLocales" AfterTargets="Build">
+      <ItemGroup>
+  	    <!-- Include only files under resources\Locale and its subfolders -->
+  	    <LocaleFiles Include="resources\Localization\**\*.*" />
+      </ItemGroup>
+  
+      <Copy SourceFiles="@(LocaleFiles)" DestinationFiles="@(LocaleFiles->'$(OutDir)locale\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>embedded</DebugType>
     <FileAlignment>512</FileAlignment>

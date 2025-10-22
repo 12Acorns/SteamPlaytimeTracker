@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
 
 namespace SteamPlaytimeTracker.IO;
 
@@ -9,6 +11,7 @@ internal static class ApplicationPath
 	private static readonly Dictionary<string, (string LocalPath, ApplicationPathOption Option)> _pathMap = [];
 	private static readonly string _localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 	private static readonly string _appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+	private static readonly string _exePath = GetExePath();
 
 	public static void AddOrUpdatePath(string lookupName, ApplicationPathOption option, params ReadOnlySpan<string> relativePath) =>
 		AddOrUpdatePath(lookupName, Path.Combine(relativePath), option);
@@ -54,14 +57,11 @@ internal static class ApplicationPath
 			globalPath = null!;
 			return false;
 		}
-		if(binding.Option == ApplicationPathOption.CustomGlobal)
+		globalPath = binding.Option switch
 		{
-			globalPath = binding.RelativePath;
-		}
-		else
-		{
-			globalPath = Path.Combine(GetBasePath(binding.Option), binding.RelativePath);
-		}
+			ApplicationPathOption.CustomGlobal => binding.RelativePath,
+			_ => Path.Combine(GetBasePath(binding.Option), binding.RelativePath)
+		};
 		LoggingService.Logger.Information("ApplicationPath lookup succeeded for name: {LookupName}, Path: {GlobalPath}", lookupName, globalPath);
 		return true;
 	}
@@ -79,6 +79,35 @@ internal static class ApplicationPath
 		ApplicationPathOption.AppData => _appData,
 		ApplicationPathOption.LocalAppData => _localAppData,
 		ApplicationPathOption.LocalLowAppData => OperatingSystem.IsWindows() ? _localAppData : Directory.CreateDirectory(Path.Combine(_appData, "LocalLow")).FullName,
+		ApplicationPathOption.ExeLocation => _exePath,
 		_ => _localAppData
 	};
+	private static string GetExePath()
+	{
+		var exePath = Environment.ProcessPath;
+		string exeDirectory;
+		if(!string.IsNullOrEmpty(exePath))
+		{
+			exeDirectory = Path.GetDirectoryName(exePath) ?? string.Empty;
+			if(!string.IsNullOrEmpty(exeDirectory))
+			{
+				return exeDirectory;
+			}
+		}
+		exePath = AppDomain.CurrentDomain.BaseDirectory;
+		if(File.Exists(Path.Combine(exePath, "SteamPlaytimeTracker.exe")))
+		{
+			return exePath;
+		}
+		exePath = Assembly.GetEntryAssembly()?.Location ?? string.Empty;
+		if(!string.IsNullOrEmpty(exePath))
+		{
+			exeDirectory = Path.GetDirectoryName(exePath) ?? string.Empty;
+			if(!string.IsNullOrEmpty(exeDirectory))
+			{
+				return exeDirectory;
+			}
+		}
+		throw new AuthenticationException("Failed to determine executable path.");
+	}
 }
