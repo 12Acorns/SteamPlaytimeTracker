@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
+             xmlns:global="clr-namespace:SteamPlaytimeTracker" 
+             xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions"
              d:DataContext="{d:DesignInstance Type=local:FolderSelectView}"
              mc:Ignorable="d" 
              x:Name="folderSelect"
@@ -32,7 +34,8 @@
             HoverBackground="#40808080" PressedBackground="{StaticResource translucentGray}"
             HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0"
             Click="btn_OpenInstallFolder_Click">
-            <TextBlock Text="Open Folder" TextWrapping="Wrap" FontSize="16" />
+            <TextBlock Text="{ext:LocalizationExtensions Key={x:Static global:GlobalData.FolderSelectOpenKey}}" 
+                       TextWrapping="Wrap" FontSize="16" />
         </local:ExtendedButton>
     </Grid>
 </UserControl>

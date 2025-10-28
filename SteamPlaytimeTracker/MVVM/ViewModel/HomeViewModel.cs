@@ -38,14 +38,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 		_steamDb = steamDb;
 
 		SwitchToSettingsMenuCommand = new RelayCommand(o => NavigationService.NavigateTo<SettingsViewModel>());
-		PlaytimeOrderImagePath = "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
-		NameOrderImagePath = "/resources/Sorting/Name-Order-Icon_First-Last.png";
+		PlaytimeOrderImagePath = GlobalData.PlaytimeOrderImagePathFirstLast;
+		NameOrderImagePath = GlobalData.NameOrderImagePathFirstLast;
 		PlaytimeOrderButtonCommand = new(_ =>
 		{
-			var sortAscending = PlaytimeOrderImagePath == "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
+			var sortAscending = PlaytimeOrderImagePath == GlobalData.PlaytimeOrderImagePathFirstLast;
 			PlaytimeOrderImagePath = sortAscending
-				? "/resources/Sorting/Playtime-Order-Icon_Last-First.png"
-				: "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
+				? GlobalData.PlaytimeOrderImagePathLastFirst
+				: GlobalData.PlaytimeOrderImagePathFirstLast;
 			CapsuleSortType = CapsuleSortType.Playtime;
 			if(!sortAscending)
 			{
@@ -60,10 +60,10 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 		NameOrderButtonCommand = new(_ =>
 		{
-			var sortAscending = NameOrderImagePath == "/resources/Sorting/Name-Order-Icon_First-Last.png";
+			var sortAscending = NameOrderImagePath == GlobalData.NameOrderImagePathFirstLast;
 			NameOrderImagePath = sortAscending
-				? "/resources/Sorting/Name-Order-Icon_Last-First.png"
-				: "/resources/Sorting/Name-Order-Icon_First-Last.png";
+				? GlobalData.NameOrderImagePathLastFirst
+				: GlobalData.NameOrderImagePathFirstLast;
 			CapsuleSortType = CapsuleSortType.Name;
 			if(!sortAscending)
 			{

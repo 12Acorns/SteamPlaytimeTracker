@@ -5,5 +5,6 @@ internal enum ApplicationPathOption : byte
 	LocalAppData,
 	LocalLowAppData,
 	AppData,
-	CustomGlobal
+	CustomGlobal,
+	ExeLocation
 }
