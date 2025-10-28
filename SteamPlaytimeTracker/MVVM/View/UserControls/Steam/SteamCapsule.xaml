@@ -40,5 +40,6 @@
                     </Rectangle.Fill>
                 </Rectangle>
             </Grid>
+        </Grid>
     </Border>
 </UserControl>
