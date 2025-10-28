@@ -10,6 +10,8 @@
              xmlns:app="clr-namespace:SteamPlaytimeTracker.Steam.Data.App"
              xmlns:dbo="clr-namespace:SteamPlaytimeTracker.DbObject"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
+             xmlns:global="clr-namespace:SteamPlaytimeTracker"
+             xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions"
              mc:Ignorable="d" 
              Background="Transparent"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -58,7 +60,7 @@
                        Foreground="LightGray"
                        FontSize="18"/>
         </Grid>
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="No apps could be found which contained recordable playtime." 
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{ext:LocalizationExtensions Key={x:Static global:GlobalData.NoAppsFoundKey}}" 
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    Foreground="LightGray"
                    FontSize="18"

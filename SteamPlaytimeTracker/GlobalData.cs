@@ -1,5 +1,8 @@
 ﻿global using static SteamPlaytimeTracker.Utility.VisualTreeUtility;
+using OpenTK.Graphics.ES20;
 using ScottPlot;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.Localization.Data;
 using System.IO;
 
 namespace SteamPlaytimeTracker;
@@ -17,12 +20,27 @@ internal static partial class GlobalData
 	public const string LocaleMapFileName = "locales.json";
 
 	public static readonly string MainSliceCheckLocalPath = Path.Combine("logs", "gameprocess_log.txt");
+	public static readonly LocaleData NoLocaleFound = new()
+	{
+		Code = "no-locale",
+		DisplayName = "No Locale Found",
+		LocaleTextMap = []
+	};
 }
 
 internal static partial class GlobalData
 {
 	public const string MemoryCacheKey = "MemCache";
 	public const string HybridCacheKey = "HybridCache";
+}
+
+internal static partial class GlobalData
+{
+	public const string NameOrderImagePathLastFirst = "/resources/Sorting/Name-Order-Icon_Last-First.png";
+	public const string NameOrderImagePathFirstLast = "/resources/Sorting/Name-Order-Icon_First-Last.png";
+
+	public const string PlaytimeOrderImagePathLastFirst = "/resources/Sorting/Playtime-Order-Icon_Last-First.png";
+	public const string PlaytimeOrderImagePathFirstLast = "/resources/Sorting/Playtime-Order-Icon_First-Last.png";
 }
 
 internal static partial class GlobalData
@@ -67,4 +85,20 @@ internal static partial class GlobalData
 		var dow => throw new NotImplementedException($"Inputted date produced an invalid day of the week. D/M/Y -> {dt.Day}/{dt.Month}/{dt.Year}. DOW: {dow}")
 	};
 	public static Color GetDayPlotColour(int day, int month, int year) => GetDayPlotColour(new DateTime(year, month, day));
+}
+
+internal static partial class GlobalData
+{
+	public const string NoAppsFoundKey = "main.no-apps-found";
+
+	public const string FolderSelectOpenKey = "settings.option.open-folder";
+
+	public const string SteamInstallFolderPlaceholderKey = "settings.steam-install-placeholder-indicator";
+	public const string SteamInstallFolderNotSelectedWarnignKey = "settings.steam-install-invalid";
+	public const string SteamInstallFolderTitleKey = "settings.steam-install-title";
+	public const string SteamInstallLocationKey = "settings.steam-install";
+	public const string SelectLocalizationKey = "settings.select-Localization";
+	public const string OpenLogsKey = "settings.open-logs";
+
+	public const string ConfirmKey = "global.confirm";
 }

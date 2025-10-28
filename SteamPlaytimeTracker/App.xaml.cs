@@ -16,8 +16,9 @@ using SteamPlaytimeTracker.Services.Steam;
 using SteamPlaytimeTracker.Utility.Cache;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
+using System.IO;
+using SteamPlaytimeTracker.Services.Localization;
 
 namespace SteamPlaytimeTracker;
 
@@ -74,6 +75,8 @@ public partial class App : Application
 		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
+		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
+		serviceCollection.AddSingleton<LocalizationManager>();
 
 		serviceCollection.AddSingleton<Func<Type, object[], ViewModel>>(provider => (viewModelType, @params) =>
 		{
@@ -107,15 +110,11 @@ public partial class App : Application
 				catch(Exception ex)
 				{
 					logger.Error(ex, "Failed to delete temporary directory: {TmpDirectory}", tmpDirectory);
-					throw;
+					return;
 				}
 				logger.Information("Deleted temporary directory: {TmpDirectory}", tmpDirectory);
 			}
 		};
-
-		var locales = LocalizationManager.GetAvailableLocales();
-
-		int a = 0;
 	}
 
 	protected override void OnStartup(StartupEventArgs e)
@@ -163,6 +162,10 @@ public partial class App : Application
 			return;
 		}
 		logger.Information("Database migrations applied successfully.");
+
+		var localizer = ServiceProvider.GetRequiredService<ILocalizationService>();
+		var config = ServiceProvider.GetRequiredService<AppConfig>();
+		localizer.ChangeLocale(config.AppData.LocalizationData.LanguageCode);
 
 		var mainWindow = ServiceProvider.GetRequiredService<HomeWindow>();
 		mainWindow.Show();

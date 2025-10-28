@@ -1,35 +1,31 @@
-﻿using Serilog;
+﻿using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Localization.Data;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Services.Navigation;
 using System.Diagnostics;
 using System.Windows;
 using System.IO;
+using Serilog;
+using SteamPlaytimeTracker.Services.Localization;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
-	private readonly IAsyncLifetimeService _lifetimeService;
 	private readonly INavigationService _navigationService;
 	private readonly AppConfig _config;
-	private readonly DbAccess _steamDb;
 	private readonly ILogger _logger;
 
-	private string _steamInstallPath = string.Empty;
-	private bool? _autoRefreshSteamApps = true;
-
-	public SettingsViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeService, ILogger logger, AppConfig config, DbAccess steamDb)
+	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService)
 	{
 		_navigationService = navigationService;
-		_lifetimeService = lifetimeService;
 		_logger = logger;
 		_config = config;
-		_steamDb = steamDb;
-		AutoRefreshSteamApps = _config.AppData.SteamInstallData.CheckForSteamAppsPeriodically;
+		LocalizationService = localizationService;
 		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
@@ -38,7 +34,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			if(VerifySettings(settingsView.fsv_SteamInstall.tf_AppInstall.Text))
 			{
 				_config.AppData.SteamInstallData.SteamInstallationFolder = settingsView.fsv_SteamInstall.tf_AppInstall.Text;
-				_config.AppData.SteamInstallData.CheckForSteamAppsPeriodically = settingsView.tgl_AutoFetchSteamApps.IsChecked!.Value;
 
 				ApplicationPath.AddOrUpdatePath(GlobalData.MainTimeSliceCheckLookupName, 
 					Path.Combine(_config.AppData.SteamInstallData.SteamInstallationFolder, GlobalData.MainSliceCheckLocalPath), 
@@ -76,27 +71,35 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		});
+		AvailableLocales = LocalizationManager.GetAvailableLocales().ToArray();
 	}
 
 	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
+	public ILocalizationService LocalizationService { get; }
 
 	public INavigationService NavigationService => _navigationService;
-	public bool? AutoRefreshSteamApps
-	{
-		get => _autoRefreshSteamApps;
-		set
-		{
-			_autoRefreshSteamApps = value;
-			OnPropertyChanged();
-		}
-	}
 	public string SteamInstallPath
 	{
-		get => _steamInstallPath;
+		get;
 		set
 		{
-			_steamInstallPath = value;
+			field = value;
+			OnPropertyChanged();
+		}
+	} = string.Empty;
+	public LocaleData[] AvailableLocales { get; private set; } = [];
+	public LocaleData CurrentLocale
+	{
+		get
+		{
+			var match = AvailableLocales.FirstOrDefault(x => x.Code.Equals(_config.AppData.LocalizationData.LanguageCode, StringComparison.OrdinalIgnoreCase));
+			return match ?? AvailableLocales.First(x => x.Code.Equals("en-gb", StringComparison.OrdinalIgnoreCase));
+		}
+		set
+		{
+			_config.AppData.LocalizationData.LanguageCode = value.Code;
+			LocalizationService.ChangeLocale(value);
 			OnPropertyChanged();
 		}
 	}

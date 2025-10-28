@@ -35,10 +35,15 @@
   <ItemGroup>
     <None Remove="MVVM\View\SplashScreen1.png" />
     <None Remove="resources\Default-Tex.png" />
+    <None Remove="resources\Localization\locales\en-gb.json" />
     <None Remove="resources\Name-Order-Icon.png" />
     <None Remove="resources\Name-Order-IconCenter_First-Last.png" />
     <None Remove="resources\Name-Order-IconCenter_Last-First.png" />
     <None Remove="resources\Progress-Spinner-Mask.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="resources\Localization\locales\en-gb.json" />
   </ItemGroup>
 
   <ItemGroup>

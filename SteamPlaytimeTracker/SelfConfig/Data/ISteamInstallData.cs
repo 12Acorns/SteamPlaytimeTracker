@@ -8,6 +8,4 @@ public interface ISteamInstallData
 	public string? SteamInstallationFolder { get; set; }
 	[Option(DefaultValue = null, Alias = nameof(LastCheckedSteamApps))]
 	public long? LastCheckedSteamApps { get; set; }
-	[Option(DefaultValue = true, Alias = nameof(CheckForSteamAppsPeriodically))]
-	public bool CheckForSteamAppsPeriodically { get; set; }
 }

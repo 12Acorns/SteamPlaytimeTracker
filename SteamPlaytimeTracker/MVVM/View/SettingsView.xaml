@@ -5,9 +5,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
-        xmlns:userControls="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
-        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" xmlns:settings="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
-             mc:Ignorable="d"
+        xmlns:uc="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls" 
+        xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" 
+        xmlns:settings="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
+        xmlns:localedata="clr-namespace:SteamPlaytimeTracker.Localization.Data"
+        xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions" 
+        xmlns:global="clr-namespace:SteamPlaytimeTracker"
+        mc:Ignorable="d"
         d:DesignHeight="450" d:DesignWidth="800"
         Background="{StaticResource defaultGray}">
     <Grid>
@@ -18,19 +22,30 @@
 
         <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <ItemsControl Name="ictrl_Settings" Background="Transparent" HorizontalContentAlignment="Stretch">
-                <userControls:FolderSelectView x:Name="fsv_SteamInstall"
-                    InstallIndicator="Steam Installation Location:" InstallPlaceholder="Steam Install Here..." 
-                    InstallFolderTitle="Select Steam Installation Folder" InstallFolderNotSelectedWarning="Steam Install not Selected" 
+                <uc:FolderSelectView x:Name="fsv_SteamInstall"
+                    InstallIndicator="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallLocationKey}}"
+                    InstallPlaceholder="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderPlaceholderKey}}"
+                    InstallFolderTitle="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderTitleKey}}"
+                    InstallFolderNotSelectedWarning="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderNotSelectedWarnignKey}}" 
                     FolderPath="{Binding DataContext.SteamInstallPath, Mode=TwoWay, ElementName=settingsView}" />
-                <Grid Name="Auto_Fetch_Apps">
+                <Grid Name="Current_Localization">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="156" />
                         <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.15*" MinWidth="60" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="Auto-Fetch Steam Apps:" HorizontalAlignment="Right" Foreground="LightGray" />
-                    <ToggleButton x:Name="tgl_AutoFetchSteamApps" Grid.Column="2" HorizontalAlignment="Center" Width="25" Height="25" 
-                        IsChecked="{Binding DataContext.AutoRefreshSteamApps, ElementName=settingsView}"/>
+                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectLocalizationKey}}" 
+                           HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
+                    <ComboBox Grid.Column="2" Margin="2" 
+                              ItemsSource="{Binding AvailableLocales}" 
+                              SelectedItem="{Binding CurrentLocale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type localedata:LocaleData}">
+                                <TextBlock Text="{Binding DisplayName}" Foreground="Black" FontSize="12" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
                 </Grid>
             </ItemsControl>
         </ScrollViewer>
@@ -43,13 +58,14 @@
             </Grid.ColumnDefinitions>
 
             <Border Background="LightGray" BorderThickness="1" BorderBrush="#FF707070">
-                
+
             </Border>
-            <Button Grid.Column="1" Name="btn_OpenLogs" Content="Logs"
-                Command="{Binding OpenLogDirCommand}" 
+            <Button Grid.Column="1" Name="btn_OpenLogs" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.OpenLogsKey}}"
+                Command="{Binding OpenLogDirCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
-            <Button Grid.Column="2" Name="btn_ConfirmSettings" Content="Confirm"
-                Command="{Binding ConfirmSettingsCommand}" 
+            <Button Grid.Column="2" Name="btn_ConfirmSettings" 
+                    Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.ConfirmKey}}"
+                Command="{Binding ConfirmSettingsCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
         </Grid>
     </Grid>
