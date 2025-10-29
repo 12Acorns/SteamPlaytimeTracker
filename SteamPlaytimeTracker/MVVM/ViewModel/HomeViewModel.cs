@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿using ScottPlot;
+using ScottPlot.WPF;
+using Serilog;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.IO;

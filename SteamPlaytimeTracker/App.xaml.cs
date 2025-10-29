@@ -19,8 +19,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.IO;
 using SteamPlaytimeTracker.Services.Localization;
-using SkiaSharp;
-using SteamPlaytimeTracker.Utility.Text;
 
 namespace SteamPlaytimeTracker;
 

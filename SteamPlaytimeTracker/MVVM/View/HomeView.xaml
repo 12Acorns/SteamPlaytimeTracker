@@ -40,37 +40,29 @@
                     <ColumnDefinition Width="30" />
                 </Grid.ColumnDefinitions>
 
-                <usercontrols:ExtendedButton Background="Transparent" BorderThickness="0"
-                                             Command="{Binding PlaytimeOrderButtonCommand}">
-                    <Image Source="{Binding PlaytimeOrderImagePath}" 
-                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                           MinHeight="20"
-                           MinWidth="20"/>
+                <usercontrols:ExtendedButton Background="Transparent" BorderThickness="0" Command="{Binding PlaytimeOrderButtonCommand}">
+                    <Image Source="{Binding PlaytimeOrderImagePath}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                           MinHeight="20" MinWidth="20"/>
                 </usercontrols:ExtendedButton>
                 <usercontrols:ExtendedButton Grid.Column="1" Background="Transparent" BorderThickness="0"
                                              Command="{Binding NameOrderButtonCommand}">
-                    <Image Source="{Binding NameOrderImagePath}" 
-                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                        MinHeight="20"
-                        MinWidth="20"/>
+                    <Image Source="{Binding NameOrderImagePath}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        MinHeight="20" MinWidth="20"/>
                 </usercontrols:ExtendedButton>
             </Grid>
-            <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" 
-                       HorizontalAlignment="Left" VerticalAlignment="Center"
-                       Foreground="LightGray"
-                       FontSize="18" />
+            <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                       Foreground="LightGray" FontSize="18" />
         </Grid>
         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{ext:LocalizationExtensions Key={x:Static global:GlobalData.NoAppsFoundKey}}" 
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="LightGray"
-                   FontSize="18"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="LightGray" FontSize="18"
                    Visibility="{Binding NoAppsFoundVisibility}"/>
         <ListBox x:Name="lb_SteamEntries" Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
                  ItemContainerStyle="{StaticResource LBI_NoOutline}" Foreground="Transparent"
                  ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingPanel.IsVirtualizing="True"
+                 VirtualizingPanel.VirtualizationMode="Recycling" 
+                 VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.CacheLength="32"
                  ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0"
-                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                 VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.VirtualizationMode="Recycling"
                  ItemTemplate="{StaticResource SteamAppEntryDataTemplate}" Grid.ColumnSpan="2"
                  SizeChanged="ListBox_SizeChanged">
             <ListBox.Resources>
@@ -79,7 +71,7 @@
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <vwp:VirtualizingWrapPanel x:Name="wrapPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top" 
-                                               Orientation="Horizontal" Margin="2,0,2,0"/>
+                                               Orientation="Horizontal" Margin="2,2,2,0" />
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
         </ListBox>

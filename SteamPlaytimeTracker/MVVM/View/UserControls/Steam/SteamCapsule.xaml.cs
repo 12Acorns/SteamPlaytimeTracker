@@ -83,7 +83,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		var bmp = new BitmapImage();
 		bmp.BeginInit();
 		bmp.UriSource = new Uri(url, UriKind.Absolute);
-		bmp.CacheOption = BitmapCacheOption.Default;
+		bmp.CacheOption = BitmapCacheOption.OnDemand;
 		bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
 		bmp.EndInit();
 		return bmp;

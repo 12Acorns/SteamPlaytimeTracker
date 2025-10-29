@@ -16,9 +16,9 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" Source="{StaticResource ApplicationIcoPath}" 
+        <Image Grid.Column="0" Source="{StaticResource ApplicationIcoPath}"
            RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" 
-           Margin="2" />
+           Margin="4" />
         <TextBlock Grid.Column="1" Text="Main Window" Foreground="LightGray" VerticalAlignment="Center" />
         <usercontrols:ExtendedButton Grid.Column="2" Background="Transparent" Foreground="LightGray" BorderThickness="0"
                                  HoverBackground="LightGray" PressedBackground="Gray"
@@ -31,7 +31,7 @@
               Margin="4" />
         </usercontrols:ExtendedButton>
         <usercontrols:ExtendedButton Grid.Column="3" Background="Transparent" Foreground="LightGray" BorderThickness="0"
-                                 
+                                 HoverBackground="LightGray" PressedBackground="Gray"
                                  Command="{Binding ToggleSizeCommand}"
                                  IsHitTestVisible="True"
                                  WindowChrome.IsHitTestVisibleInChrome="True">
@@ -41,7 +41,7 @@
               Margin="4" />
         </usercontrols:ExtendedButton>
         <usercontrols:ExtendedButton Grid.Column="4" Background="Transparent" Foreground="LightGray" BorderThickness="0"
-                                 
+                                 HoverBackground="LightGray" PressedBackground="Gray"
                                  Command="{Binding QuitApplicationCommand}"
                                  IsHitTestVisible="True"
                                  WindowChrome.IsHitTestVisibleInChrome="True">
