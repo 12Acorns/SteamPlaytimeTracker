@@ -7,6 +7,7 @@ using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
 using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -22,12 +23,13 @@ internal class SteamAppViewModel : Core.ViewModel
 	private static readonly ScottPlot.Color _defaultGrayScottColour = ScottPlot.Color.FromSKColor(_defaultGray.Color.ToSKColor());
 
 	private readonly List<EventHandler<MouseButtonEventArgs>> _trackedEvents = [];
-
+	private readonly ILocalizationService _localizationService;
 	private bool _override = true;
 
-	public SteamAppViewModel(INavigationService navigationService)
+	public SteamAppViewModel(INavigationService navigationService, ILocalizationService localizationService)
 	{
 		NavigationService = navigationService;
+		_localizationService = localizationService;
 		SwitchBackToHomeViewCommand = new RelayCommand(o =>
 		{
 			CleanUp();
@@ -35,10 +37,11 @@ internal class SteamAppViewModel : Core.ViewModel
 		});
 		Plot = new();
 
+		// Likely issue, changing locale will likelty not update text. in future move to OnLoad
 		AvailableGraphingOptions = [
-			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, "Year Playtime", false),
-			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, "Month Playtime", true),
-			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, "Day Playtime", false)
+			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, _localizationService[GlobalData.LocAppViewYearPlaytimeViewKey], false),
+			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, _localizationService[GlobalData.LocAppViewMonthPlaytimeViewKey], true),
+			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, _localizationService[GlobalData.LocAppViewDayPlaytimeViewKey], false)
 		];
 	}
 
@@ -180,7 +183,7 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		var hours = SelectedApp.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
 		// n2 = 2 decimal places
-		TotalPlaytimeText = $"Total Playtime: '{hours:n2}' hours";
+		TotalPlaytimeText = _localizationService[GlobalData.LocPlaytimeHoursText, ("Playtime Hours", $"{hours:n2}")];
 	}
 
 	private void CreatePlots()
@@ -357,7 +360,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			});
 
 		Plot.Plot.Title(StartDate.ToString("yyyy", CultureInfo.InvariantCulture), 24);
-		Plot.Plot.XLabel("Month", 20);
+		Plot.Plot.XLabel(_localizationService[GlobalData.LocMonthGraphY], 20);
 
 		return Plot.Plot.Add.Bars(playtimeByMonth.ToList());
 	}
@@ -388,7 +391,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				};
 			});
 		Plot.Plot.Title(start.ToString("MMMM", CultureInfo.InvariantCulture), 24);
-		Plot.Plot.XLabel("Day", 20);
+		Plot.Plot.XLabel(_localizationService[GlobalData.LocDayGraphY], 20);
 
 		ShowEndDatePicker = false;
 
@@ -403,7 +406,7 @@ internal class SteamAppViewModel : Core.ViewModel
 		Plot.Plot.Axes.Bottom.TickLabelStyle.ForeColor = ScottPlot.Colors.White;
 		Plot.Plot.Axes.Bottom.MajorTickStyle.Length = 0;
 		Plot.Plot.Axes.Bottom.MinorTickStyle.Length = 0;
-		Plot.Plot.YLabel("Playtime (h)", 20);
+		Plot.Plot.YLabel(_localizationService[GlobalData.LocPlaytimeHoursGraphY], 20);
 
 		Plot.Plot.Axes.Title.Label.ForeColor = ScottPlot.Colors.White;
 		Plot.Plot.Axes.Left.TickLabelStyle.FontSize = 20;

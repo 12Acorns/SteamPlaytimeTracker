@@ -89,6 +89,15 @@ internal static partial class GlobalData
 
 internal static partial class GlobalData
 {
+	public const string LocPlaytimeHoursGraphY = "app-view.graph.playtime-hours-y";
+	public const string LocMonthGraphY = "app-view.graph.month-y";
+	public const string LocDayGraphY = "app-view.graph.day-y";
+
+	public const string LocPlaytimeHoursText = "app-view.hours-playtime-indicator";
+	public const string LocAppViewYearPlaytimeViewKey = "app-view.year-playtime";
+	public const string LocAppViewMonthPlaytimeViewKey = "app-view.month-playtime";
+	public const string LocAppViewDayPlaytimeViewKey = "app-view.day-playtime";
+
 	public const string NoAppsFoundKey = "main.no-apps-found";
 
 	public const string FolderSelectOpenKey = "settings.option.open-folder";
@@ -101,4 +110,5 @@ internal static partial class GlobalData
 	public const string OpenLogsKey = "settings.open-logs";
 
 	public const string ConfirmKey = "global.confirm";
+	public const string SettingsLocKey = "global.settings";
 }

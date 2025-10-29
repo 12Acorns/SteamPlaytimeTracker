@@ -31,7 +31,7 @@
                 <ColumnDefinition Width="0.95*"/>
                 <ColumnDefinition Width="0.05*" MinWidth="60" />
             </Grid.ColumnDefinitions>
-            <usercontrols:ExtendedButton Grid.Column="2" Content="Settings" 
+            <usercontrols:ExtendedButton Grid.Column="2" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SettingsLocKey}}" 
                     Background="Transparent" Foreground="LightGray" HoverBackground="{StaticResource translucentGray}"
                     Command="{Binding SwitchToSettingsMenuCommand}" Margin="0,1,4,1" BorderThickness="0.5" />
             <Grid>

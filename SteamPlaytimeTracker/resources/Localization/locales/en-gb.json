@@ -1,9 +1,18 @@
 {
 	"translations": {
+		"app-view.graph.playtime-hours-y": "Playtime (h)",
+		"app-view.graph.month-y": "Month",
+		"app-view.graph.day-y": "Day",
+
+		"app-view.hours-playtime-indicator": "Total Playtime: '{Playtime Hours}' hours",
+		"app-view.year-playtime": "Year Playtime",
+		"app-view.month-playtime": "Month Playtime",
+		"app-view.day-playtime": "Day Playtime",
+
 		"main.no-apps-found": "No apps could be found which contained recordable playtime.",
-		
+
 		"settings.option.open-folder": "Open Folder",
-		
+
 		"settings.steam-install-placeholder-indicator": "Steam Install Here...",
 		"settings.steam-install-title": "Select Steam Installation Folder",
 		"settings.steam-install-invalid": "Steam Install not Selected",
@@ -12,5 +21,6 @@
 		"settings.open-logs": "Open Logs",
 
 		"global.confirm": "Confirm",
+		"global.settings": "Settings"
 	}
 }

@@ -2,10 +2,10 @@
 using SteamPlaytimeTracker.SelfConfig;
 using System.Diagnostics.CodeAnalysis;
 using SteamPlaytimeTracker.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.IO;
 using Serilog;
-using System.Reflection;
 
 namespace SteamPlaytimeTracker.Localization;
 
@@ -36,7 +36,7 @@ internal sealed class LocalizationManager
 		translation = null;
 		return _locale?.LocaleTextMap?.TryGetValue(key, out translation) ?? false;
 	}
-	public void LoadLocale(LocaleData data)
+	public bool TryLoadLocale(LocaleData data)
 	{
 		var filePath = Path.Combine(
 			ApplicationPath.GetPath(GlobalData.LocalizationLookupName), 
@@ -44,12 +44,17 @@ internal sealed class LocalizationManager
 			$"{data.Code}.json");
 		if(!File.Exists(filePath))
 		{
-			_logger.Warning("Locale file not found: {LocaleFilePath}. Loading default: en-gb", filePath);
+			_logger.Warning("Locale file not found: {LocaleFilePath}", filePath);
 			if(!LoadEmbededLocaleAndDumpToDisk(data, filePath))
 			{
-				LoadEnGbLocaleEmbededAndDumpToDisk(filePath);
+				_logger.Warning("Falling back to en-gb locale.");
+				return LoadEnGbLocaleEmbededAndDumpToDisk(Path.Combine(
+					ApplicationPath.GetPath(GlobalData.LocalizationLookupName),
+					GlobalData.LocalesFolderName,
+					$"en-GB.json"));
 			}
-			return;
+			_logger.Information("Loaded from embeded resource, contents dumped to disk: {LocaleFilePath}", filePath);
+			return true;
 		}
 		using var stream = File.OpenRead(filePath);
 		_locale = new LocaleData
@@ -59,11 +64,12 @@ internal sealed class LocalizationManager
 			LocaleTextMap = JsonSerializer.Deserialize<TranslationMap>(stream, _options)?.Map ?? []
 		};
 		_config.AppData.LocalizationData.LanguageCode = _locale.Code;
+		return true;
 	}
 	public void LoadLocale(string code)
 	{
 		var match = GetAvailableLocales().FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
-		LoadLocale(match ?? throw new FileNotFoundException("Locale code not found in available locales.", code));
+		TryLoadLocale(match ?? throw new FileNotFoundException("Locale code not found in available locales.", code));
 	}
 	public static IEnumerable<LocaleData> GetAvailableLocales()
 	{
@@ -108,13 +114,5 @@ internal sealed class LocalizationManager
 		stream.CopyTo(file);
 		return true;
 	}
-	private void LoadNoLocale()
-	{
-		_locale = new LocaleData()
-		{
-			Code = "no-locale",
-			DisplayName = "No Locale Found",
-			LocaleTextMap = []
-		};
-	}
+	private void LoadNoLocale() => _locale = GlobalData.NoLocaleFound;
 }

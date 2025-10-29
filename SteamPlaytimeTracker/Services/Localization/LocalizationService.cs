@@ -3,6 +3,7 @@ using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.SelfConfig;
 using System.ComponentModel;
 using Serilog;
+using SteamPlaytimeTracker.Utility.Text;
 
 namespace SteamPlaytimeTracker.Services.Localization;
 
@@ -24,19 +25,16 @@ internal class LocalizationService : ILocalizationService
 		_manager = manager;
 	}
 
-	public string this[string key, (string Key, object Value)[] paramaters]
+	public string this[string key, params (string Key, object Value)[] paramaters]
 	{
 		get
 		{
 			var template = this[key];
-			if(template == key)
-				return template;
-			if(string.IsNullOrEmpty(template))
-				return template;
-			foreach(var (keyI, value) in paramaters)
+			if(template == key || string.IsNullOrEmpty(template))
 			{
-				template = template.Replace($"{{{keyI}}}", value?.ToString() ?? string.Empty);
+				return template;
 			}
+			template = StringUtility.FormatNamed(template, paramaters);
 			if(template.Contains('{'))
 			{
 				_logger.Warning("Translation for key: {Key} may be missing parameters. Resulting template: {Template}", key, template);
@@ -57,7 +55,7 @@ internal class LocalizationService : ILocalizationService
 
 	public void ChangeLocale(LocaleData locale)
 	{
-		_manager.LoadLocale(locale);
+		_manager.TryLoadLocale(locale);
 		_config.AppData.LocalizationData.LanguageCode = locale.Code;
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
 	}
