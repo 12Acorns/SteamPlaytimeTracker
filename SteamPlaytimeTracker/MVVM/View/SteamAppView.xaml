@@ -93,7 +93,8 @@
                                         Margin="1,0,0,0" BorderThickness="0" />
                             <DatePicker Text="{Binding EndDateText, Mode=TwoWay}" SelectedDate="{Binding EndDate, Mode=TwoWay}"
                                         DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
-                                        Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" />
+                                        Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" 
+                                        Visibility="{Binding EndDatePickerVisiblity}" />
                         </StackPanel>
                     </Grid>
                     <Grid Grid.Column="1">

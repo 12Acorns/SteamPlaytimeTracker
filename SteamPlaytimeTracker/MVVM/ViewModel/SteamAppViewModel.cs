@@ -48,7 +48,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	public WpfPlot Plot { get; }
 	public string TotalPlaytimeText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -57,7 +57,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public string StartDateText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -66,7 +66,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public string EndDateText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -75,7 +75,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public DateTime StartDate
 	{
-		get => field;
+		get;
 		set
 		{
 			if(value > EndDate && !_override && ShowEndDatePicker)
@@ -86,12 +86,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
+			if(!_override)
+			{
+				RefreshPlots(setStartEndToMinMax: false);
+			}
 			OnPropertyChanged();
 		}
 	}
 	public DateTime EndDate
 	{
-		get => field;
+		get;
 		set
 		{
 			if(value < StartDate && !_override)
@@ -102,12 +106,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
+			if(!_override)
+			{
+				RefreshPlots(setStartEndToMinMax: false);
+			}
 			OnPropertyChanged();
 		}
 	}
 	public DateTime MinStartDate
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -116,7 +124,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public DateTime MaxEndDate
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -125,7 +133,17 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public bool ShowEndDatePicker
 	{
-		get => field;
+		get;
+		set
+		{
+			field = value;
+			EndDatePickerVisiblity = !field ? Visibility.Hidden : Visibility.Visible;
+			OnPropertyChanged();
+		}
+	}
+	public Visibility EndDatePickerVisiblity
+	{
+		get;
 		set
 		{
 			field = value;
@@ -134,7 +152,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public SteamAppEntry SelectedApp
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -143,7 +161,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public ObservableCollection<GrapthViewSelectionData> AvailableGraphingOptions
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -152,7 +170,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public GrapthViewSelectionData SelectedGraphingOption
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -249,9 +267,9 @@ internal class SteamAppViewModel : Core.ViewModel
 					GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
 					_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 				};
-				_override = false;
-
 				SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
+				_override = false;
+				RefreshPlots(setStartEndToMinMax: false);
 
 				e.Handled = true;
 			}
@@ -259,16 +277,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			HomeWindow.OnMouseDownA += OnClickBarEvent;
 		}
 	}
-	private void RefreshPlots()
+	private void RefreshPlots(bool setStartEndToMinMax = true)
 	{
 		RemoveEventHandlesFromPlot();
 
 		Plot.Plot.Clear();
-		RefreshDateRange();
+		RefreshDateRange(setStartEndToMinMax);
 		CreatePlots();
 		Plot.Plot.Axes.AutoScale();
 	}
-	private void RefreshDateRange()
+	private void RefreshDateRange(bool setStartEndToMinMax = true)
 	{
 		var selectedOption = SelectedGraphingOption.Id.Id;
 		var minDate = SelectedApp.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart;
@@ -288,10 +306,13 @@ internal class SteamAppViewModel : Core.ViewModel
 			MinStartDate = new DateTime(minDate.Year, minDate.Month, 1);
 			MaxEndDate = new DateTime(maxDate.Year, maxDate.Month, 1).FirstDayOfNextMonth();
 		}
-		_override = true;
-		StartDate = MinStartDate;
-		EndDate = MaxEndDate;
-		_override = false;
+		if(setStartEndToMinMax)
+		{
+			_override = true;
+			StartDate = MinStartDate;
+			EndDate = MaxEndDate;
+			_override = false;
+		}
 	}
 	private void RemoveEventHandlesFromPlot()
 	{
@@ -369,9 +390,9 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 
 		var start = new DateTime(StartDate.Year, StartDate.Month, 1);
-		var end = start.LastDayOfMonth();
+		var end = start.FirstDayOfNextMonth();
 
-		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart <= end)
+		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart < end)
 			.GroupBy(x => x.SessionStart.ToString("dd", CultureInfo.InvariantCulture))
 			.Select((x, idx) =>
 			{
