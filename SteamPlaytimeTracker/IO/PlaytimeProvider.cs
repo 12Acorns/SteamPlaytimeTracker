@@ -26,6 +26,16 @@ internal static class PlaytimeProvider
 	private static IEnumerable<IGrouping<uint, PlaytimeSlice>>? GetSegmentsFromPrimary() => IOUtility.HandleTmpFileLifetime(
 		ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), filePath =>
 	{
+		// New plan to collect playtime in a cleaner way
+		// Collect all segments in a List<List<(...)>>
+		// Eacg inner list is the playtime within a block before the whitespace seperation
+		// Each entry in the inner list is either a start or end date
+		// In each inner list, remove all end dates from the start until there is a start date
+		// Go into loop, while there are still entries and is for the same app, and the date is an end date keep iterating
+		// Once a new start date is found look back to the last end date
+		// Create a new segment from the start date to the end date
+		// Repeat until all segments have been processed
+
 		var dates = new List<(string Date, uint AppId, bool IsEnd)>();
 
 		var segments = new List<PlaytimeSliceDTO>(capacity: 120);
