@@ -167,15 +167,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public override void OnConstructed()
 	{
 		base.OnConstructed();
-		var progress = ProgressSpinnerBar.Create(TimeSpan.FromSeconds(1.5d), (32, 32));
-		progress.ShowInTaskbar = false;
+		var progress = ProgressSpinnerBar.Create(TimeSpan.FromSeconds(3.5d), (500, 300));
+		progress.ShowInTaskbar = true;
 		_logger.Information("Loading local Steam apps and syncing database...");
 		var loadTask = Task.Run(LoadDataAsync);
-		_ = Task.Run(() =>
+		_ = Task.Run(async () =>
 		{
 			while(!loadTask.IsCompleted)
 			{
-
+				await Task.Delay(200);
 			}
 			App.Current.Dispatcher.Invoke(progress.Close);
 		});
@@ -197,11 +197,13 @@ internal sealed class HomeViewModel : Core.ViewModel
 	{
 		var localAppsTask = _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).AsTask();
 		var appEntriesTask = _appService.AllEntries().AsTask();
-		var fileSegmentsLookup = PlaytimeProvider.GetPlayimeSegments();
+		var fileSegmentsLookupTask = PlaytimeProvider.GetPlayimeSegments();
 
-		await Task.WhenAll(localAppsTask, appEntriesTask).ConfigureAwait(false);
+		await Task.WhenAll(localAppsTask, appEntriesTask, fileSegmentsLookupTask.AsTask()).ConfigureAwait(false);
 
-		if(fileSegmentsLookup == null)
+		var fileSegmentsLookup = fileSegmentsLookupTask.Result;
+
+		if(fileSegmentsLookup is null or { Count: 0})
 		{
 			_logger.Warning("No playtime segments could be retrieved from the primary source. Aborting sync.");
 			return;

@@ -83,6 +83,46 @@ internal static class IOUtility
 			throw;
 		}
 	}
+	public static async IAsyncEnumerable<T?>? HandleTmpFileLifetimeAsyncEnumerable<T>(string originalFilePath, Func<string, IAsyncEnumerable<T?>?> asyncFunc,
+		int bufferSize = DefaultBufferSize * 10, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+	{
+		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
+		var tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), tmpFileName);
+		IAsyncEnumerable<T?>? iterReturn = default;
+		try
+		{
+			await CopyAsync(originalFilePath, tmpFilePath, bufferSize, cancellationToken).ConfigureAwait(false);
+			LoggingService.Logger.Information("Copied file to temporary location: {0}", tmpFilePath);
+			iterReturn = asyncFunc(tmpFilePath);
+		}
+		catch(Exception ex)
+		{
+			LoggingService.Logger.Error(ex, "Failed to copy file");
+		}
+		finally
+		{
+			try
+			{
+				if(File.Exists(tmpFilePath))
+				{
+					File.Delete(tmpFilePath);
+				}
+				LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
+			}
+			catch(Exception e)
+			{
+				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
+			}
+		}
+		if(iterReturn == null)
+		{
+			yield break;
+		}
+		await foreach(var item in iterReturn.WithCancellation(cancellationToken).ConfigureAwait(false))
+		{
+			yield return item;
+		}
+	}
 	public static async ValueTask<T?> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 
 		int bufferSize = DefaultBufferSize * 10, CancellationToken cancellationToken = default)
 	{

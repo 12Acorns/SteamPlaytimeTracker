@@ -1,41 +1,31 @@
-﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
+﻿using OutParsing;
 using SteamPlaytimeTracker.DbObject;
-using System.Globalization;
-using OutParsing;
-using System.IO;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Utility;
+using System.Globalization;
+using System.IO;
 
 namespace SteamPlaytimeTracker.IO;
 
 internal static class PlaytimeProvider
 {
-	public static Dictionary<uint, List<PlaytimeSlice>> GetPlayimeSegments()
+	public static async ValueTask<Dictionary<uint, List<PlaytimeSlice>>> GetPlayimeSegments(CancellationToken cancellationToken = default)
 	{
-		var res = GetSegmentsFromPrimary();
-		if(res == null)
+		var res = GetSegmentsFromPrimary(cancellationToken);
+		if(res is null)
 		{
 			LoggingService.Logger.Warning("No playtime segments could be retrieved from the primary source.");
 			return [];
 		}
 		LoggingService.Logger.Information("Playtime segments successfully retrieved from the primary source.");
-		return res.ToDictionary(static x => x.Key, static x => x.ToList());
+		return (await res.ConfigureAwait(false) ?? []).ToDictionary(static x => x.Key, static x => x.ToList());
 	}
-
 	// Lord forgive, I promose I will refactor anothertime
 	// May the tech debt be forgiving 🙏
-	private static IEnumerable<IGrouping<uint, PlaytimeSlice>>? GetSegmentsFromPrimary() => IOUtility.HandleTmpFileLifetime(
+	private static async Task<IEnumerable<IGrouping<uint, PlaytimeSlice>>?> GetSegmentsFromPrimary(CancellationToken cancellationToken = default) => 
+		await Task.Run(() => IOUtility.HandleTmpFileLifetime(
 		ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), filePath =>
 	{
-		// New plan to collect playtime in a cleaner way
-		// Collect all segments in a List<List<(...)>>
-		// Eacg inner list is the playtime within a block before the whitespace seperation
-		// Each entry in the inner list is either a start or end date
-		// In each inner list, remove all end dates from the start until there is a start date
-		// Go into loop, while there are still entries and is for the same app, and the date is an end date keep iterating
-		// Once a new start date is found look back to the last end date
-		// Create a new segment from the start date to the end date
-		// Repeat until all segments have been processed
-
 		var dates = new List<(string Date, uint AppId, bool IsEnd)>();
 
 		var segments = new List<PlaytimeSliceDTO>(capacity: 120);
@@ -152,5 +142,5 @@ internal static class PlaytimeProvider
 			var dateDelta = endDateOffset - startDateOffset;
 			return new PlaytimeSlice { SessionStart = startDateOffset, SessionLength = dateDelta, AppId = x[0].AppId };
 		})).SelectMany(static x => x).GroupBy(static x => x.AppId);
-	});
+	})).ConfigureAwait(false);
 }

@@ -10,15 +10,9 @@ public partial class ProgressSpinner : UserControl
 		InitializeComponent();
 	}
 
-	public static ProgressSpinner CreateSpinner(TimeSpan timeForOneRotation, (int Width, int Height) dimensions = default)
+	public static ProgressSpinner CreateSpinner(TimeSpan timeForOneRotation)
 	{
-		if(dimensions == default)
-		{
-			dimensions = (128, 128);
-		}
 		var spinner = new ProgressSpinner();
-		spinner.LayoutRoot.Width = dimensions.Width;
-		spinner.LayoutRoot.Height = dimensions.Height;
 		var sbRoot = spinner.StoryBoardRoot;
 		var sb = sbRoot.Storyboard.Clone();
 		sb.Duration = timeForOneRotation;

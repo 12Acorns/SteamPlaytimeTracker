@@ -13,7 +13,7 @@ public partial class ProgressSpinnerBar : Window, INotifyPropertyChanged
 
 	public ProgressSpinner? Spinner
 	{
-		get => field;
+		get;
 		private set
 		{
 			value = field;
@@ -23,12 +23,23 @@ public partial class ProgressSpinnerBar : Window, INotifyPropertyChanged
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	public static ProgressSpinnerBar Create(TimeSpan timeForOneRotation, (int Width, int Height) spinnerDimensions = default)
+	public static ProgressSpinnerBar Create(TimeSpan timeForOneRotation, (int Width, int Height) dimensions = default)
 	{
+		if(dimensions == default)
+		{
+			dimensions = (256, 164);
+		}
 		var progressSpinner = new ProgressSpinnerBar
 		{
-			Spinner = ProgressSpinner.CreateSpinner(timeForOneRotation, spinnerDimensions)
+			Spinner = ProgressSpinner.CreateSpinner(timeForOneRotation),
+			MaxWidth = dimensions.Width,
+			MaxHeight = dimensions.Height
 		};
 		return progressSpinner;
+	}
+
+	private void pBar_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+	{
+		DragMove();
 	}
 }
