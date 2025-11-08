@@ -2,6 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using SteamPlaytimeTracker.DbObject;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
+using System.Net.WebSockets;
+using System.Globalization;
 
 namespace SteamPlaytimeTracker.Steam.Data.Playtime;
 
@@ -9,10 +12,10 @@ namespace SteamPlaytimeTracker.Steam.Data.Playtime;
 internal sealed class PlaytimeSlice
 {
 	[Key] public int Id { get; set; }
-	public DateTimeOffset SessionStart { get; set; } 
-	public TimeSpan SessionLength { get; set; }  
+	[JsonPropertyName("start")] public DateTimeOffset SessionStart { get; set; } 
+	[JsonPropertyName("duration")] public TimeSpan SessionLength { get; set; }  
 	[NotMapped] public uint AppId { get; set; }
-	public SteamAppEntry SteamAppEntry { get; set; } = null!;
+	[JsonIgnore] public SteamAppEntry SteamAppEntry { get; set; } = null!;
 
 	[NotMapped]
 	public DateTimeOffset SessionEnd => SessionStart + SessionLength;

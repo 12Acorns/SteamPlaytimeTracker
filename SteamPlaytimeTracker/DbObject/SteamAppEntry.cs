@@ -3,7 +3,6 @@ using SteamPlaytimeTracker.Steam.Data.Playtime;
 using System.ComponentModel.DataAnnotations;
 using SteamPlaytimeTracker.Steam.Data.App;
 using System.Diagnostics;
-using System.ComponentModel;
 
 namespace SteamPlaytimeTracker.DbObject;
 

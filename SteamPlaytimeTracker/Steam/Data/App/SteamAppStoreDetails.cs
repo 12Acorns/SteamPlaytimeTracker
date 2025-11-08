@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
