@@ -1,9 +1,9 @@
-﻿using Serilog.Sinks.File;
+﻿using System.Runtime.CompilerServices;
+using Serilog.Sinks.File;
 using Serilog.Core;
 using System.Text;
 using System.IO;
 using Serilog;
-using System.Runtime.CompilerServices;
 
 namespace SteamPlaytimeTracker;
 

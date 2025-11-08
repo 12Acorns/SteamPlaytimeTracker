@@ -7,7 +7,8 @@
              xmlns:steam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam"
              xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF" 
              xmlns:data="clr-namespace:SteamPlaytimeTracker.Graphing.Data" 
-             xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" d:DataContext="{d:DesignInstance Type=viewmodel:SteamAppViewModel}"
+             xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" 
+             d:DataContext="{d:DesignInstance Type=viewmodel:SteamAppViewModel}"
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
@@ -93,7 +94,8 @@
                                         Margin="1,0,0,0" BorderThickness="0" />
                             <DatePicker Text="{Binding EndDateText, Mode=TwoWay}" SelectedDate="{Binding EndDate, Mode=TwoWay}"
                                         DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
-                                        Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" />
+                                        Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" 
+                                        Visibility="{Binding EndDatePickerVisiblity}" />
                         </StackPanel>
                     </Grid>
                     <Grid Grid.Column="1">

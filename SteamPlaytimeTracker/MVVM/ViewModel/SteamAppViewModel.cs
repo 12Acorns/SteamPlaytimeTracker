@@ -7,6 +7,7 @@ using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
 using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -22,12 +23,13 @@ internal class SteamAppViewModel : Core.ViewModel
 	private static readonly ScottPlot.Color _defaultGrayScottColour = ScottPlot.Color.FromSKColor(_defaultGray.Color.ToSKColor());
 
 	private readonly List<EventHandler<MouseButtonEventArgs>> _trackedEvents = [];
-
+	private readonly ILocalizationService _localizationService;
 	private bool _override = true;
 
-	public SteamAppViewModel(INavigationService navigationService)
+	public SteamAppViewModel(INavigationService navigationService, ILocalizationService localizationService)
 	{
 		NavigationService = navigationService;
+		_localizationService = localizationService;
 		SwitchBackToHomeViewCommand = new RelayCommand(o =>
 		{
 			CleanUp();
@@ -35,10 +37,11 @@ internal class SteamAppViewModel : Core.ViewModel
 		});
 		Plot = new();
 
+		// Likely issue, changing locale will likelty not update text. in future move to OnLoad
 		AvailableGraphingOptions = [
-			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, "Year Playtime", false),
-			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, "Month Playtime", true),
-			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, "Day Playtime", false)
+			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, _localizationService[GlobalData.LocAppViewYearPlaytimeViewKey], false),
+			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, _localizationService[GlobalData.LocAppViewMonthPlaytimeViewKey], true),
+			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, _localizationService[GlobalData.LocAppViewDayPlaytimeViewKey], false)
 		];
 	}
 
@@ -48,7 +51,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	public WpfPlot Plot { get; }
 	public string TotalPlaytimeText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -57,7 +60,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public string StartDateText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -66,7 +69,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public string EndDateText
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -75,7 +78,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public DateTime StartDate
 	{
-		get => field;
+		get;
 		set
 		{
 			if(value > EndDate && !_override && ShowEndDatePicker)
@@ -86,12 +89,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
+			if(!_override)
+			{
+				RefreshPlots(setStartEndToMinMax: false);
+			}
 			OnPropertyChanged();
 		}
 	}
 	public DateTime EndDate
 	{
-		get => field;
+		get;
 		set
 		{
 			if(value < StartDate && !_override)
@@ -102,12 +109,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			{
 				field = value;
 			}
+			if(!_override)
+			{
+				RefreshPlots(setStartEndToMinMax: false);
+			}
 			OnPropertyChanged();
 		}
 	}
 	public DateTime MinStartDate
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -116,7 +127,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public DateTime MaxEndDate
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -125,7 +136,17 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public bool ShowEndDatePicker
 	{
-		get => field;
+		get;
+		set
+		{
+			field = value;
+			EndDatePickerVisiblity = !field ? Visibility.Hidden : Visibility.Visible;
+			OnPropertyChanged();
+		}
+	}
+	public Visibility EndDatePickerVisiblity
+	{
+		get;
 		set
 		{
 			field = value;
@@ -134,7 +155,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public SteamAppEntry SelectedApp
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -143,7 +164,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public ObservableCollection<GrapthViewSelectionData> AvailableGraphingOptions
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -152,7 +173,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	}
 	public GrapthViewSelectionData SelectedGraphingOption
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -180,7 +201,7 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		var hours = SelectedApp.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
 		// n2 = 2 decimal places
-		TotalPlaytimeText = $"Total Playtime: '{hours:n2}' hours";
+		TotalPlaytimeText = _localizationService[GlobalData.LocPlaytimeHoursText, ("Playtime Hours", $"{hours:n2}")];
 	}
 
 	private void CreatePlots()
@@ -249,9 +270,9 @@ internal class SteamAppViewModel : Core.ViewModel
 					GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
 					_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 				};
-				_override = false;
-
 				SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
+				_override = false;
+				RefreshPlots(setStartEndToMinMax: false);
 
 				e.Handled = true;
 			}
@@ -259,16 +280,16 @@ internal class SteamAppViewModel : Core.ViewModel
 			HomeWindow.OnMouseDownA += OnClickBarEvent;
 		}
 	}
-	private void RefreshPlots()
+	private void RefreshPlots(bool setStartEndToMinMax = true)
 	{
 		RemoveEventHandlesFromPlot();
 
 		Plot.Plot.Clear();
-		RefreshDateRange();
+		RefreshDateRange(setStartEndToMinMax);
 		CreatePlots();
 		Plot.Plot.Axes.AutoScale();
 	}
-	private void RefreshDateRange()
+	private void RefreshDateRange(bool setStartEndToMinMax = true)
 	{
 		var selectedOption = SelectedGraphingOption.Id.Id;
 		var minDate = SelectedApp.PlaytimeSlices.MinBy(x => x.SessionStart.Ticks)!.SessionStart;
@@ -288,10 +309,13 @@ internal class SteamAppViewModel : Core.ViewModel
 			MinStartDate = new DateTime(minDate.Year, minDate.Month, 1);
 			MaxEndDate = new DateTime(maxDate.Year, maxDate.Month, 1).FirstDayOfNextMonth();
 		}
-		_override = true;
-		StartDate = MinStartDate;
-		EndDate = MaxEndDate;
-		_override = false;
+		if(setStartEndToMinMax)
+		{
+			_override = true;
+			StartDate = MinStartDate;
+			EndDate = MaxEndDate;
+			_override = false;
+		}
 	}
 	private void RemoveEventHandlesFromPlot()
 	{
@@ -357,7 +381,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			});
 
 		Plot.Plot.Title(StartDate.ToString("yyyy", CultureInfo.InvariantCulture), 24);
-		Plot.Plot.XLabel("Month", 20);
+		Plot.Plot.XLabel(_localizationService[GlobalData.LocMonthGraphY], 20);
 
 		return Plot.Plot.Add.Bars(playtimeByMonth.ToList());
 	}
@@ -369,9 +393,9 @@ internal class SteamAppViewModel : Core.ViewModel
 		}
 
 		var start = new DateTime(StartDate.Year, StartDate.Month, 1);
-		var end = start.LastDayOfMonth();
+		var end = start.FirstDayOfNextMonth();
 
-		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart <= end)
+		var playtimeByDay = game.PlaytimeSlices.Where(x => x.SessionStart >= start && x.SessionStart < end)
 			.GroupBy(x => x.SessionStart.ToString("dd", CultureInfo.InvariantCulture))
 			.Select((x, idx) =>
 			{
@@ -388,7 +412,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				};
 			});
 		Plot.Plot.Title(start.ToString("MMMM", CultureInfo.InvariantCulture), 24);
-		Plot.Plot.XLabel("Day", 20);
+		Plot.Plot.XLabel(_localizationService[GlobalData.LocDayGraphY], 20);
 
 		ShowEndDatePicker = false;
 
@@ -403,7 +427,7 @@ internal class SteamAppViewModel : Core.ViewModel
 		Plot.Plot.Axes.Bottom.TickLabelStyle.ForeColor = ScottPlot.Colors.White;
 		Plot.Plot.Axes.Bottom.MajorTickStyle.Length = 0;
 		Plot.Plot.Axes.Bottom.MinorTickStyle.Length = 0;
-		Plot.Plot.YLabel("Playtime (h)", 20);
+		Plot.Plot.YLabel(_localizationService[GlobalData.LocPlaytimeHoursGraphY], 20);
 
 		Plot.Plot.Axes.Title.Label.ForeColor = ScottPlot.Colors.White;
 		Plot.Plot.Axes.Left.TickLabelStyle.FontSize = 20;

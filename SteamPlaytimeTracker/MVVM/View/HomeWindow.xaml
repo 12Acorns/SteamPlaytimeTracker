@@ -20,7 +20,7 @@
         Closing="Window_Closing" Topmost="False"
         Title="Application View" Height="450" Width="800">
     <WindowChrome.WindowChrome>
-        <WindowChrome CornerRadius="8" CaptionHeight="25" ResizeBorderThickness="8" />
+        <WindowChrome CornerRadius="8" CaptionHeight="25" ResizeBorderThickness="3" />
     </WindowChrome.WindowChrome>
     <Border Background="{StaticResource defaultGray}" BorderThickness="0" CornerRadius="8" Padding="1">
         <Grid>

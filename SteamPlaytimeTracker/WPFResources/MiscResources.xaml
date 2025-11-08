@@ -3,7 +3,7 @@
     <Storyboard x:Key="defaultSpinnerStoryBoard">
         <DoubleAnimation Storyboard.TargetName="rotateTransform"
           Storyboard.TargetProperty="Angle"
-          From="0" To="360" Duration="00:00:01"
+          From="0" To="360" Duration="00:00:02"
           RepeatBehavior="Forever"/>
     </Storyboard>
 </ResourceDictionary>

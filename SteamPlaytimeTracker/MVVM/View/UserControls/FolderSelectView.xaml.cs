@@ -10,11 +10,14 @@ public partial class FolderSelectView : UserControl, INotifyPropertyChanged
 {
 	public static readonly DependencyProperty FolderPathProperty =
 		DependencyProperty.Register("FolderPath", typeof(string), typeof(FolderSelectView), new PropertyMetadata(string.Empty));
-
-	private string _installFolderTitle = string.Empty;
-	private string _installFolderNotSelectedWarning = string.Empty;
-	private string _installPlaceholder = string.Empty;
-	private string _installIndicator = string.Empty;
+	public static readonly DependencyProperty InstallPlaceholderProperty =
+		DependencyProperty.RegisterAttached("InstallPlaceholder", typeof(string), typeof(FolderSelectView), new PropertyMetadata(string.Empty));
+	public static readonly DependencyProperty InstallIndicatorProperty =
+		DependencyProperty.RegisterAttached("InstallIndicator", typeof(string), typeof(FolderSelectView), new PropertyMetadata(string.Empty));
+	public static readonly DependencyProperty InstallFolderTitleProperty =
+		DependencyProperty.RegisterAttached("InstallFolderTitle", typeof(string), typeof(FolderSelectView), new PropertyMetadata(string.Empty));
+	public static readonly DependencyProperty InstallFolderNotSelectedWarningProperty =
+		DependencyProperty.RegisterAttached("InstallFolderNotSelectedWarning", typeof(string), typeof(FolderSelectView), new PropertyMetadata(string.Empty));
 
 	public FolderSelectView()
 	{
@@ -29,39 +32,23 @@ public partial class FolderSelectView : UserControl, INotifyPropertyChanged
 	}
 	public string InstallPlaceholder
 	{
-		get => _installPlaceholder;
-		set
-		{
-			_installPlaceholder = value;
-			OnPropertyChanged();
-		}
+		get => (string)GetValue(InstallPlaceholderProperty);
+		set => SetValue(InstallPlaceholderProperty, value);
 	}
 	public string InstallIndicator
 	{
-		get => _installIndicator;
-		set
-		{
-			_installIndicator = value;
-			OnPropertyChanged();
-		}
+		get => (string)GetValue(InstallIndicatorProperty);
+		set => SetValue(InstallIndicatorProperty, value);
 	}
 	public string InstallFolderTitle
 	{
-		get => _installFolderTitle;
-		set
-		{
-			_installFolderTitle = value;
-			OnPropertyChanged();
-		}
+		get => (string)GetValue(InstallFolderTitleProperty);
+		set => SetValue(InstallFolderTitleProperty, value);
 	}
 	public string InstallFolderNotSelectedWarning
 	{
-		get => _installFolderNotSelectedWarning;
-		set
-		{
-			_installFolderNotSelectedWarning = value;
-			OnPropertyChanged();
-		}
+		get => (string)GetValue(InstallFolderNotSelectedWarningProperty);
+		set => SetValue(InstallFolderNotSelectedWarningProperty, value);
 	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -70,12 +57,12 @@ public partial class FolderSelectView : UserControl, INotifyPropertyChanged
 	{
 		var openFolder = new OpenFolderDialog()
 		{
-			Title = _installFolderTitle,
+			Title = InstallFolderTitle,
 			Multiselect = false
 		};
 		if(!(openFolder.ShowDialog() ?? false))
 		{
-			MessageBox.Show(_installFolderNotSelectedWarning, "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
+			MessageBox.Show(InstallFolderNotSelectedWarning, "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
 			return;
 		}
 		tf_AppInstall.Text = openFolder.FolderName;

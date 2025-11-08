@@ -1,5 +1,6 @@
 ﻿using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 using SteamPlaytimeTracker.MVVM.ViewModel;
+using System.Windows;
 using System.Windows.Controls;
 using WpfToolkit.Controls;
 
@@ -7,16 +8,19 @@ namespace SteamPlaytimeTracker.MVVM.View;
 
 public partial class HomeView : UserControl
 {
+	private static HomeView? _instance;
+
 	public HomeView()
 	{
 		InitializeComponent();
+		_instance = this;
 		Loaded += (s, e) =>
 		{
 			ListBox_SizeChanged(lb_SteamEntries, null!);
 		};
 	}
 
-	private void ListBox_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+	private void ListBox_SizeChanged(object sender, SizeChangedEventArgs e)
 	{
 		if(sender is not ListBox lb)
 		{
@@ -38,4 +42,6 @@ public partial class HomeView : UserControl
 		vm.UniformHeight = newItemWidth * SteamCapsule.HeightScaleFactor;
 		lb.InvalidateArrange();
 	}
+
+	public static void RefreshArrangement() => _instance?.ListBox_SizeChanged(_instance.lb_SteamEntries, null!);
 }

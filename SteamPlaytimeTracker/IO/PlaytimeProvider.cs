@@ -1,29 +1,29 @@
-﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
+﻿using OutParsing;
 using SteamPlaytimeTracker.DbObject;
-using System.Globalization;
-using OutParsing;
-using System.IO;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Utility;
+using System.Globalization;
+using System.IO;
 
 namespace SteamPlaytimeTracker.IO;
 
 internal static class PlaytimeProvider
 {
-	public static Dictionary<uint, List<PlaytimeSlice>> GetPlayimeSegments()
+	public static async ValueTask<Dictionary<uint, List<PlaytimeSlice>>> GetPlayimeSegments(CancellationToken cancellationToken = default)
 	{
-		var res = GetSegmentsFromPrimary();
-		if(res == null)
+		var res = GetSegmentsFromPrimary(cancellationToken);
+		if(res is null)
 		{
 			LoggingService.Logger.Warning("No playtime segments could be retrieved from the primary source.");
 			return [];
 		}
 		LoggingService.Logger.Information("Playtime segments successfully retrieved from the primary source.");
-		return res.ToDictionary(static x => x.Key, static x => x.ToList());
+		return (await res.ConfigureAwait(false) ?? []).ToDictionary(static x => x.Key, static x => x.ToList());
 	}
-
 	// Lord forgive, I promose I will refactor anothertime
 	// May the tech debt be forgiving 🙏
-	private static IEnumerable<IGrouping<uint, PlaytimeSlice>>? GetSegmentsFromPrimary() => IOUtility.HandleTmpFileLifetime(
+	private static async Task<IEnumerable<IGrouping<uint, PlaytimeSlice>>?> GetSegmentsFromPrimary(CancellationToken cancellationToken = default) => 
+		await Task.Run(() => IOUtility.HandleTmpFileLifetime(
 		ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), filePath =>
 	{
 		var dates = new List<(string Date, uint AppId, bool IsEnd)>();
@@ -142,5 +142,5 @@ internal static class PlaytimeProvider
 			var dateDelta = endDateOffset - startDateOffset;
 			return new PlaytimeSlice { SessionStart = startDateOffset, SessionLength = dateDelta, AppId = x[0].AppId };
 		})).SelectMany(static x => x).GroupBy(static x => x.AppId);
-	});
+	})).ConfigureAwait(false);
 }
