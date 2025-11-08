@@ -1,10 +1,8 @@
-﻿using HarfBuzzSharp;
+﻿using SteamPlaytimeTracker.DataTransfer;
 using Microsoft.EntityFrameworkCore;
-using SteamPlaytimeTracker.DataTransfer;
-using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Unicode;
+using System.IO;
 
 namespace SteamPlaytimeTracker.Services.DataTransfer;
 
