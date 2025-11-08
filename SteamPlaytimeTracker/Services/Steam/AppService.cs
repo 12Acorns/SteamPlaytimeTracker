@@ -33,14 +33,14 @@ internal sealed class AppService : IAppService
 		_lifetimeService = lifetimeService;
 	}
 
-	public async ValueTask<List<SteamAppEntry>> AllEntries() => await _db.UserApps
+	public async ValueTask<List<SteamAppEntry>> AllEntries(CancellationToken token) => await _db.UserApps
 			.AsNoTracking()
 			.Include(x => x.StoreDetails)
 				.ThenInclude(x => x.AppData)
 				.ThenInclude(x => x.StoreData)
 			.Include(x => x.PlaytimeSlices)
 			.AsSplitQuery()
-			.ToListAsync().ConfigureAwait(false);
+			.ToListAsync(token).ConfigureAwait(false);
 	public async ValueTask<SteamAppEntry?> GetEntryAsync(uint appId, CancellationToken token)
 	{
 		try

@@ -98,6 +98,7 @@ internal static partial class GlobalData
 	public const string LocAppViewMonthPlaytimeViewKey = "app-view.month-playtime";
 	public const string LocAppViewDayPlaytimeViewKey = "app-view.day-playtime";
 
+	public const string LoadingAppsKey = "main.loading-apps";
 	public const string NoAppsFoundKey = "main.no-apps-found";
 
 	public const string FolderSelectOpenKey = "settings.option.open-folder";

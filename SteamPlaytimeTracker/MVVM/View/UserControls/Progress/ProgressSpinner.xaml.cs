@@ -8,15 +8,6 @@ public partial class ProgressSpinner : UserControl
 	public ProgressSpinner()
 	{
 		InitializeComponent();
-	}
-
-	public static ProgressSpinner CreateSpinner(TimeSpan timeForOneRotation)
-	{
-		var spinner = new ProgressSpinner();
-		var sbRoot = spinner.StoryBoardRoot;
-		var sb = sbRoot.Storyboard.Clone();
-		sb.Duration = timeForOneRotation;
-		sbRoot.Storyboard = sb;
-		return spinner;
+		DataContext = this;
 	}
 }

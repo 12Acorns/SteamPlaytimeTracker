@@ -19,7 +19,7 @@
     <Grid Background="Transparent">
         <Grid Background="Transparent" >
             <Rectangle Fill="Black" RadiusX="15" RadiusY="15" />
-            <Rectangle Fill="DarkGray" RadiusX="15" RadiusY="15" Margin="2" />
+            <Rectangle Fill="White" RadiusX="15" RadiusY="15" Margin="2" />
         </Grid>
         <Grid>
             <Grid.RowDefinitions>

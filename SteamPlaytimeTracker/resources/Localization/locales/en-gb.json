@@ -9,6 +9,7 @@
 		"app-view.month-playtime": "Month Playtime",
 		"app-view.day-playtime": "Day Playtime",
 
+		"main.loading-apps": "Loading local Steam apps, please wait.",
 		"main.no-apps-found": "No apps could be found which contained recordable playtime.",
 
 		"settings.option.open-folder": "Open Folder",

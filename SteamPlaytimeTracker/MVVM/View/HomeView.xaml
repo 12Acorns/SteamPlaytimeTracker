@@ -53,7 +53,7 @@
             <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" HorizontalAlignment="Left" VerticalAlignment="Center"
                        Foreground="LightGray" FontSize="18" />
         </Grid>
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{ext:LocalizationExtensions Key={x:Static global:GlobalData.NoAppsFoundKey}}" 
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding AppContextText}" 
                    HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="LightGray" FontSize="18"
                    Visibility="{Binding NoAppsFoundVisibility}"/>
         <ListBox x:Name="lb_SteamEntries" Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"

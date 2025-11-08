@@ -1,28 +1,30 @@
-﻿using ScottPlot;
-using ScottPlot.WPF;
-using Serilog;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.DbObject;
-using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.MVVM.View.UserControls.Progress;
-using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Services.Lifetime;
+﻿using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
+using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Capsule;
-using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
+using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.MVVM.View;
 using System.Collections.ObjectModel;
-using System.Windows;
+using SteamPlaytimeTracker.DbObject;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Core;
+using System.Windows.Threading;
+using SteamPlaytimeTracker.IO;
 using System.Windows.Data;
+using ValueTaskSupplement;
+using Serilog;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class HomeViewModel : Core.ViewModel
 {
+	private readonly ILocalizationService _localizationService;
 	private readonly IAsyncLifetimeService _lifetimeProvider;
 	private readonly IAppService _appService;
 	private readonly AppConfig _appConfig;
@@ -30,15 +32,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private readonly ILogger _logger;
 
 	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, ILogger logger,
-		AppConfig appConfig, DbAccess steamDb)
+		AppConfig appConfig, DbAccess steamDb, ILocalizationService localizationService)
 	{
+		_localizationService = localizationService;
 		NavigationService = navigationService;
 		_lifetimeProvider = lifetimeProvider;
 		_appService = appService;
 		_logger = logger;
 		_appConfig = appConfig;
 		_steamDb = steamDb;
-
 		SwitchToSettingsMenuCommand = new RelayCommand(o => NavigationService.NavigateTo<SettingsViewModel>());
 		PlaytimeOrderImagePath = GlobalData.PlaytimeOrderImagePathFirstLast;
 		NameOrderImagePath = GlobalData.NameOrderImagePathFirstLast;
@@ -88,7 +90,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
 	public INavigationService NavigationService { get; set; }
-	public Visibility NoAppsFoundVisibility => SteamApps.Count == 0 ? Visibility.Visible : Visibility.Hidden;
+	public string AppContextText
+	{
+		get;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	}
 	public ObservableCollection<SteamAppEntry> SteamApps
 	{
 		get => field;
@@ -167,64 +177,70 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public override void OnConstructed()
 	{
 		base.OnConstructed();
-		var progress = ProgressSpinnerBar.Create(TimeSpan.FromSeconds(3.5d), (500, 300));
-		progress.ShowInTaskbar = true;
 		_logger.Information("Loading local Steam apps and syncing database...");
-		var loadTask = Task.Run(LoadDataAsync);
+		var loadTask = Task.Run(LoadDataAsync, _lifetimeProvider.CancellationToken);
+		AppContextText = _localizationService[GlobalData.LoadingAppsKey];
 		_ = Task.Run(async () =>
 		{
 			while(!loadTask.IsCompleted)
 			{
-				await Task.Delay(200);
+				for(int i = 0; i < 2; i++)
+				{
+					AppContextText += ".";
+					await Task.Delay(100, _lifetimeProvider.CancellationToken);
+				}
+				AppContextText = _localizationService[GlobalData.LoadingAppsKey];
 			}
-			App.Current.Dispatcher.Invoke(progress.Close);
-		});
-		progress.ShowDialog();
+			if(SteamApps.Count > 0)
+			{
+				AppContextText = string.Empty;
+			}
+			else
+			{
+				AppContextText = _localizationService[GlobalData.NoAppsFoundKey];
+			}
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				HomeView.RefreshArrangement();
+			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+		}, _lifetimeProvider.CancellationToken);
 	}
 	private async Task LoadDataAsync()
 	{
-		await AppendLocalAppsAndSaveToDb();
-		var toAdd = (await _appService.AllEntries()).OrderBy(x => x.SteamApp!.Name);
+		await AppendLocalAppsAndSaveToDb().ConfigureAwait(false);
+		var toAdd = (await _appService.AllEntries().ConfigureAwait(false)).OrderBy(x => x.SteamApp?.Name ?? "");
 		App.Current.Dispatcher.Invoke(() =>
 		{
 			SteamApps = new ObservableCollection<SteamAppEntry>(toAdd);
-			_logger.Information("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
 			SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 			SteamAppsView.IsLiveSorting = true;
-		});
+
+			_logger.Information("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
+		}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 	}
 	private async Task AppendLocalAppsAndSaveToDb()
 	{
-		var localAppsTask = _appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken).AsTask();
-		var appEntriesTask = _appService.AllEntries().AsTask();
-		var fileSegmentsLookupTask = PlaytimeProvider.GetPlayimeSegments();
-
-		await Task.WhenAll(localAppsTask, appEntriesTask, fileSegmentsLookupTask.AsTask()).ConfigureAwait(false);
-
-		var fileSegmentsLookup = fileSegmentsLookupTask.Result;
-
-		if(fileSegmentsLookup is null or { Count: 0})
+		var (localApps, appEntries, fileSegmentsLookup) = await ValueTaskEx.WhenAll(
+			_appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken), 
+			_appService.AllEntries(_lifetimeProvider.CancellationToken),
+			 PlaytimeProvider.GetPlayimeSegments(_lifetimeProvider.CancellationToken));
+		if(!fileSegmentsLookup.IsNullOrEmpty())
 		{
 			_logger.Warning("No playtime segments could be retrieved from the primary source. Aborting sync.");
 			return;
 		}
-
-
 		_logger.Information("Fetching local apps...");
 
-		var localApps = localAppsTask.Result;
-		var appEntries = appEntriesTask.Result
-			.Where(x => x.StoreDetails is not null && x.StoreDetails.Exists)
+		var appEntriesLookup = appEntries
+			.Where(entry => entry.StoreDetails is { Exists: true } )
 			.ToHashSet(AlternateAppLookup.Instance)
 			.GetAlternateLookup<SteamStoreAppData>();
-
-
 		_logger.Information("Adding new local apps to database...");
 
 		try
 		{
 			bool hasNewEntry = false;
-			foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntries.Contains(app)))
+			foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntriesLookup.Contains(app)))
 			{
 				notFoundEntry.Id = (int)notFoundEntry.StoreData!.AppId;
 				notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
@@ -244,7 +260,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			}
 
-			foreach(var app in appEntries.Set.Where(x => x.SteamApp is not null))
+			foreach(var app in appEntriesLookup.Set.Where(x => x.SteamApp is not null))
 			{
 				var segments = fileSegmentsLookup[app.SteamApp!.AppId];
 				if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
@@ -252,7 +268,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 					continue;
 				}
 				var uniqueSegments = segments.Except(app.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
-				if(uniqueSegments.Count == 0)
+				if(uniqueSegments.Count is 0)
 				{
 					continue;
 				}

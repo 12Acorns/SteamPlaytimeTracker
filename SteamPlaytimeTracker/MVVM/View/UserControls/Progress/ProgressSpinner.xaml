@@ -13,9 +13,10 @@
                 <RotateTransform x:Name="rotateTransform"/>
             </TransformGroup>
         </Grid.RenderTransform>
-        <Ellipse Fill="SkyBlue" Margin="20">
+        <Ellipse Fill="SkyBlue" Margin="20" Stretch="UniformToFill">
             <Ellipse.OpacityMask>
-                <ImageBrush ImageSource="pack://application:,,,/SteamPlaytimeTracker;component/resources/Progress-Spinner-Mask.png" Stretch="None" />
+                <ImageBrush ImageSource="pack://application:,,,/SteamPlaytimeTracker;component/resources/Progress-Spinner-Mask.png" 
+                            Stretch="UniformToFill" />
             </Ellipse.OpacityMask>
             <Ellipse.Triggers>
                 <EventTrigger RoutedEvent="Ellipse.Loaded">
