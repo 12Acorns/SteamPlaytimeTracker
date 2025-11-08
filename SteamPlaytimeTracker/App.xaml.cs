@@ -19,6 +19,8 @@ using System.Diagnostics;
 using System.Windows;
 using System.IO;
 using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.DataTransfer;
+using SteamPlaytimeTracker.Services.DataTransfer;
 
 namespace SteamPlaytimeTracker;
 
@@ -65,7 +67,6 @@ public partial class App : Application
 		});
 		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(iConfigData));
 		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"), ServiceLifetime.Transient);
-
 		serviceCollection.AddSingleton<HomeWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();
@@ -77,6 +78,8 @@ public partial class App : Application
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
 		serviceCollection.AddSingleton<LocalizationManager>();
+
+		serviceCollection.AddTransient<ExportService>();
 
 		serviceCollection.AddSingleton<Func<Type, object[], ViewModel>>(provider => (viewModelType, @params) =>
 		{
@@ -170,6 +173,20 @@ public partial class App : Application
 		var mainWindow = ServiceProvider.GetRequiredService<HomeWindow>();
 		mainWindow.Show();
 		base.OnStartup(e);
+
+		var exportService = ServiceProvider.GetRequiredService<ExportService>();
+		exportService.ExportPlaytimeDataAsync(Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports"),
+			$"PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss}.json").ContinueWith(task =>
+		{
+			if(task.IsFaulted)
+			{
+				logger.Error(task.Exception, "Failed to export playtime data");
+			}
+			else
+			{
+				logger.Information("Playtime data exported successfully");
+			}
+		});
 	}
 
 	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);

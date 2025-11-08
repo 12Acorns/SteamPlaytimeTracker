@@ -3,6 +3,7 @@ using OpenTK.Graphics.ES20;
 using ScottPlot;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.Localization.Data;
+using System.Globalization;
 using System.IO;
 
 namespace SteamPlaytimeTracker;
@@ -26,6 +27,16 @@ internal static partial class GlobalData
 		DisplayName = "No Locale Found",
 		LocaleTextMap = []
 	};
+}
+
+internal static partial class GlobalData
+{
+	public const string DateTimeFormatString = "yyyy-MM-ddTHH:mm:sszzz";
+
+	public static readonly CultureInfo GbCulture = CultureInfo.GetCultureInfo("en-GB");
+
+	public static string DateToString(DateTimeOffset offset) => offset.ToString(DateTimeFormatString, GbCulture);
+	public static bool TryParseDateTimeOffset(string dto, out DateTimeOffset offset) => DateTimeOffset.TryParseExact(dto, DateTimeFormatString, GbCulture, DateTimeStyles.None, out offset);
 }
 
 internal static partial class GlobalData
