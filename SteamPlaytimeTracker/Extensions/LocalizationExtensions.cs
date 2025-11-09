@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using SteamPlaytimeTracker.Services.Localization;
 using System.ComponentModel;
-using System.Windows;
-using System.Windows.Data;
 using System.Windows.Markup;
+using System.Windows.Data;
+using System.Windows;
 
 namespace SteamPlaytimeTracker.Extensions;
 

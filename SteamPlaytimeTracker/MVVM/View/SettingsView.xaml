@@ -45,7 +45,18 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-
+                </Grid>
+                <Grid Name="Current_LoggingLevel">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="156" />
+                        <ColumnDefinition Width="0.8*" />
+                        <ColumnDefinition Width="0.15*" MinWidth="60" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectLogLevelKey}}" 
+                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
+                    <ComboBox Grid.Column="2" Margin="2" 
+                            ItemsSource="{Binding AvailableLogLevels}" 
+                            SelectedItem="{Binding SelectedLogLevel, Converter={StaticResource DefaultEnumToStringConverter}, Mode=TwoWay}" />
                 </Grid>
             </ItemsControl>
         </ScrollViewer>

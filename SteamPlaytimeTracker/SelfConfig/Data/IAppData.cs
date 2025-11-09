@@ -10,4 +10,5 @@ public interface IAppData
 	public ILocalizationData LocalizationData { get; set; }
 	public ISteamInstallData SteamInstallData { get; set; }
 	public IDiskCacheData DiskCacheBehaviour { get; set; }
+	public ILogData LoggingData { get; set; }
 }

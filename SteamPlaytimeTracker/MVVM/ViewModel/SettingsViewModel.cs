@@ -1,16 +1,16 @@
-﻿using SteamPlaytimeTracker.Services.Navigation;
+﻿using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Localization.Data;
-using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
 using System.Diagnostics;
+using Serilog.Events;
 using System.Windows;
 using System.IO;
 using Serilog;
-using SteamPlaytimeTracker.Services.Localization;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -25,8 +25,11 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		_navigationService = navigationService;
 		_logger = logger;
 		_config = config;
+
 		LocalizationService = localizationService;
 		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
+		AvailableLogLevels = Enum.GetNames<LogEventLevel>();
+		SelectedLogLevel = _config.AppData.LoggingData.LogLevel;
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
@@ -88,7 +91,27 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	} = string.Empty;
-	public LocaleData[] AvailableLocales { get; private set; } = [];
+	public string[] AvailableLogLevels { get; private set; }
+	public LogEventLevel SelectedLogLevel
+	{
+		get;
+		set
+		{
+			field = value;
+			LoggingService.LoggingLevelSwitcher.MinimumLevel = field;
+			_config.AppData.LoggingData.LogLevel = field;
+			OnPropertyChanged();
+		}
+	}
+	public LocaleData[] AvailableLocales
+	{
+		get;
+		private set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = [];
 	public LocaleData CurrentLocale
 	{
 		get

@@ -1,11 +1,14 @@
 ﻿global using static SteamPlaytimeTracker.Utility.VisualTreeUtility;
-using OpenTK.Graphics.ES20;
-using ScottPlot;
-using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.Localization.Data;
 using System.IO;
+using ScottPlot;
 
 namespace SteamPlaytimeTracker;
+
+internal static partial class GlobalData
+{
+	public const string AppVersion = "0.2.0";
+}
 
 // Path related constants
 internal static partial class GlobalData
@@ -108,6 +111,7 @@ internal static partial class GlobalData
 	public const string SteamInstallFolderTitleKey = "settings.steam-install-title";
 	public const string SteamInstallLocationKey = "settings.steam-install";
 	public const string SelectLocalizationKey = "settings.select-Localization";
+	public const string SelectLogLevelKey = "settings.select-log-level";
 	public const string OpenLogsKey = "settings.open-logs";
 
 	public const string ConfirmKey = "global.confirm";

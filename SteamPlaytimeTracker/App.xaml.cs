@@ -1,24 +1,24 @@
-﻿using Config.Net;
-using Microsoft.EntityFrameworkCore;
+﻿using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Navigation;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
-using Serilog.Core;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.Utility.Cache;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.MVVM.View;
+using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.MVVM.ViewModel;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.Utility.Cache;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using Serilog.Core;
+using Config.Net;
 using System.IO;
-using SteamPlaytimeTracker.Services.Localization;
+using Serilog;
 
 namespace SteamPlaytimeTracker;
 
@@ -41,7 +41,7 @@ public partial class App : Application
 			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
 			.Build();
 
-		iConfigData.AppVersion = "0.1.0";
+		iConfigData.AppVersion = GlobalData.AppVersion;
 
 		ApplicationPath.TryAddPath(GlobalData.MainTimeSliceCheckLookupName, ApplicationPathOption.CustomGlobal,
 			iConfigData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);

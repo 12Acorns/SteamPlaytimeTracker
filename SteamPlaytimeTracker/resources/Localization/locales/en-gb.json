@@ -19,6 +19,7 @@
 		"settings.steam-install-invalid": "Steam Install not Selected",
 		"settings.steam-install": "Steam Install Location:",
 		"settings.select-Localization": "Select Localization:",
+		"settings.select-log-level": "Select Log Level",
 		"settings.open-logs": "Open Logs",
 
 		"global.confirm": "Confirm",

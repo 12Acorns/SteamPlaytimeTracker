@@ -9,7 +9,10 @@ namespace SteamPlaytimeTracker;
 
 internal static class LoggingService
 {
+	public static readonly LoggingLevelSwitch LoggingLevelSwitcher = new();
+
 	public static readonly Logger Logger = new LoggerConfiguration()
+			.MinimumLevel.ControlledBy(LoggingLevelSwitcher)
 			.WriteTo.Async(x => x.File("logs/SteamPlaytimeTracker.log", rollingInterval: RollingInterval.Day, hooks: SerilogHooks.FileCycleHook))
 			.CreateLogger();
 	public static string CurrentLogFilePath
