@@ -1,5 +1,6 @@
-# Steam Playtime Tracker
-SPT is a open source project designed to show a more detailed view of your Steam playtime - whilst having minimal calls to the Steam API.
+# Steam Playtime Tracker (SPT)
+SPT is a open source project designed to show a more detailed view of your Steam playtime. This project is not a live usage tracker (as in records what apps you use for how long whilst you use them) nor is it a game launcher. This is purely for viewing a historic record of your playtime history. Do not expect to have a full record of playtime from when you started playing to present.
+This project nor myself have any affiliation to Valve or the Steam marketplace/game launcher.
 
 # Getting Started and Navigating
 ## Download
