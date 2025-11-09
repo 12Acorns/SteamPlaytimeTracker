@@ -7,7 +7,7 @@ namespace SteamPlaytimeTracker;
 
 internal static partial class GlobalData
 {
-	public const string AppVersion = "0.2.0";
+	public const string AppVersion = "0.1.0";
 }
 
 // Path related constants

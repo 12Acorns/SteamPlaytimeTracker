@@ -224,7 +224,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			_appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken), 
 			_appService.AllEntries(_lifetimeProvider.CancellationToken),
 			 PlaytimeProvider.GetPlayimeSegments(_lifetimeProvider.CancellationToken));
-		if(!fileSegmentsLookup.IsNullOrEmpty())
+		if(fileSegmentsLookup.IsNullOrEmpty())
 		{
 			_logger.Warning("No playtime segments could be retrieved from the primary source. Aborting sync.");
 			return;
