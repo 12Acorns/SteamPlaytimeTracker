@@ -19,7 +19,7 @@ Simply scroll and click on any app you wish to view the playtime of.
 You will be broght to a view with a few key elements. On the left hand side you have what game you have selected. To the right of that, there is the graph of your playtime - and by default is by month.
 Below the graph there are two date select fields, the top field is the **Start Date** and the bottom field is the **End Date**. Simply put your desired date ranges in!
 Finally, there is a summary of key stats, and so far there is just total playtime.
-<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/51da169f-c68f-4801-95cb-cdf0f78f8ea3" />
+<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/65952b9d-1d32-4199-a516-db6c492353b0" />
 
 # What Is Next
 With college coming up soon, I will not be updating this as often, but I do intend to finish off graphing by grouping overlapping months by the year that month is in through a legend key. Simply put, say there are tracked playtime between 2022-2025 then the graph will have 3 bars under each month (or as many bars as there can be for months with playtime in them per year) where each bar will have a colour linked to the year.
