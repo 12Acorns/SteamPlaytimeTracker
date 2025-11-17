@@ -4,7 +4,7 @@ This project nor myself have any affiliation to Valve or the Steam marketplace/g
 
 # Getting Started and Navigating
 ## Download
-Clone the repository to your drive, and build the project.
+Clone the repository to your drive, and build the project; or download the latest release.
 ## Setting required data
 It is simple to get started, find your steam installation and enter the path into the installation input field and press continue!
 <img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/b1131e24-5f14-40dc-a08c-d377079d6a65" />
