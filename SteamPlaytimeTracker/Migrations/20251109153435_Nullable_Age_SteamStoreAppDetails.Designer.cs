@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SteamPlaytimeTracker;
 
@@ -10,9 +11,11 @@ using SteamPlaytimeTracker;
 namespace SteamPlaytimeTracker.Migrations
 {
     [DbContext(typeof(DbAccess))]
-    partial class DbAccessModelSnapshot : ModelSnapshot
+    [Migration("20251109153435_Nullable_Age_SteamStoreAppDetails")]
+    partial class Nullable_Age_SteamStoreAppDetails
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.7");

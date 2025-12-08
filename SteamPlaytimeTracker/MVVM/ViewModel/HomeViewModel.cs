@@ -19,6 +19,7 @@ using SteamPlaytimeTracker.IO;
 using System.Windows.Data;
 using ValueTaskSupplement;
 using Serilog;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -27,9 +28,11 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private readonly ILocalizationService _localizationService;
 	private readonly IAsyncLifetimeService _lifetimeProvider;
 	private readonly IAppService _appService;
-	private readonly AppConfig _appConfig;
 	private readonly DbAccess _steamDb;
 	private readonly ILogger _logger;
+
+	private int _allApps;
+	private int _appsProcessed;
 
 	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, ILogger logger,
 		AppConfig appConfig, DbAccess steamDb, ILocalizationService localizationService)
@@ -39,8 +42,8 @@ internal sealed class HomeViewModel : Core.ViewModel
 		_lifetimeProvider = lifetimeProvider;
 		_appService = appService;
 		_logger = logger;
-		_appConfig = appConfig;
 		_steamDb = steamDb;
+
 		SwitchToSettingsMenuCommand = new RelayCommand(o => NavigationService.NavigateTo<SettingsViewModel>());
 		PlaytimeOrderImagePath = GlobalData.PlaytimeOrderImagePathFirstLast;
 		NameOrderImagePath = GlobalData.NameOrderImagePathFirstLast;
@@ -98,7 +101,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			field = value;
 			OnPropertyChanged();
 		}
-	}
+	} = "";
 	public ObservableCollection<SteamAppEntry> SteamApps
 	{
 		get => field;
@@ -177,19 +180,24 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public override void OnConstructed()
 	{
 		base.OnConstructed();
-		_logger.Information("Loading local Steam apps and syncing database...");
+		_logger.Debug("Loading local Steam apps and syncing database...");
 		var loadTask = Task.Run(LoadDataAsync, _lifetimeProvider.CancellationToken);
 		AppContextText = _localizationService[GlobalData.LoadingAppsKey];
+		var original = AppContextText;
+		var insertIdx = AppContextText.Length;
 		_ = Task.Run(async () =>
 		{
 			while(!loadTask.IsCompleted)
 			{
-				for(int i = 0; i < 2; i++)
+				for(int i = 1; i <= 3; i++)
 				{
-					AppContextText += ".";
-					await Task.Delay(100, _lifetimeProvider.CancellationToken);
+					AppContextText = original + new string('.', i);
+					if(_allApps is > 0)
+					{
+						AppContextText += $"{new string(' ', 3 - i)}{_appsProcessed/((float)_allApps) * 100:n0}";
+					}
+					await Task.Delay(250, _lifetimeProvider.CancellationToken).ConfigureAwait(false);
 				}
-				AppContextText = _localizationService[GlobalData.LoadingAppsKey];
 			}
 			if(SteamApps.Count > 0)
 			{
@@ -215,7 +223,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
 			SteamAppsView.IsLiveSorting = true;
 
-			_logger.Information("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
+			_logger.Debug("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
 		}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 	}
 	private async Task AppendLocalAppsAndSaveToDb()
@@ -226,16 +234,19 @@ internal sealed class HomeViewModel : Core.ViewModel
 			 PlaytimeProvider.GetPlayimeSegments(_lifetimeProvider.CancellationToken));
 		if(fileSegmentsLookup.IsNullOrEmpty())
 		{
-			_logger.Warning("No playtime segments could be retrieved from the primary source. Aborting sync.");
+			_logger.Warning("No playtime segments could be retrieved from the primary source. This could indicate no log file was found.");
 			return;
 		}
-		_logger.Information("Fetching local apps...");
+		_logger.Debug("Fetching local apps...");
 
 		var appEntriesLookup = appEntries
 			.Where(entry => entry.StoreDetails is { Exists: true } )
 			.ToHashSet(AlternateAppLookup.Instance)
 			.GetAlternateLookup<SteamStoreAppData>();
-		_logger.Information("Adding new local apps to database...");
+
+		Interlocked.Exchange(ref _allApps, appEntriesLookup.Set.Count);
+
+		_logger.Debug("Adding new local apps to database...");
 
 		try
 		{
@@ -252,7 +263,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				});
 				_steamDb.SteamStoreApps.Add(appToAdd);
 				hasNewEntry = true;
-				_logger.Information("New local app added to database: {AppName} (AppID: {AppId})",
+				_logger.Verbose("New local app added to database: {AppName} (AppID: {AppId})",
 					notFoundEntry.StoreData.Name, notFoundEntry.StoreData.AppId);
 			}
 			if(hasNewEntry)
@@ -262,8 +273,10 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 			foreach(var app in appEntriesLookup.Set.Where(x => x.SteamApp is not null))
 			{
+				Interlocked.Increment(ref _appsProcessed);
+
 				var segments = fileSegmentsLookup[app.SteamApp!.AppId];
-				if(app.PlaytimeSlices.SequenceEqual(segments, PlaytimeSliceEquality.Instance))
+				if(SequencesEqual(app.PlaytimeSlices, segments, PlaytimeSliceEquality.Instance))
 				{
 					continue;
 				}
@@ -276,7 +289,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
 				app.PlaytimeSlices.AddRange(uniqueSegments);
 				_steamDb.UserApps.Update(app);
-				_logger.Information("Updated playtime segments for app: {AppName} (AppID: {AppId}) with {SegmentCount} new segments.",
+				_logger.Verbose("Updated playtime segments for app: {AppName} (AppID: {AppId}) with {SegmentCount} new segments.",
 					app.SteamApp.Name, app.SteamApp.AppId, uniqueSegments.Count);
 			}
 			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
@@ -286,6 +299,8 @@ internal sealed class HomeViewModel : Core.ViewModel
 			_logger.Error(ex, "An error occurred while syncing local apps with the database.");
 			return;
 		}
-		_logger.Information("Local apps synced with database.");
+		_logger.Debug("Local apps synced with database.");
 	}
+	private static bool SequencesEqual(IEnumerable<PlaytimeSlice> first, IEnumerable<PlaytimeSlice> second, IEqualityComparer<PlaytimeSlice> comparer) =>
+		first.ToHashSet(comparer).SetEquals(second);
 }

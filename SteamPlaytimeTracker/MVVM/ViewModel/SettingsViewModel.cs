@@ -1,28 +1,35 @@
-﻿using SteamPlaytimeTracker.Services.Localization;
-using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Localization.Data;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.MVVM.View;
+﻿using Serilog;
+using Serilog.Events;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.Localization.Data;
+using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Navigation;
 using System.Diagnostics;
-using Serilog.Events;
-using System.Windows;
 using System.IO;
-using Serilog;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
+using SteamPlaytimeTracker.Extensions;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
-	private readonly INavigationService _navigationService;
+	private readonly FontFamily[] _availableFonts;
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
 
+	private bool _allowCapture = false;
+
 	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService)
 	{
-		_navigationService = navigationService;
+		NavigationService = navigationService;
 		_logger = logger;
 		_config = config;
 
@@ -44,7 +51,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 				_logger.Information("Successfully saved AppData", _config.AppData);
 
-				_navigationService.NavigateTo<HomeViewModel>();
+				NavigationService.NavigateTo<HomeViewModel>();
 			}
 		});
 		OpenLogDirCommand = new RelayCommand(o =>
@@ -75,13 +82,64 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			}
 		});
 		AvailableLocales = LocalizationManager.GetAvailableLocales().ToArray();
+
+		_availableFonts = Fonts.SystemFontFamilies.OrderBy(f => f.Source).ToArray();
+		AvailableFontsView = (ListCollectionView)CollectionViewSource.GetDefaultView(_availableFonts);
+		TextChangedFiltering = new(data =>
+		{
+			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, string text, ..])
+			{
+				return;
+			}
+			searchBar.SearchContent.IsDropDownOpen = true;
+			AvailableFontsView.Filter = item =>
+			{
+				return item is FontFamily fontFamily && text is string filterText &&
+					fontFamily.Source.Contains(filterText);
+			};
+		});
+		SelectedFont = ((Style)App.Current.MainWindow.FindResource("DefaultWindowStyle"))
+			.Setters?.Cast<Setter>()?.FirstOrDefault(x => x.Value is FontFamily)?.Value as FontFamily ?? new FontFamily("Ariel");
+
+		KeyInputCommand = new(data =>
+		{
+			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, KeyEventArgs keyArgs])
+			{
+				return;
+			}
+			switch(keyArgs.Key)
+			{
+				case Key.Return or Key.Enter:
+					if(searchBar.SearchContent.SelectedIndex is -1)
+					{
+						if(AvailableFontsView.Count is 0)
+						{
+							return;
+						}
+						searchBar.SearchContent.SelectedIndex = 0;
+					}
+					if(searchBar.SearchContent.SelectedItem is FontFamily selectedFont)
+					{
+						SelectedFont = selectedFont;
+						searchBar.SearchContent.IsDropDownOpen = false;
+						searchBar.SearchContent.RemoveFocus();
+					}
+					searchBar.SearchContent.SelectedIndex = -1;
+					_allowCapture = false;
+					break;
+				case Key.Escape:
+					searchBar.SearchContent.IsDropDownOpen = false;
+					searchBar.SearchContent.RemoveFocus();
+					_allowCapture = false;
+					break;
+			}
+		});
 	}
 
 	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 	public ILocalizationService LocalizationService { get; }
-
-	public INavigationService NavigationService => _navigationService;
+	public INavigationService NavigationService { get; }
 	public string SteamInstallPath
 	{
 		get;
@@ -126,6 +184,27 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	}
+
+	public ListCollectionView AvailableFontsView
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = default!;
+	public FontFamily SelectedFont
+	{
+		get => field;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	}
+	public RelayCommand TextChangedFiltering { get; }
+	public RelayCommand KeyInputCommand { get; }
 
 	private bool VerifySettings(string path, bool showMsgBox = false)
 	{

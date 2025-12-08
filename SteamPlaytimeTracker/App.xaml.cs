@@ -1,24 +1,32 @@
-﻿using SteamPlaytimeTracker.Services.Localization;
-using SteamPlaytimeTracker.Services.Navigation;
-using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.MVVM.ViewModel;
-using SteamPlaytimeTracker.Utility.Cache;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.MVVM.View;
+﻿using Config.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using OneOf;
+using Polly;
+using Polly.Retry;
+using Polly.Timeout;
+using Serilog;
+using Serilog.Core;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.Services.Web.Steam;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.Utility.Cache;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Windows;
-using Serilog.Core;
-using Config.Net;
 using System.IO;
-using Serilog;
+using System.Net;
+using System.Text.Json;
+using System.Windows;
 
 namespace SteamPlaytimeTracker;
 
@@ -31,6 +39,13 @@ public partial class App : Application
 
 	public App()
 	{
+		InitializeComponent();
+
+		FrameworkElement.StyleProperty.OverrideMetadata(typeof(Window), new FrameworkPropertyMetadata
+		{
+			DefaultValue = FindResource(typeof(Window))
+		});
+
 		ApplicationPath.TryAddPath(GlobalData.LocalizationLookupName, ApplicationPathOption.ExeLocation, "locale");
 		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
 		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
@@ -73,10 +88,39 @@ public partial class App : Application
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
 		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
+		serviceCollection.AddSingleton<ISteamWebService, SteamWebService>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
 		serviceCollection.AddSingleton<LocalizationManager>();
+
+		serviceCollection.AddHttpClient(GlobalData.SteamHttpClientKey, client =>
+		{
+			client.BaseAddress = new Uri(GlobalData.SingleAppDetailsUrl);
+		});
+		serviceCollection.AddResiliencePipeline(GlobalData.SteamHttpPipelineKey, pipeline =>
+		{
+			pipeline
+				.AddTimeout(new TimeoutStrategyOptions()
+				{
+					Timeout = TimeSpan.FromSeconds(10),
+					OnTimeout = timeoutArgs =>
+					{
+						var logger = ServiceProvider.GetRequiredService<ILogger>();
+						logger.Warning("HTTP request timed out after {Timeout} seconds.", $"{timeoutArgs.Timeout.TotalSeconds:n2}");
+						return ValueTask.CompletedTask;
+					}
+				})
+				.AddRetry(new RetryStrategyOptions()
+				{
+					ShouldHandle = retryArgs => new ValueTask<bool>(retryArgs.Outcome.Result is
+						OneOf<SteamStoreAppData, ParseResult, HttpStatusCode> { IsT0: false }),
+					MaxRetryAttempts = 2,
+					BackoffType = DelayBackoffType.Exponential,
+					Delay = TimeSpan.FromSeconds(3),
+					MaxDelay = TimeSpan.FromSeconds(30)
+				});
+		});
 
 		serviceCollection.AddSingleton<Func<Type, object[], ViewModel>>(provider => (viewModelType, @params) =>
 		{

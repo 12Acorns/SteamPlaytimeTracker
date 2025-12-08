@@ -1,0 +1,28 @@
+{
+	"translations": {
+		"app-view.graph.playtime-hours-y": "Temps de jeu (h)",
+		"app-view.graph.month-y": "Mois",
+		"app-view.graph.day-y": "Jour",
+
+		"app-view.hours-playtime-indicator": "Durée totale de jeu: '{Playtime Hours}' heures",
+		"app-view.year-playtime": "Année de récréation",
+		"app-view.month-playtime": "Mois de récréation",
+		"app-view.day-playtime": "Journée de récréation",
+
+		"main.loading-apps": "Chargement des applications Steam locales, veuillez patienter.",
+		"main.no-apps-found": "Aucune application contenant des données d'enregistrement du temps de jeu n'a été trouvée.",
+
+		"settings.option.open-folder": "Ouvrir le dossier",
+
+		"settings.steam-install-placeholder-indicator": "Installer Steam ici...",
+		"settings.steam-install-title": "Sélectionnez le dossier d'installation de Steam",
+		"settings.steam-install-invalid": "Installation Steam non sélectionnée",
+		"settings.steam-install": "Emplacement d'installation Steam:",
+		"settings.select-Localization": "Sélectionnez Localisation:",
+		"settings.select-log-level": "Sélectionnez le niveau de journalisation",
+		"settings.open-logs": "Journaux ouverts",
+
+		"global.confirm": "Confirmer",
+		"global.settings": "Paramètres"
+	}
+}

@@ -7,6 +7,15 @@ namespace SteamPlaytimeTracker;
 
 internal static partial class GlobalData
 {
+	private const string SteamStoreDomainUrl = "https://store.steampowered.com";
+
+	public const string SteamHttpClientKey = "steam";
+	public const string SingleAppDetailsUrl = $"{SteamStoreDomainUrl}/api/";
+	public const string SteamHttpPipelineKey = SteamHttpClientKey;
+}
+
+internal static partial class GlobalData
+{
 	public const string AppVersion = "0.1.0";
 }
 

@@ -1,18 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OneOf;
-using OutParsing;
-using Serilog;
-using SteamPlaytimeTracker.DbObject;
-using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Steam;
+﻿using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Cache;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.DbObject;
 using System.Collections.Concurrent;
-using System.IO;
+using Microsoft.EntityFrameworkCore;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.IO;
+using ValueTaskSupplement;
+using OutParsing;
 using System.Net;
+using System.IO;
+using Serilog;
+using OneOf;
+using SteamPlaytimeTracker.Services.Web.Steam;
 
 namespace SteamPlaytimeTracker.Services.Steam;
 
@@ -24,13 +25,16 @@ internal sealed class AppService : IAppService
 	private readonly ILogger _logger;
 	private readonly ICacheManager _cacheManager;
 	private readonly IAsyncLifetimeService _lifetimeService;
+	private readonly ISteamWebService _steamWebService;
 
-	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager, IAsyncLifetimeService lifetimeService)
+	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager, IAsyncLifetimeService lifetimeService,
+		ISteamWebService steamWebService)
 	{
 		_db = db;
 		_logger = logger;
 		_cacheManager = cacheManager;
 		_lifetimeService = lifetimeService;
+		_steamWebService = steamWebService;
 	}
 
 	public async ValueTask<List<SteamAppEntry>> AllEntries(CancellationToken token) => await _db.UserApps
@@ -52,12 +56,13 @@ internal sealed class AppService : IAppService
 							.ThenInclude(x => x.AppData)
 							.ThenInclude(x => x.StoreData)
 						.Include(x => x.PlaytimeSlices)
+						.AsSplitQuery()
 						.FirstOrDefaultAsync(x => x.StoreDetails.Id == appId, token).ConfigureAwait(false))
 					.ConfigureAwait(false);
 		}
 		catch(Exception ex)
 		{
-			_logger.Error(ex, "Failed to get app {1} from Database. Error: {0}", appId);
+			_logger.Error(ex, "Failed to get app {0} from Database.", appId);
 			throw;
 		}
 	}
@@ -73,15 +78,16 @@ internal sealed class AppService : IAppService
 			return [];
 		}).ConfigureAwait(false);
 	}
-	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => await HandleTmpFileLifetimeAsync(searchFile, async tmpTile =>
+	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => 
+		await IOUtility.HandleTmpFileLifetimeAsync(searchFile, async tmpTile =>
 	{
 		var seen = new ConcurrentDictionary<uint, byte>();
-		var resultTasks = new ConcurrentBag<Task<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>>();
+		var resultTasks = new ConcurrentBag<ValueTask<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>>();
 		await foreach(var line in IOUtility.ReadLinesAsync(tmpTile, cancellationToken: token).ConfigureAwait(false))
 		{
 			if(token.IsCancellationRequested)
 			{
-				_logger.Information("Cancellation requested, stopping reading local apps.");
+				_logger.Debug("Cancellation requested, stopping reading local apps.");
 				break;
 			}
 			if(string.IsNullOrWhiteSpace(line))
@@ -99,45 +105,20 @@ internal sealed class AppService : IAppService
 				continue;
 			}
 			// In future save app details to own dbset
-			resultTasks.Add(SteamRequest.GetAppDetails(appId, _lifetimeService.CancellationToken).AsTask());
+			resultTasks.Add(_steamWebService.GetAppDetails(appId, _lifetimeService.CancellationToken));
 		};
-		var results = await Task.WhenAll(resultTasks).ConfigureAwait(false);
+		var results = await ValueTaskEx.WhenAll(resultTasks).ConfigureAwait(false);
 		return results.Where(x =>
 		{
 			x.Switch(_ => { }, _ => { }, httpResponse =>
 			{
 				if(httpResponse is HttpStatusCode.TooManyRequests)
 				{
-					_logger.Warning("Too many requests when fetching app details.");
-					_logger.Information("Adding app to re-fetch queue");
+					_logger.Debug("Too many requests when fetching app details.");
+					_logger.Debug("Adding app to re-fetch queue");
 				}
 			});
 			return x.IsT0 && x.AsT0.Success && !string.IsNullOrWhiteSpace(x.AsT0.StoreData?.Name);
 		}).Select(x => x.AsT0);
-	}).ConfigureAwait(false);
-	private async ValueTask<T> HandleTmpFileLifetimeAsync<T>(string path, Func<string, ValueTask<T>> asyncFunc)
-	{
-		string tmpFilePath = "";
-		try
-		{
-			tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), Guid.NewGuid().ToString());
-
-			File.Copy(path, tmpFilePath);
-			_logger.Information("Copied file to temporary location: {0}", tmpFilePath);
-			return await asyncFunc(tmpFilePath).ConfigureAwait(false);
-		}
-		catch(Exception ex)
-		{
-			_logger.Error(ex, "Failed to copy file");
-			throw;
-		}
-		finally
-		{
-			if(File.Exists(tmpFilePath))
-			{
-				File.Delete(tmpFilePath);
-			}
-			_logger.Information("Copied file to temporary location: {0}", tmpFilePath);
-		}
-	}
+	}, cancellationToken: token).ConfigureAwait(false) ?? [];
 }
