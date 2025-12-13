@@ -18,7 +18,7 @@
         ResizeMode="CanResize"
         SizeChanged="Window_SizeChanged"
         Closing="Window_Closing" Topmost="False"
-        Style="{StaticResource DefaultWindowStyle}"
+        Style="{DynamicResource DefaultWindowStyle}"
         Title="Application View" Height="450" Width="800">
     <WindowChrome.WindowChrome>
         <WindowChrome CornerRadius="8" CaptionHeight="25" ResizeBorderThickness="3" />

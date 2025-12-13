@@ -8,24 +8,21 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="25" />
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBox Grid.Row="0" x:Name="SearchText"
-                Background="{Binding SearchBarBackground, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                Foreground="{Binding SearchBarTextColour, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                TextChanged="TextBox_TextChanged"
-                KeyDown="SearchText_KeyDown"
-                TextWrapping="Wrap" />
         <ComboBox Grid.Row="1" x:Name="SearchContent" HorizontalContentAlignment="Right" TextBlock.TextAlignment="Right"
                 ItemsSource="{Binding SearchItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                SelectedItem="{Binding SelectedSearchItem, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                SelectedItem="{Binding SelectedSearchItem, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                IsEditable="True" IsTextSearchEnabled="True" TextBoxBase.TextChanged="TextBox_TextChanged"
+                KeyDown="SearchText_KeyDown">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
+            <ComboBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" />
+                </ItemsPanelTemplate>
+            </ComboBox.ItemsPanel>
         </ComboBox>
     </Grid>
 </UserControl>

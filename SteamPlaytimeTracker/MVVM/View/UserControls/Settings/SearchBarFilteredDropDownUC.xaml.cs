@@ -57,9 +57,9 @@ public partial class SearchBarFilteredDropDownUC : UserControl
 		set => SetValue(_keyDownSearchProperty, value);
 	}
 
-	private void TextBox_TextChanged(object sender, TextChangedEventArgs e) => OnTextChanged.Execute(
-		(List<object>)[this, ((TextBox)sender).Text, e]);
+	private void TextBox_TextChanged(object sender, TextChangedEventArgs e) => OnTextChanged?.Execute(
+		(List<object>)[this, ((ComboBox)sender)?.Text ?? "", e]);
 
-	private void SearchText_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) => OnKeyDownSearch.Execute(
+	private void SearchText_KeyDown(object sender, System.Windows.Input.KeyEventArgs e) => OnKeyDownSearch?.Execute(
 		(List<object>)[this, e]);
 }

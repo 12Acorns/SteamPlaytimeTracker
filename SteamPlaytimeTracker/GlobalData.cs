@@ -1,4 +1,5 @@
 ﻿global using static SteamPlaytimeTracker.Utility.VisualTreeUtility;
+global using static SteamPlaytimeTracker.Utility.ResourceUtility;
 using SteamPlaytimeTracker.Localization.Data;
 using System.IO;
 using ScottPlot;

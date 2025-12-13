@@ -27,6 +27,7 @@ using System.IO;
 using System.Net;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Media;
 
 namespace SteamPlaytimeTracker;
 
@@ -210,6 +211,8 @@ public partial class App : Application
 		var localizer = ServiceProvider.GetRequiredService<ILocalizationService>();
 		var config = ServiceProvider.GetRequiredService<AppConfig>();
 		localizer.ChangeLocale(config.AppData.LocalizationData.LanguageCode);
+
+		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
 
 		var mainWindow = ServiceProvider.GetRequiredService<HomeWindow>();
 		mainWindow.Show();

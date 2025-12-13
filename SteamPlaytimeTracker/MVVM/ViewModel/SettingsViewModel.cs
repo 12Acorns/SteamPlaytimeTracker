@@ -25,8 +25,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
 
-	private bool _allowCapture = false;
-
+	
 	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService)
 	{
 		NavigationService = navigationService;
@@ -85,6 +84,8 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 		_availableFonts = Fonts.SystemFontFamilies.OrderBy(f => f.Source).ToArray();
 		AvailableFontsView = (ListCollectionView)CollectionViewSource.GetDefaultView(_availableFonts);
+		SelectedFont = new FontFamily(_config.AppData.StyleData.CurrentFont ?? "Segoe UI");
+
 		TextChangedFiltering = new(data =>
 		{
 			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, string text, ..])
@@ -98,9 +99,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					fontFamily.Source.Contains(filterText);
 			};
 		});
-		SelectedFont = ((Style)App.Current.MainWindow.FindResource("DefaultWindowStyle"))
-			.Setters?.Cast<Setter>()?.FirstOrDefault(x => x.Value is FontFamily)?.Value as FontFamily ?? new FontFamily("Ariel");
-
 		KeyInputCommand = new(data =>
 		{
 			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, KeyEventArgs keyArgs])
@@ -125,12 +123,10 @@ internal sealed class SettingsViewModel : Core.ViewModel
 						searchBar.SearchContent.RemoveFocus();
 					}
 					searchBar.SearchContent.SelectedIndex = -1;
-					_allowCapture = false;
 					break;
 				case Key.Escape:
 					searchBar.SearchContent.IsDropDownOpen = false;
 					searchBar.SearchContent.RemoveFocus();
-					_allowCapture = false;
 					break;
 			}
 		});
@@ -187,7 +183,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 	public ListCollectionView AvailableFontsView
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
@@ -196,10 +192,17 @@ internal sealed class SettingsViewModel : Core.ViewModel
 	} = default!;
 	public FontFamily SelectedFont
 	{
-		get => field;
+		get;
 		set
 		{
+			// temp fix, i do not know why this is getting called during a view change
+			if(value is null)
+			{
+				return;
+			}
 			field = value;
+			AddOrUpdateResource("DefaultFontFamily", field);
+			_config.AppData.StyleData.CurrentFont = field.Source;
 			OnPropertyChanged();
 		}
 	}

@@ -73,7 +73,8 @@
     </Style>
 
     <Style x:Key="DefaultWindowStyle" TargetType="{x:Type Window}">
-        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource DefaultFontFamily}" />
     </Style>
 
+    <FontFamily x:Key="DefaultFontFamily">Segoe UI</FontFamily>
 </ResourceDictionary>

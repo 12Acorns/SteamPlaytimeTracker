@@ -71,9 +71,7 @@
                             SearchBarBackground="White"
                             SearchBarTextColour="Black"
                             SearchItemsSource="{Binding AvailableFontsView}"
-                            SelectedSearchItem="{Binding SelectedFont, Mode=TwoWay}"
-                            OnTextChanged="{Binding TextChangedFiltering}"
-                            OnKeyDownSearch="{Binding KeyInputCommand}"/>
+                            SelectedSearchItem="{Binding SelectedFont, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
             </ItemsControl>
         </ScrollViewer>
