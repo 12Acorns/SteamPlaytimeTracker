@@ -29,12 +29,15 @@ internal sealed class SteamWebService : ISteamWebService
 
 	private readonly ResiliencePipelineProvider<string> _resiliencePipeline;
 	private readonly IHttpClientFactory _clientFactory;
+	private readonly ICacheManager _cacheManager;
 	private readonly ILogger _logger;
 
-	public SteamWebService(ILogger logger, IHttpClientFactory clientFactory, ResiliencePipelineProvider<string> resiliencePipeline)
+	public SteamWebService(ILogger logger, IHttpClientFactory clientFactory, ICacheManager cacheManager, 
+		ResiliencePipelineProvider<string> resiliencePipeline)
 	{
 		_logger = logger;
 		_clientFactory = clientFactory;
+		_cacheManager = cacheManager;
 		_resiliencePipeline = resiliencePipeline;
 	}
 
@@ -45,15 +48,9 @@ internal sealed class SteamWebService : ISteamWebService
 		{
 			token = ApplicationEndAsyncLifetimeService.Default.CancellationToken;
 		}
-		var cache = App.ServiceProvider.GetService<ICacheManager>();
-		if(cache == null)
-		{
-			_logger.Error($"Failed to get {nameof(ICacheManager)} from ServiceProvider.");
-			return ParseResult.UnkownError;
-		}
 
 		var idStr = appId.ToString();
-		return await cache.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTime: 15, async () =>
+		return await _cacheManager.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTime: 15, async () =>
 		{
 			try
 			{
@@ -64,24 +61,29 @@ internal sealed class SteamWebService : ISteamWebService
 				if(!response.IsSuccessStatusCode)
 				{
 					_logger.Error("Failed to fetch app details from Steam API. Status code: {0}. Response: {1}. Id: {2}",
-						response.StatusCode, response.ToString(), appId);
+						response.StatusCode, response.ToString(), idStr);
 					return response.StatusCode;
 				}
 				var contentStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-				_logger.Verbose("Successfully fetched steam app store data.");
+				_logger.Verbose("Successfully fetched steam app store data for app {0}.", idStr);
 
 				var jObject = await JsonNode.ParseAsync(contentStream, cancellationToken: token).ConfigureAwait(false);
-				var child = jObject![appId.ToString()];
+				if(jObject == null)
+				{
+					_logger.Error("Failed to parse app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.FailedToParse);
+					return ParseResult.FailedToParse;
+				}
+				var child = jObject[appId.ToString()];
 				return child.Deserialize<SteamStoreAppData>(_serializerOptions)!;
 			}
 			catch(JsonException jEx)
 			{
-				_logger.Error(jEx, "Failed to parse app details from Steam API. Parse Result: {0}", ParseResult.FailedToParse);
+				_logger.Error(jEx, "Failed to parse app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.FailedToParse);
 				return ParseResult.FailedToParse;
 			}
 			catch(Exception ex)
 			{
-				_logger.Error(ex, "Failed to fetch app details from Steam API. Parse Result: {0}", ParseResult.UnkownError);
+				_logger.Error(ex, "Failed to fetch app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.UnkownError);
 				return ParseResult.UnkownError;
 			}
 		});

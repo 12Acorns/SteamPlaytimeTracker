@@ -83,7 +83,7 @@ internal static class IOUtility
 			throw;
 		}
 	}
-	public static async IAsyncEnumerable<T>? HandleTmpFileLifetimeAsyncEnumerable<T>(string originalFilePath, Func<string, IAsyncEnumerable<T>?> asyncFunc,
+	public static async IAsyncEnumerable<T> HandleTmpFileLifetimeAsyncEnumerable<T>(string originalFilePath, Func<string, IAsyncEnumerable<T>> asyncFunc,
 		int bufferSize = DefaultBufferSize * 10, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";

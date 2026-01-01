@@ -5,7 +5,6 @@ using SteamPlaytimeTracker.Steam.Data.Capsule;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
-using SteamPlaytimeTracker.Services.Steam;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Extensions;
@@ -20,6 +19,7 @@ using System.Windows.Data;
 using ValueTaskSupplement;
 using Serilog;
 using SteamPlaytimeTracker.Steam.Data.Playtime;
+using SteamPlaytimeTracker.Services.App;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -181,7 +181,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	{
 		base.OnConstructed();
 		_logger.Debug("Loading local Steam apps and syncing database...");
-		var loadTask = Task.Run(LoadDataAsync, _lifetimeProvider.CancellationToken);
+		var loadTask = LoadDataAsync();
 		AppContextText = _localizationService[GlobalData.LoadingAppsKey];
 		var original = AppContextText;
 		var insertIdx = AppContextText.Length;
