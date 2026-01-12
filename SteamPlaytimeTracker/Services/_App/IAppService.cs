@@ -3,7 +3,7 @@ using SteamPlaytimeTracker.DbObject;
 using System.Net;
 using OneOf;
 
-namespace SteamPlaytimeTracker.Services.App;
+namespace SteamPlaytimeTracker.Services._App;
 
 // TODO: stream apps
 // Provide method GetStoreAppDetailsAsync -> ValueTask<OneOf<SteamStoreAppData?, ParseResult, HttpStatusCode>>

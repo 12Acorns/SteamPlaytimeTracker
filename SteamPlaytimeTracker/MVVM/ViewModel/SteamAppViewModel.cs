@@ -239,16 +239,11 @@ internal class SteamAppViewModel : Core.ViewModel
 			var endOfSpecifiedDate = new DateTime(startOfSpecifiedDate.Year + 1, 1, 1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
-		static (DateTime Start, DateTime End) GetStartAndEndOfMonth(string monthName)
+		(DateTime Start, DateTime End) GetStartAndEndOfMonth(string monthName)
 		{
+			var year = DateTime.ParseExact(Plot.Plot.Axes.Title.Label.Text, "yyyy", CultureInfo.InvariantCulture);
 			var startOfSpecifiedDate = DateTime.ParseExact(monthName, "MMMM", CultureInfo.InvariantCulture);
-			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
-
-			return (startOfSpecifiedDate, endOfSpecifiedDate);
-		}
-		static (DateTime Start, DateTime End) GetStartAndEndOfMonthFromMonthNum(int month)
-		{
-			var startOfSpecifiedDate = new DateTime(DateTime.Now.Year, month, 1);
+			startOfSpecifiedDate = new DateTime(year.Year, startOfSpecifiedDate.Month, 1);
 			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
@@ -276,7 +271,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				{
 					GraphViewSelectionId.YearPlaytimeId => GetStartAndEndOfYear(dateSpecified),
 					GraphViewSelectionId.MonthPlaytimeId => GetStartAndEndOfMonth(dateSpecified),
-					GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
+					GraphViewSelectionId.DayPlaytimeId => (StartDate, EndDate),
 					_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 				};
 				SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
@@ -507,7 +502,6 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		MinStartDate = StartDate;
 		MaxEndDate = EndDate;
-
 	}
 	private void CleanUp()
 	{

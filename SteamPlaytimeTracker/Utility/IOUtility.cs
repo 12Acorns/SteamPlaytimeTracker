@@ -99,21 +99,6 @@ internal static class IOUtility
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file from: {0}", originalFilePath);
 		}
-		finally
-		{
-			try
-			{
-				if(File.Exists(tmpFilePath))
-				{
-					File.Delete(tmpFilePath);
-					LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
-				}
-			}
-			catch(Exception e)
-			{
-				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
-			}
-		}
 		if(iterReturn == null)
 		{
 			yield break;
@@ -121,6 +106,18 @@ internal static class IOUtility
 		await foreach(var item in iterReturn.WithCancellation(cancellationToken).ConfigureAwait(false))
 		{
 			yield return item;
+		}
+		try
+		{
+			if(File.Exists(tmpFilePath))
+			{
+				File.Delete(tmpFilePath);
+				LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
+			}
+		}
+		catch(Exception e)
+		{
+			LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
 		}
 	}
 	public static async ValueTask<T?> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 

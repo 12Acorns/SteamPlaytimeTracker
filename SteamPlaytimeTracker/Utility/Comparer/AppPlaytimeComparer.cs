@@ -1,8 +1,6 @@
-﻿using SteamPlaytimeTracker.Services.Steam;
-using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.Extensions;
-using System.Collections;
+﻿using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.DbObject;
+using System.Collections;
 
 namespace SteamPlaytimeTracker.Utility.Comparer;
 

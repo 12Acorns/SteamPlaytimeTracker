@@ -8,16 +8,19 @@ using Polly.Timeout;
 using Serilog;
 using Serilog.Core;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.ViewModel;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Services.App;
+using SteamPlaytimeTracker.Services._App;
+using SteamPlaytimeTracker.Services.Disk;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Playtime;
 using SteamPlaytimeTracker.Services.Web.Steam;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;
@@ -94,6 +97,8 @@ public partial class App : Application
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
 		serviceCollection.AddSingleton<LocalizationManager>();
+		serviceCollection.AddSingleton<ILocalSteamAppService, LocalSteamAppService>();
+		serviceCollection.AddSingleton<IPlaytimeService, PlaytimeService>();
 
 		serviceCollection.AddHttpClient(GlobalData.SteamHttpClientKey, client =>
 		{

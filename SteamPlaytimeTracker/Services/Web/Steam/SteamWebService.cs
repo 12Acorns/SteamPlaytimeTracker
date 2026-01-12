@@ -17,7 +17,6 @@ namespace SteamPlaytimeTracker.Services.Web.Steam;
 
 internal sealed class SteamWebService : ISteamWebService
 {
-
 	private static readonly JsonSerializerOptions _serializerOptions = new()
 	{
 		UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
@@ -50,7 +49,7 @@ internal sealed class SteamWebService : ISteamWebService
 		}
 
 		var idStr = appId.ToString();
-		return await _cacheManager.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTime: 15, async () =>
+		return await _cacheManager.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTime: 15, async token =>
 		{
 			try
 			{
@@ -86,6 +85,6 @@ internal sealed class SteamWebService : ISteamWebService
 				_logger.Error(ex, "Failed to fetch app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.UnkownError);
 				return ParseResult.UnkownError;
 			}
-		});
+		}, token: token);
 	}
 }

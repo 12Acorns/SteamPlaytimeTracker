@@ -16,7 +16,7 @@ using OneOf;
 using SteamPlaytimeTracker.Services.Web.Steam;
 using SteamPlaytimeTracker.Services.Disk;
 
-namespace SteamPlaytimeTracker.Services.App;
+namespace SteamPlaytimeTracker.Services._App;
 
 internal sealed class AppService : IAppService
 {
@@ -52,7 +52,7 @@ internal sealed class AppService : IAppService
 	{
 		try
 		{
-			return await _cacheManager.GetAsync(appId.ToString(), async () => 
+			return await _cacheManager.GetAsync($"GEA_{appId}", async token => 
 				await _db.UserApps
 						.AsNoTracking()
 						.Include(x => x.StoreDetails)
@@ -60,7 +60,7 @@ internal sealed class AppService : IAppService
 							.ThenInclude(x => x.StoreData)
 						.Include(x => x.PlaytimeSlices)
 						.AsSplitQuery()
-						.FirstOrDefaultAsync(x => x.StoreDetails.Id == appId, token).ConfigureAwait(false))
+						.FirstOrDefaultAsync(x => x.StoreDetails.Id == appId, token).ConfigureAwait(false), token: token)
 					.ConfigureAwait(false);
 		}
 		catch(Exception ex)
@@ -72,22 +72,22 @@ internal sealed class AppService : IAppService
 
 	public async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsAsync(CancellationToken token)
 	{
-		return await _cacheManager.GetAsync("LocalApps", LocalAppCacheDurationMinutes, async () =>
+		return await _cacheManager.GetAsync("LocalApps", LocalAppCacheDurationMinutes, async token =>
 		{
 			if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 			{
 				return await GetLocalAppsPrimaryAsync(primarySearchFile, token).ConfigureAwait(false);
 			}
 			return [];
-		}).ConfigureAwait(false);
+		}, token: token).ConfigureAwait(false);
 	}
 
 	public async ValueTask<OneOf<SteamStoreAppData?, ParseResult, HttpStatusCode>> GetStoreAppDetailsAsync(uint appId, CancellationToken token = default)
 	{
-		var localApps = await _localSteamAppService.GetLocalAppIds(token);
+		var localApps = await _localSteamAppService.GetLocalAppIds(token).ConfigureAwait(false);
 		if(!localApps.Contains(appId))
 		{
-			return default(SteamStoreAppData);
+			return null;
 		}
 		return (await _steamWebService.GetAppDetails(appId, token).ConfigureAwait(false)).MapT0(appData => appData.Success ? appData : null);
 	}

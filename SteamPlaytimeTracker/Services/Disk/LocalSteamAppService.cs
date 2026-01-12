@@ -24,14 +24,14 @@ internal sealed class LocalSteamAppService : ILocalSteamAppService
 	}
 
 	public ValueTask<HashSet<uint>> GetLocalAppIds(CancellationToken token = default) => _cacheManager.GetAsync("LocalAppIds", LocalCacheDurationMinutes,
-		async () =>
+		async token =>
 	{
 		if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 		{
 			return await GetLocalAppIdsPrimary(primarySearchFile, token).ToHashSetAsync(cancellationToken: token).ConfigureAwait(false);
 		}
 		return [];
-	});
+	}, token: token);
 	private IAsyncEnumerable<uint> GetLocalAppIdsPrimary(string searchFile, CancellationToken token)
 	{
 		return IOUtility.HandleTmpFileLifetimeAsyncEnumerable(searchFile, tmpFile => GetIds(tmpFile, token), cancellationToken: token);
