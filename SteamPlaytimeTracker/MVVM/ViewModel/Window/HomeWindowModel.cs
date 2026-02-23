@@ -1,14 +1,16 @@
 ﻿using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.SelfConfig;
-using System.IO;
 using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Core;
+using System.IO;
 
-namespace SteamPlaytimeTracker.MVVM.ViewModel;
+namespace SteamPlaytimeTracker.MVVM.ViewModel.Window;
 
-internal sealed class HomeWindowModel : Core.ViewModel
+internal sealed class HomeWindowModel : MenuModel
 {
 	public HomeWindowModel(INavigationService navigationService,  AppConfig config, LocalizationManager localization)
 	{
+		Title = "Home Window :3";
 		NavigationService = navigationService;
 
 		if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))
@@ -23,7 +25,7 @@ internal sealed class HomeWindowModel : Core.ViewModel
 
 	public INavigationService NavigationService
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;

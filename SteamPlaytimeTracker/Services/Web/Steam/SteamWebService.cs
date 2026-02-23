@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Services.Lifetime;
+﻿using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Utility.Converter;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;

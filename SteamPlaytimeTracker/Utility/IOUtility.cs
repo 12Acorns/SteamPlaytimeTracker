@@ -1,13 +1,18 @@
-﻿using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.Services.Lifetime;
-using System.IO;
+﻿using SteamPlaytimeTracker.Services.Lifetime;
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
+using SteamPlaytimeTracker.IO;
 using System.Text;
+using System.IO;
 
 namespace SteamPlaytimeTracker.Utility;
 
 internal static class IOUtility
 {
+	private static readonly ConcurrentStack<IOFailure> _failures = [];
+
+	public static Stack<IOFailure> Failures => new(_failures);
+
 	private const FileOptions DefaultOptions = FileOptions.SequentialScan | FileOptions.Asynchronous;
 	private const int DefaultBufferSize = 8192;
 
@@ -56,8 +61,18 @@ internal static class IOUtility
 			yield return line!;
 		}
 	}
+	/// <exception cref="ArgumentException"></exception>
+	/// <exception cref="ArgumentOutOfRangeException"></exception>
+	/// <exception cref="PathTooLongException"></exception>
+	/// <exception cref="UnauthorizedAccessException"></exception>
+	/// <exception cref="IOException"></exception>
+	/// <exception cref="FileNotFoundException"></exception>
+	/// <exception cref="OperationCanceledException"></exception>
 	public static async Task CopyAsync(string fromPath, string toPath, int bufferSize = DefaultBufferSize * 10, CancellationToken cancellationToken = default)
 	{
+		ArgumentOutOfRangeException.ThrowIfLessThan(bufferSize, 1);
+		ArgumentException.ThrowIfNullOrWhiteSpace(fromPath);
+		ArgumentException.ThrowIfNullOrWhiteSpace(toPath);
 		if(!cancellationToken.CanBeCanceled)
 		{
 			cancellationToken = ApplicationEndAsyncLifetimeService.Default.CancellationToken;
@@ -65,10 +80,6 @@ internal static class IOUtility
 
 		try
 		{
-			ArgumentOutOfRangeException.ThrowIfLessThan(bufferSize, 1);
-			ArgumentException.ThrowIfNullOrWhiteSpace(fromPath);
-			ArgumentException.ThrowIfNullOrWhiteSpace(toPath);
-
 			if(!File.Exists(fromPath))
 			{
 				throw new FileNotFoundException("Source file does not exist", fromPath);
@@ -77,18 +88,55 @@ internal static class IOUtility
 			await using var destinationStream = new FileStream(toPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, DefaultOptions);
 			await sourceStream.CopyToAsync(destinationStream, bufferSize, cancellationToken).ConfigureAwait(false);
 		}
+		catch(UnauthorizedAccessException ex)
+		{
+			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1} due to insufficient file privilege.\n" +
+				"This could be due to Steam being open or application needs admin privileges. The former can be resolved " +
+				"by shutting down Steam.", fromPath, toPath);
+			_failures.Push(new IOFailure
+			{
+				FailureType = IOFailure.IOFailureType.Copy,
+				FailureException = ex
+			});
+			throw;
+		}
+		catch(ArgumentException ex)
+		{
+			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1} because of bad arguments", fromPath, toPath);
+			_failures.Push(new IOFailure
+			{
+				FailureType = IOFailure.IOFailureType.BadArg,
+				FailureException = ex
+			});
+			throw;
+		}
+		catch(TaskCanceledException ex)
+		{
+			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1} because the operation was cancelled", fromPath, toPath);
+			_failures.Push(new IOFailure
+			{
+				FailureType = IOFailure.IOFailureType.OperationCancelled,
+				FailureException = ex
+			});
+			throw;
+		}
 		catch(Exception ex)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1}", fromPath, toPath);
+			_failures.Push(new IOFailure
+			{
+				FailureType = IOFailure.IOFailureType.Other,
+				FailureException = ex
+			});
 			throw;
 		}
 	}
 	public static async IAsyncEnumerable<T> HandleTmpFileLifetimeAsyncEnumerable<T>(string originalFilePath, Func<string, IAsyncEnumerable<T>> asyncFunc,
-		int bufferSize = DefaultBufferSize * 10, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+		int bufferSize = DefaultBufferSize, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
 		var tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), tmpFileName);
-		IAsyncEnumerable<T>? iterReturn = default;
+		IAsyncEnumerable<T>? iterReturn;
 		try
 		{
 			await CopyAsync(originalFilePath, tmpFilePath, bufferSize, cancellationToken).ConfigureAwait(false);
@@ -98,9 +146,6 @@ internal static class IOUtility
 		catch(Exception ex)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file from: {0}", originalFilePath);
-		}
-		if(iterReturn == null)
-		{
 			yield break;
 		}
 		await foreach(var item in iterReturn.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -181,6 +226,20 @@ internal static class IOUtility
 			{
 				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
 			}
+		}
+	}
+	internal readonly record struct IOFailure
+	{
+		public IOFailureType FailureType { get; init; }
+		public Exception? FailureException { get; init; }
+
+		public enum IOFailureType
+		{
+			None,
+			Copy,
+			BadArg,
+			OperationCancelled,
+			Other
 		}
 	}
 }

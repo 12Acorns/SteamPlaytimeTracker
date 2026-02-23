@@ -1,10 +1,12 @@
-﻿using System.ComponentModel;
+﻿using SteamPlaytimeTracker.MVVM.ViewModel.Window;
+using SteamPlaytimeTracker.Core;
+using System.ComponentModel;
 using System.Windows.Input;
 using System.Windows;
 
 namespace SteamPlaytimeTracker.MVVM.View;
 
-public partial class HomeWindow : Window
+public partial class HomeWindow : Window, IMenuWindow<HomeWindowModel>
 {
 	public static event EventHandler<MouseButtonEventArgs>? OnMouseDownA;
 
