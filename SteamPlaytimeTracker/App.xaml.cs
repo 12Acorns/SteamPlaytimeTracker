@@ -8,16 +8,21 @@ using Polly.Timeout;
 using Serilog;
 using Serilog.Core;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.MVVM.ViewModel.Window;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Services._App;
+using SteamPlaytimeTracker.Services.Disk;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Menu;
 using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Steam;
+using SteamPlaytimeTracker.Services.Playtime;
 using SteamPlaytimeTracker.Services.Web.Steam;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;
@@ -25,8 +30,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Text.Json;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace SteamPlaytimeTracker;
@@ -63,29 +70,38 @@ public partial class App : Application
 			iConfigData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
-		serviceCollection.AddSingleton<HomeWindow>(provider => new HomeWindow()
-		{
-			DataContext = provider.GetRequiredService<HomeWindowModel>()
-		});
-		serviceCollection.AddSingleton<SettingsView>(provider => new SettingsView()
-		{
-			DataContext = provider.GetRequiredService<SettingsViewModel>()
-		});
-		serviceCollection.AddSingleton<HomeView>(provider => new HomeView()
-		{
-			DataContext = provider.GetRequiredService<HomeViewModel>()
-		});
-		serviceCollection.AddSingleton<SteamAppView>(provider => new SteamAppView()
-		{
-			DataContext = provider.GetRequiredService<SteamAppViewModel>()
-		});
+		serviceCollection.AddSingleton(RequiredModel<HomeWindow, HomeWindowModel>);
+		serviceCollection.AddSingleton(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
+		serviceCollection.AddSingleton(RequiredModel<SettingsView, SettingsViewModel>);
+		serviceCollection.AddSingleton(RequiredModel<HomeView, HomeViewModel>);
+		serviceCollection.AddSingleton(RequiredModel<SteamAppView, SteamAppViewModel>);
+
 		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(iConfigData));
 		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"), ServiceLifetime.Transient);
 
 		serviceCollection.AddSingleton<HomeWindowModel>();
+		serviceCollection.AddSingleton<ApplicationInfoWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();
 		serviceCollection.AddSingleton<SteamAppViewModel>();
+		serviceCollection.AddSingleton<IMenuService, MenuService>(provider =>
+		{
+			(MenuModel Model, Window Menu) Factory(Type modelType, Type menuType, object[] @params)
+			{
+				var logger = provider.GetRequiredService<ILogger>();
+				var model = (MenuModel)provider.GetRequiredService(modelType);
+				var menu = (Window)provider.GetRequiredService(menuType);
+				if(!model.IsConstructed)
+				{
+					model.OnConstructed();
+					logger.Information("Post-Constructed MenuModel: {MenuModelType}", modelType.FullName);
+				}
+				model.OnLoad(@params);
+				logger.Information("Loaded MenuModel: {MenuModelType}", modelType.FullName);
+				return (model, menu);
+			}
+			return new MenuService(Factory);
+		});
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
 		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
@@ -94,6 +110,8 @@ public partial class App : Application
 		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
 		serviceCollection.AddSingleton<LocalizationManager>();
+		serviceCollection.AddSingleton<ILocalSteamAppService, LocalSteamAppService>();
+		serviceCollection.AddSingleton<IPlaytimeService, PlaytimeService>();
 
 		serviceCollection.AddHttpClient(GlobalData.SteamHttpClientKey, client =>
 		{
@@ -214,11 +232,18 @@ public partial class App : Application
 
 		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
 
-		var mainWindow = ServiceProvider.GetRequiredService<HomeWindow>();
-		mainWindow.Show();
+		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
+		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 		base.OnStartup(e);
 	}
 
 	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);
 	private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e) => OnSessionEndingA?.Invoke(this, e);
+
+	private static TView RequiredModel<TView, TModel>(IServiceProvider provider)
+		where TView : ContentControl, new()
+		where TModel : notnull => new()
+	{
+		DataContext = provider.GetRequiredService<TModel>()
+	};
 }

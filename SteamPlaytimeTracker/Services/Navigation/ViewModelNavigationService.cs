@@ -5,7 +5,6 @@ namespace SteamPlaytimeTracker.Services.Navigation;
 class ViewModelNavigationService : ObservableObject, INavigationService
 {
 	private readonly Func<Type, object[], ViewModel> _modelViewFactory;
-	private ViewModel _currentView = null!;
 
 	public ViewModelNavigationService(Func<Type, object[], ViewModel> modelViewFactory)
 	{
@@ -13,10 +12,10 @@ class ViewModelNavigationService : ObservableObject, INavigationService
 	}
 	public ViewModel CurrentView
 	{
-		get => _currentView;
+		get => field;
 		set
 		{
-			_currentView = value;
+			field = value;
 			OnPropertyChanged();
 		}
 	}

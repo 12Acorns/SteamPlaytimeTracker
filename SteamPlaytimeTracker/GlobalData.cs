@@ -8,6 +8,12 @@ namespace SteamPlaytimeTracker;
 
 internal static partial class GlobalData
 {
+	public const string HomeWindowModelServiceKey = "HomeModel";
+	public const string AppInfoWindowModelServiceKey = "AppInfoModel";
+}
+
+internal static partial class GlobalData
+{
 	private const string SteamStoreDomainUrl = "https://store.steampowered.com";
 
 	public const string SteamHttpClientKey = "steam";

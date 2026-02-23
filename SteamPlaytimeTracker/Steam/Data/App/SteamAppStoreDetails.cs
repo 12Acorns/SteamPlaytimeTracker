@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SteamPlaytimeTracker.Steam.Data.App;
 
@@ -30,7 +31,7 @@ public sealed class SteamStoreAppData
 	[JsonConstructor]
 	public SteamStoreAppData(bool success, SteamAppStoreDetails storeData) => (Success, StoreData) = (success, storeData);
 	[JsonIgnore, Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; }
-	[JsonPropertyName("success")] public bool Success { get; set; }
+	[JsonPropertyName("success"), MemberNotNullWhen(true, nameof(StoreData))] public bool Success { get; set; }
 	[JsonPropertyName("data")] public SteamAppStoreDetails? StoreData { get; set; } = default!;
 }
 [DebuggerDisplay("{Name} | {AppId} | {Age} | {IsFree}")]

@@ -1,21 +1,21 @@
-﻿using Serilog;
-using Serilog.Events;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.Localization.Data;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
-using SteamPlaytimeTracker.SelfConfig;
+﻿using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
-using System.Diagnostics;
-using System.IO;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Input;
-using System.Windows.Media;
+using SteamPlaytimeTracker.Localization.Data;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.IO;
+using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Data;
+using System.Diagnostics;
+using Serilog.Events;
+using System.Windows;
+using System.IO;
+using Serilog;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -180,7 +180,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	}
-
 	public ListCollectionView AvailableFontsView
 	{
 		get;
