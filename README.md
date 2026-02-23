@@ -32,3 +32,6 @@ One more thing of note, this is more of a technical detail, I plan to use altern
 After a brief search, Steam stored some info about apps in logs. Mainly, "gameprocess_log.txt" is used as it provides all you would need to track playtime.
 This data is then packed into a struct containing the session length, when the session started, as well as the AppId.
 Finally, a list of these structs is used for graphing.
+
+# Copyrights
+- Icons - Google Fonts (https://fonts.google.com/icons) - Appache-2.0
