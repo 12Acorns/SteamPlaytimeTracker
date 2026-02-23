@@ -34,4 +34,5 @@ This data is then packed into a struct containing the session length, when the s
 Finally, a list of these structs is used for graphing.
 
 # Copyrights
-- Icons - Google Fonts (https://fonts.google.com/icons) - Appache-2.0
+- Icons (A) - Google Fonts (https://fonts.google.com/icons) - Appache-2.0
+- Icons (B) - <a href="https://www.flaticon.com/free-icons/info" title="info icons">Info icons created by Stockio - Flaticon</a>
