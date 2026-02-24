@@ -1,40 +1,39 @@
-﻿using Config.Net;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using OneOf;
-using Polly;
-using Polly.Retry;
-using Polly.Timeout;
-using Serilog;
-using Serilog.Core;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.MVVM.ViewModel;
+﻿using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.MVVM.ViewModel.Window;
-using SteamPlaytimeTracker.SelfConfig;
+using Microsoft.Extensions.DependencyInjection;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Web.Steam;
+using SteamPlaytimeTracker.Services.Playtime;
+using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.MVVM.ViewModel;
 using SteamPlaytimeTracker.Services._App;
 using SteamPlaytimeTracker.Services.Disk;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Menu;
-using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Playtime;
-using SteamPlaytimeTracker.Services.Web.Steam;
-using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Windows;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.MVVM.View;
+using Microsoft.EntityFrameworkCore;
+using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.IO;
 using System.Windows.Controls;
+using System.ComponentModel;
 using System.Windows.Media;
+using System.Diagnostics;
+using System.Windows;
+using Polly.Timeout;
+using Serilog.Core;
+using Polly.Retry;
+using System.Net;
+using Config.Net;
+using System.IO;
+using Serilog;
+using OneOf;
+using Polly;
+using SteamPlaytimeTracker.Services.Messaging;
 
 namespace SteamPlaytimeTracker;
 
@@ -70,8 +69,8 @@ public partial class App : Application
 			iConfigData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
-		serviceCollection.AddSingleton(RequiredModel<HomeWindow, HomeWindowModel>);
-		serviceCollection.AddSingleton(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
+		serviceCollection.AddTransient(RequiredModel<HomeWindow, HomeWindowModel>);
+		serviceCollection.AddTransient(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
 		serviceCollection.AddSingleton(RequiredModel<SettingsView, SettingsViewModel>);
 		serviceCollection.AddSingleton(RequiredModel<HomeView, HomeViewModel>);
 		serviceCollection.AddSingleton(RequiredModel<SteamAppView, SteamAppViewModel>);
@@ -102,6 +101,8 @@ public partial class App : Application
 			}
 			return new MenuService(Factory);
 		});
+
+		serviceCollection.AddSingleton<IMessageExchangeService, ThreadedMessageExchangeService>();
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
 		serviceCollection.AddSingleton<ICacheManager, CacheManager>();

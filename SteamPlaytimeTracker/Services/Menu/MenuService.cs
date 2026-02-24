@@ -1,4 +1,5 @@
 ﻿using SteamPlaytimeTracker.Core;
+using System.ComponentModel;
 using System.Windows;
 
 namespace SteamPlaytimeTracker.Services.Menu;
@@ -17,10 +18,6 @@ internal sealed class MenuService : ObservableObject, IMenuService
 		where TModel : MenuModel
 		where TMenu : Window, IMenuWindow<TModel>
 	{
-		if(Menus.TryPeek(out var menu) && menu.Model != null)
-		{
-			throw new Exception($"Window is already open: {menu.Model}");
-		}
 		Menus.Push(_menuModelFactory(typeof(TModel), typeof(TMenu), @params ?? []));
 		var curr = Menus.Peek();
 		curr.Menu.Title = curr.Model.Title;
@@ -32,14 +29,22 @@ internal sealed class MenuService : ObservableObject, IMenuService
 		{
 			curr.Menu.Show();
 		}
+		curr.Menu.Closed += OnClosing();
 	}
+
+	private EventHandler OnClosing() => (s, e) => CloseMenu();
 	public void CloseMenu()
 	{
 		if(Menus.Count is 0)
 		{
 			throw new Exception("No window is open");
 		}
-		Menus.Peek().Menu.Close();
+		var curr = Menus.Peek();
+		curr.Menu.Closed -= OnClosing();
+		if(PresentationSource.FromVisual(curr.Menu) != null)
+		{
+			curr.Menu.Close();
+		}
 		Menus.Pop();
 	}
 }

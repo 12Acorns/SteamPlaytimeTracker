@@ -1,22 +1,17 @@
-﻿namespace SteamPlaytimeTracker.Extensions;
+﻿using System.Linq.Expressions;
+using System.Reflection;
+
+namespace SteamPlaytimeTracker.Extensions;
 
 internal static class SemaphoreExtensions
 {
-	private static int GetMaxSemCount(SemaphoreSlim sem)
-	{
-		var field = typeof(SemaphoreSlim).GetField("m_maxCount", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-		if(field != null && field.GetValue(sem) is int maxCount)
-		{
-			return maxCount;
-		}
-		throw new InvalidOperationException("Unable to retrieve max count of SemaphoreSlim.");
-	}
+	private static readonly Func<SemaphoreSlim, int> _getMaxCount = CreateGetMaxCountDelegate();
 
 	extension(SemaphoreSlim sem)
 	{
 		public bool TryRelease(int count)
 		{
-			if(sem.CurrentCount < GetMaxSemCount(sem))
+			if(sem.CurrentCount < _getMaxCount(sem))
 			{
 				sem.Release(count);
 				return true;
@@ -24,5 +19,12 @@ internal static class SemaphoreExtensions
 			return false;
 		}
 		public bool TryRelease() => sem.TryRelease(1);
+	}
+
+	private static Func<SemaphoreSlim, int> CreateGetMaxCountDelegate()
+	{
+		var param = Expression.Parameter(typeof(SemaphoreSlim), "semSlim");
+		var field = Expression.Field(param, typeof(SemaphoreSlim).GetField("m_maxCount", BindingFlags.NonPublic | BindingFlags.Instance)!);
+		return Expression.Lambda<Func<SemaphoreSlim, int>>(field, name: "GetSemMaxCount", parameters: [param]).Compile();
 	}
 }

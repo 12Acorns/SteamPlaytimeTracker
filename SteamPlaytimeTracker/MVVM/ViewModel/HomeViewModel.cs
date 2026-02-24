@@ -1,14 +1,18 @@
-﻿using OneOf;
+﻿using Microsoft.EntityFrameworkCore.Update;
+using OneOf;
 using Serilog;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
+using SteamPlaytimeTracker.MVVM.ViewModel.Window;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Services._App;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Menu;
+using SteamPlaytimeTracker.Services.Messaging;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Services.Playtime;
 using SteamPlaytimeTracker.Steam.Data.App;
@@ -17,7 +21,9 @@ using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
+using SteamPlaytimeTracker.Utility.Messaging;
 using SteamPlaytimeTracker.Utility.ObservableCollections;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Channels;
@@ -29,6 +35,25 @@ namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class HomeViewModel : Core.ViewModel
 {
+	private delegate Dictionary<uint, (int Index, SteamAppEntry Entry)> AppLookupCache(
+		ref int cachedCount, 
+		ref Dictionary<uint, (int Index, SteamAppEntry Entry)> cache,
+		ConcurrentObservableCollection<SteamAppEntry> apps);
+
+	private Dictionary<uint, (int Index, SteamAppEntry Entry)> _appLookupCache = [];
+	private int _appLookupCacheCount = 0;
+	private readonly AppLookupCache _appLookup = (ref cachedCount, ref lookupCache, apps) =>
+	{
+		if(cachedCount != apps.Count)
+		{
+			cachedCount = apps.Count;
+			return lookupCache = apps.Index().ToDictionary(x => x.Item.SteamApp!.AppId);
+		}
+		return lookupCache;
+	};
+
+	private readonly IMessageExchangeService _messageExchangeService;
+	private readonly IMenuService _menuService;
 	private readonly ILocalizationService _localizationService;
 	private readonly IAsyncLifetimeService _lifetimeProvider;
 	private readonly IPlaytimeService _playtimeService;
@@ -40,13 +65,12 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private readonly ChannelReader<SteamAppEntry> _appReader;
 	private readonly Thread _queueProcessThread;
 
-	private readonly ConcurrentQueue<OneOf<ParseResult, HttpStatusCode>> _webFetchErrors = [];
-
 	private readonly ConcurrentQueue<SteamAppEntry> _entriesToSync = [];
 	private Thread? _entrySyncThread;
 
 	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, ILogger logger,
-		AppConfig appConfig, DbAccess steamDb, ILocalizationService localizationService, IPlaytimeService playtimeService)
+		AppConfig appConfig, DbAccess steamDb, ILocalizationService localizationService, IPlaytimeService playtimeService, 
+		IMessageExchangeService messageExchangeService, IMenuService menuService)
 	{
 		var channel = Channel.CreateUnbounded<SteamAppEntry>(new UnboundedChannelOptions()
 		{
@@ -63,9 +87,11 @@ internal sealed class HomeViewModel : Core.ViewModel
 		_queueProcessThread.Start();
 
 		NavigationService = navigationService;
+		_messageExchangeService = messageExchangeService;
 		_localizationService = localizationService;
 		_lifetimeProvider = lifetimeProvider;
 		_playtimeService = playtimeService;
+		_menuService = menuService;
 		_appService = appService;
 		_steamDb = steamDb;
 		_logger = logger;
@@ -109,6 +135,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 		});
 		CapsuleSortType = CapsuleSortType.Name | CapsuleSortType.Ascending;
+		OpenMessgaeMenu = new RelayCommand(_ =>
+		{
+			if(_menuService.Menus.TryPeek(out var menu) && menu.Menu is ApplicationInfoSubWindow)
+			{
+				return;
+			}
+			_menuService.ShowMenu<ApplicationInfoWindowModel, ApplicationInfoSubWindow>();
+		});
 	}
 
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
@@ -118,6 +152,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
+	public RelayCommand OpenMessgaeMenu { get; set; }
 	public INavigationService NavigationService { get; set; }
 	public ConcurrentObservableCollection<SteamAppEntry> SteamApps
 	{
@@ -193,6 +228,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	} = string.Empty;
+	public string FooterText
+	{
+		get;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = string.Empty;
 
 	public override void OnConstructed()
 	{
@@ -215,20 +259,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 		var localApps = await _appService.AllEntries(_lifetimeProvider.CancellationToken).ConfigureAwait(true);
 		SteamApps.AddRange(localApps);
 
+		// Long running, need to optimise
 		var diskApps = await _playtimeService.GetPlayimeSegments(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		await Parallel.ForEachAsync(diskApps.Chunk(32), new ParallelOptions() 
-		{ 
-			MaxDegreeOfParallelism = 4,
-			CancellationToken = _lifetimeProvider.CancellationToken
-		}, (apps, token) =>
+		var tasks = new ValueTask[diskApps.Count];
+		foreach(var lookup in diskApps.Index())
 		{
-			var tasks = new ValueTask[apps.Length];
-			for(int i = 0; i < tasks.Length; i++)
-			{
-				tasks[i] = FetchAndQueueApp(apps[i].Key, _lifetimeProvider.CancellationToken);
-			}
-			return ValueTaskEx.WhenAll(tasks);
-		}).ConfigureAwait(false);
+			tasks[lookup.Index] = FetchAndQueueApp(lookup.Item.Key, _lifetimeProvider.CancellationToken);
+		}
+		await ValueTaskEx.WhenAll(tasks).ConfigureAwait(false);
 
 		// After loading all data, syncronize data
 		_entrySyncThread = new Thread(SyncDataBackground)
@@ -245,6 +283,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		{
 			var allEntriesLookup = (await _appService.AllEntries(_lifetimeProvider.CancellationToken).ConfigureAwait(false))
 				.ToDictionary(x => x.SteamApp!.AppId);
+			var appsToSync = new List<SteamAppEntry>();
 			while(_entriesToSync.TryDequeue(out var rawEntry))
 			{
 				_lifetimeProvider.CancellationToken.ThrowIfCancellationRequested();
@@ -255,6 +294,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				if(!allEntriesLookup.TryGetValue(rawEntry.SteamApp.AppId, out var dbEntry))
 				{
 					_steamDb.UserApps.Add(rawEntry);
+					appsToSync.Add(rawEntry);
 					continue;
 				}
 				if(SequencesEqual(dbEntry.PlaytimeSlices, rawEntry.PlaytimeSlices, PlaytimeSliceEquality.Instance))
@@ -265,11 +305,14 @@ internal sealed class HomeViewModel : Core.ViewModel
 				var uniqueSegments = rawEntry.PlaytimeSlices.Except(dbEntry.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
 				if(uniqueSegments.Count is 0)
 				{
+					_steamDb.UserApps.Update(dbEntry);
+					appsToSync.Add(dbEntry);
 					continue;
 				}
 				_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
 				dbEntry.PlaytimeSlices.AddRange(uniqueSegments);
 				_steamDb.UserApps.Update(dbEntry);
+				appsToSync.Add(dbEntry);
 				_logger.Verbose("Updated playtime segments for app: {AppName} (AppID: {AppId}) with {SegmentCount} new segments.",
 					dbEntry.SteamApp!.Name, dbEntry.SteamApp.AppId, uniqueSegments.Count);
 			}
@@ -283,15 +326,21 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private async void ProcessQueuedApps()
 	{
 		var timingSemaphore = new SemaphoreSlim(1, 1);
+		int currentRetriesFromTime = 0;
+		int growthFactor = 1;
+		var currentWaitTime = TimeSpan.FromMilliseconds(500);
 		try
 		{
 			while(true)
 			{
 				_lifetimeProvider.CancellationToken.ThrowIfCancellationRequested();
-				await ProcessIfCountOrTimePasses(count: 4, time: TimeSpan.FromMilliseconds(500), token: _lifetimeProvider.CancellationToken).ConfigureAwait(false);
+				await ProcessIfCountOrTimePasses(count: 16, time: currentWaitTime, token: _lifetimeProvider.CancellationToken).ConfigureAwait(false);
 			}
 		}
-		catch { }
+		catch(Exception ex) when(ex is not OperationCanceledException) 
+		{ 
+			_logger.Error(ex, "An error occurred while processing the app queue.");
+		}
 		finally
 		{
 			timingSemaphore.TryRelease();
@@ -302,9 +351,22 @@ internal sealed class HomeViewModel : Core.ViewModel
 			if(_appReader.Count < count)
 			{
 				await ProcessAfterTime(count, time, token).ConfigureAwait(false);
+				currentRetriesFromTime++;
+				if(currentRetriesFromTime >= 3)
+				{
+					currentWaitTime *= Math.Pow(2.5, growthFactor++);
+					if(currentWaitTime.Seconds > 30)
+					{
+						currentWaitTime = TimeSpan.FromSeconds(30);
+					}
+					currentRetriesFromTime = 0;
+				}
 				return;
 			}
 			await AppendApps(count, token).ConfigureAwait(false);
+			currentWaitTime = TimeSpan.FromMilliseconds(500);
+			currentRetriesFromTime = 0;
+			growthFactor = 1;
 		}
 		async Task ProcessAfterTime(int count, TimeSpan time, CancellationToken token)
 		{
@@ -313,21 +375,47 @@ internal sealed class HomeViewModel : Core.ViewModel
 		}
 		async ValueTask AppendApps(int count, CancellationToken token)
 		{
-			await _appReader.WaitToReadAsync(token).ConfigureAwait(true);
 			App.Current.Dispatcher.Invoke(() =>
 			{
-				var processed = 0;
-				while(_appReader.TryRead(out var entry))
+				FooterText = $"Syncing {count} apps.";
+			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+			await _appReader.WaitToReadAsync(token).ConfigureAwait(true);
+			var addProcessed = 0;
+			var processed = 0;
+			var lookup = _appLookup(ref _appLookupCacheCount, ref _appLookupCache, SteamApps);
+			var queued = ArrayPool<SteamAppEntry>.Shared.Rent(count);
+			while(_appReader.TryRead(out var updatedEntry))
+			{
+				if(processed >= count)
 				{
-					if(processed >= count)
-					{
-						break;
-					}
-					SteamApps.Add(entry);
-					processed++;
+					break;
 				}
+				if(lookup.TryGetValue(updatedEntry.SteamApp!.AppId, out var existingEntry))
+				{
+					App.Current.Dispatcher.Invoke(() =>
+					{
+						SteamApps[existingEntry.Index] = updatedEntry;
+						App.Current.Dispatcher.Invoke(() =>
+						{
+							FooterText = $"Syncing {count} apps. {count - processed - 1}/{count} remaining...";
+						}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+					}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+				}
+				else
+				{
+					queued[addProcessed] = updatedEntry;
+				}
+				processed++;
+				_messageExchangeService.AddMessage(new Message(MessageType.Information, "Sync",
+						$"Syncronized app: {updatedEntry.SteamApp.Name} (AppID: {updatedEntry.SteamApp.AppId})"));
+			}
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				SteamApps.AddRange(queued.AsSpan(0, addProcessed));
 				HomeView.RefreshArrangement();
-			}, DispatcherPriority.Normal, cancellationToken: token);
+				FooterText = $"Syncing no apps.";
+			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+			ArrayPool<SteamAppEntry>.Shared.Return(queued);
 		}
 	}
 	// TODO
@@ -353,15 +441,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 			if(!potentialStoreApp.IsT0)
 			{
 				_logger.Warning("Requested to stream app with AppID {AppId}, but no such app was found.", appId);
-				var error = potentialStoreApp.Match<OneOf<ParseResult, HttpStatusCode>>(
+				var error = potentialStoreApp.Match<Message>(
 					app => throw new InvalidOperationException("Unreachable code, expected error result."),
-					parseResult => parseResult,
-					httpStatusCode => httpStatusCode);
-				_webFetchErrors.Enqueue(error);
+					parseResult => new Message(MessageType.Error, "Web", $"Failed to parse Store details for App '{appId}'. Parsing Error: {parseResult}"),
+					httpStatusCode => new Message(MessageType.Error, "Web", $"Failed to fetch Store details for app '{appId}'. Status Code: {httpStatusCode}"));
+				_messageExchangeService.AddMessage(error);
 				return;
 			}
 			var storeApp = potentialStoreApp.AsT0;
-			if(storeApp is not { Success: true }) // equiv -> storeApp is { Success: false }
+			if(storeApp is not { Success: true })
 			{
 				return;
 			}
@@ -378,82 +466,6 @@ internal sealed class HomeViewModel : Core.ViewModel
 		{
 			_logger.Error(ex, "An error occurred while fetching and loading app with AppID {AppId}.", appId);
 		}
-	}
-
-	private async Task AppendLocalAppsAndSaveToDb()
-	{
-		var (localApps, appEntries, fileSegmentsLookup) = await ValueTaskEx.WhenAll(
-			_appService.GetLocalAppsAsync(_lifetimeProvider.CancellationToken), 
-			_appService.AllEntries(_lifetimeProvider.CancellationToken),
-			 _playtimeService.GetPlayimeSegments(_lifetimeProvider.CancellationToken));
-		if(fileSegmentsLookup.IsNullOrEmpty())
-		{
-			_logger.Warning("No playtime segments could be retrieved from the primary source. This could indicate no log file was found.");
-			return;
-		}
-		_logger.Debug("Fetching local apps...");
-
-		var appEntriesLookup = appEntries
-			.Where(entry => entry.StoreDetails is { Exists: true } )
-			.ToHashSet(AlternateAppLookup.Instance)
-			.GetAlternateLookup<SteamStoreAppData>();
-
-		_logger.Debug("Adding new local apps to database...");
-
-		try
-		{
-			bool hasNewEntry = false;
-			foreach(var notFoundEntry in localApps.Where(app => app.Success && !appEntriesLookup.Contains(app)))
-			{
-				notFoundEntry.Id = (int)notFoundEntry.StoreData!.AppId;
-				notFoundEntry.StoreData.Id = (int)notFoundEntry.StoreData.AppId;
-				var appToAdd = new SteamStoreApp(notFoundEntry);
-				if(!fileSegmentsLookup.TryGetValue(notFoundEntry.StoreData.AppId, out var segments))
-				{
-					segments = [];
-				}
-				_steamDb.UserApps.Add(new SteamAppEntry()
-				{
-					StoreDetails = appToAdd,
-					PlaytimeSlices = segments
-				});
-				_steamDb.SteamStoreApps.Add(appToAdd);
-				hasNewEntry = true;
-				_logger.Verbose("New local app added to database: {AppName} (AppID: {AppId})",
-					notFoundEntry.StoreData.Name, notFoundEntry.StoreData.AppId);
-			}
-			if(hasNewEntry)
-			{
-				await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			}
-
-			foreach(var app in appEntriesLookup.Set.Where(x => x.SteamApp is not null))
-			{
-				var segments = fileSegmentsLookup[app.SteamApp!.AppId];
-				if(SequencesEqual(app.PlaytimeSlices, segments, PlaytimeSliceEquality.Instance))
-				{
-					continue;
-				}
-				var uniqueSegments = segments.Except(app.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
-				if(uniqueSegments.Count is 0)
-				{
-					continue;
-				}
-
-				_steamDb.PlaytimeSlices.AddRange(uniqueSegments);
-				app.PlaytimeSlices.AddRange(uniqueSegments);
-				_steamDb.UserApps.Update(app);
-				_logger.Verbose("Updated playtime segments for app: {AppName} (AppID: {AppId}) with {SegmentCount} new segments.",
-					app.SteamApp.Name, app.SteamApp.AppId, uniqueSegments.Count);
-			}
-			await _steamDb.SaveChangesAsync(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		}
-		catch(Exception ex)
-		{
-			_logger.Error(ex, "An error occurred while syncing local apps with the database.");
-			return;
-		}
-		_logger.Debug("Local apps synced with database.");
 	}
 	private static bool SequencesEqual(IEnumerable<PlaytimeSlice> first, IEnumerable<PlaytimeSlice> second, IEqualityComparer<PlaytimeSlice> comparer) =>
 		first.ToHashSet(comparer).SetEquals(second);

@@ -73,12 +73,18 @@
                 <ColumnDefinition Width="20" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{Binding FooterText}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Foreground="LightGray" FontSize="12" Margin="5,0,0,0"/>
-            <Image Grid.Column="1" Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4">
-                <Image.Effect>
-                    <effects:InvertEffect />
-                </Image.Effect>
-            </Image>
+                        Foreground="LightGray" FontSize="12" Margin="5,0,0,0" FontStyle="Italic"/>
+            <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
+                                         BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
+                <usercontrols:ExtendedButton.Content>
+                    <Image Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image.Effect>
+                            <effects:InvertEffect />
+                        </Image.Effect>
+                    </Image>
+                </usercontrols:ExtendedButton.Content>
+            </usercontrols:ExtendedButton>
         </Grid>
     </Grid>
 </UserControl>
