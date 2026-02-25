@@ -297,11 +297,11 @@ internal sealed class HomeViewModel : Core.ViewModel
 					appsToSync.Add(rawEntry);
 					continue;
 				}
+				dbEntry.StoreDetails = rawEntry.StoreDetails;
 				if(SequencesEqual(dbEntry.PlaytimeSlices, rawEntry.PlaytimeSlices, PlaytimeSliceEquality.Instance))
 				{
 					continue;
 				}
-				dbEntry.StoreDetails = rawEntry.StoreDetails;
 				var uniqueSegments = rawEntry.PlaytimeSlices.Except(dbEntry.PlaytimeSlices, PlaytimeSliceEquality.Instance).ToList();
 				if(uniqueSegments.Count is 0)
 				{
@@ -395,10 +395,6 @@ internal sealed class HomeViewModel : Core.ViewModel
 					App.Current.Dispatcher.Invoke(() =>
 					{
 						SteamApps[existingEntry.Index] = updatedEntry;
-						App.Current.Dispatcher.Invoke(() =>
-						{
-							FooterText = $"Syncing {count} apps. {count - processed - 1}/{count} remaining...";
-						}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 					}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 				}
 				else

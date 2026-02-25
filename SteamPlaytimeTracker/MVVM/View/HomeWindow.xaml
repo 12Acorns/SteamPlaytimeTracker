@@ -7,7 +7,7 @@
         xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel"
         xmlns:windowchrome="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.WindowChrome"
         xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
-        d:DataContext="{d:DesignInstance Type=viewmodel:HomeWindowModel}"
+        d:DataContext="{d:DesignInstance Type=local:HomeWindow}"
         mc:Ignorable="d"
         MinWidth="350"  MinHeight="400"
         Background="Transparent"
@@ -29,7 +29,7 @@
                 <RowDefinition Height="25" />
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <windowchrome:WindowChromeBar />
+            <windowchrome:WindowChromeBar Title="{Binding Title}" />
             <ContentControl Grid.Row="1" Content="{Binding NavigationService.CurrentView}" />
         </Grid>
         <Border.Effect>

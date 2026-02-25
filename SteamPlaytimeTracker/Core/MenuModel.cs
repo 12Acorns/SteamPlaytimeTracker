@@ -7,7 +7,7 @@ internal abstract class MenuModel : ObservableObject
 	internal required string Title
 	{
 		get;
-		init
+		set
 		{
 			field = value;
 			OnPropertyChanged();

@@ -1,5 +1,4 @@
 ﻿using SteamPlaytimeTracker.Core;
-using System.ComponentModel;
 using System.Windows;
 
 namespace SteamPlaytimeTracker.Services.Menu;

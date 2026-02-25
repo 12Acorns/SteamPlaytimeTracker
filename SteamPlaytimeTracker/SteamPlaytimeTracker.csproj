@@ -38,6 +38,11 @@
   <ItemGroup>
     <None Remove="MVVM\View\SplashScreen1.png" />
     <None Remove="resources\Default-Tex.png" />
+    <None Remove="resources\Icons\Data_Alert.svg" />
+    <None Remove="resources\Icons\Error_Icon.svg" />
+    <None Remove="resources\Icons\Information_Icon.svg" />
+    <None Remove="resources\Icons\Notification.svg" />
+    <None Remove="resources\Icons\Warning.svg" />
     <None Remove="resources\Info_Icon.png" />
     <None Remove="resources\Localization\locales\en-gb.json" />
     <None Remove="resources\Name-Order-Icon.png" />
@@ -81,6 +86,24 @@
 
   <ItemGroup>
     <Resource Include="resources\Default-Tex.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Data_Alert.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Error_Icon.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Information_Icon.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Notification.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Notification_Alert.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Warning.svg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="resources\Info_Icon.png">

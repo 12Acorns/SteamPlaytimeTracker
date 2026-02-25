@@ -3,20 +3,26 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             d:DataContext="{d:DesignInstance Type=local:MessageInfoControl}"
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Messages"
              mc:Ignorable="d" 
-             d:DesignHeight="80" d:DesignWidth="800">
+             d:DesignHeight="80" d:DesignWidth="800"
+             MinHeight="30">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="80" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" Source="{Binding IconPath}" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Center"
-               RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" />
-        <Border Grid.Column="1" BorderThickness="2,0,0,0" BorderBrush="Black">
-            <TextBlock Text="{Binding MessageText}" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Left"
+        <Border BorderBrush="Gray" BorderThickness="0,1,0,1" Panel.ZIndex="1" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Path Data="{Binding IconData, RelativeSource={RelativeSource AncestorType=UserControl}}" VerticalAlignment="Center" HorizontalAlignment="Center"
+              RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" Stretch="Uniform" Width="20" Height="20"
+              Stroke="{Binding IconColourMultiplier, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            <Border Grid.Column="1" BorderThickness="2,0,0,0" BorderBrush="Black">
+                <TextBlock Text="{Binding Message, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Left"
                        Foreground="LightGray" FontSize="14" TextWrapping="Wrap" />
-            
-        </Border>
+
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

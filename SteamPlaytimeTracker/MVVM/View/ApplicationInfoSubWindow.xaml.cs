@@ -10,4 +10,9 @@ public partial class ApplicationInfoSubWindow : Window, IMenuWindow<ApplicationI
     {
         InitializeComponent();
     }
+
+	private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+	{
+		BorderThickness = WindowState is WindowState.Maximized ? new Thickness(6) : new Thickness(0);
+	}
 }

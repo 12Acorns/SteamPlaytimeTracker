@@ -1,28 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-namespace SteamPlaytimeTracker.MVVM.View.UserControls.Messages
+namespace SteamPlaytimeTracker.MVVM.View.UserControls.Messages;
+
+public partial class MessageInfoControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MessageInfoControl.xaml
-    /// </summary>
-    public partial class MessageInfoControl : UserControl
+    private static readonly DependencyProperty _iconDataProperty = DependencyProperty.Register(
+        nameof(IconData), typeof(Geometry), typeof(MessageInfoControl), new PropertyMetadata(Geometry.Empty));
+	private static readonly DependencyProperty _messageProperty = DependencyProperty.Register(
+        nameof(Message), typeof(string), typeof(MessageInfoControl), new PropertyMetadata(string.Empty));
+    private static readonly DependencyProperty _iconColourMultiplierProperty = DependencyProperty.Register(
+        nameof(IconColourMultiplier), typeof(SolidColorBrush), typeof(MessageInfoControl), new PropertyMetadata(Brushes.White));
+
+
+	public MessageInfoControl()
     {
-        public MessageInfoControl()
-        {
-            InitializeComponent();
-        }
-    }
+        InitializeComponent();
+	}
+
+    public Geometry IconData 
+    {
+        get => (Geometry)GetValue(_iconDataProperty);
+        set => SetValue(_iconDataProperty, value);
+	}
+    public SolidColorBrush IconColourMultiplier
+    {
+        get => (SolidColorBrush)GetValue(_iconColourMultiplierProperty);
+        set => SetValue(_iconColourMultiplierProperty, value);
+	}
+	public string Message
+    {
+        get => (string)GetValue(_messageProperty);
+        set => SetValue(_messageProperty, value);
+	}
 }
