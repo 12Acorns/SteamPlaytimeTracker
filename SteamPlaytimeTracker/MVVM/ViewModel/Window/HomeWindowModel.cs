@@ -10,7 +10,8 @@ internal sealed class HomeWindowModel : MenuModel
 {
 	public HomeWindowModel(INavigationService navigationService,  AppConfig config, LocalizationManager localization)
 	{
-		Title = "Home Window :3";
+		// TODO: add localization support for the title
+		Title = Random.Shared.Next(0, 1000) == 54 ? "Home Window :3" : "Home Window";
 		NavigationService = navigationService;
 
 		if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))

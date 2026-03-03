@@ -61,7 +61,6 @@ internal sealed class HomeViewModel : Core.ViewModel
 	private readonly Thread _queueProcessThread;
 
 	private readonly ConcurrentQueue<SteamAppEntry> _entriesToSync = [];
-	private Thread? _entrySyncThread;
 
 	public HomeViewModel(INavigationService navigationService, IAsyncLifetimeService lifetimeProvider, IAppService appService, ILogger logger,
 		AppConfig appConfig, DbAccess steamDb, ILocalizationService localizationService, IPlaytimeService playtimeService, 
@@ -261,28 +260,23 @@ internal sealed class HomeViewModel : Core.ViewModel
 		try
 		{
 			// Long running, need to optimise
+			// As a temp fix, due to how caching works, I will call this method in app startup but not await the task, allowing loading
+			// and not halt startup by needing to wait on main thread if i were to wait the task (due to startup not being a async task itself)
+			// The reason this can be done is due to the cache having an internal semaphore that handles retrieval
+			// Meaning once the first task begins loading data, any other calls to the cache will wait until the first call has loaded data and released the semaphore,
+			// allowing them to then retrieve data from the cache without needing to load data themselves
+			// Giving the illusion to faster loading times, when in reality the loading is just being done in the background whilst WPF starts up
 			var diskApps = await _playtimeService.GetPlayimeSegments(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-			var tasks = new ValueTask[diskApps.Count];
-			foreach(var lookup in diskApps.Index())
-			{
-				tasks[lookup.Index] = FetchAndQueueApp(lookup.Item.Key, _lifetimeProvider.CancellationToken);
-			}
-			await ValueTaskEx.WhenAll(tasks).ConfigureAwait(false);
+			await ValueTaskEx.WhenAll(diskApps.Select(x => FetchAndQueueApp(x.Key, _lifetimeProvider.CancellationToken))).ConfigureAwait(false);
 		}
 		finally
 		{
 			// After loading all data, syncronize data
-			_entrySyncThread = new Thread(SyncDataBackground)
-			{
-				Priority = ThreadPriority.BelowNormal,
-				IsBackground = true,
-				Name = "Sync Apps To Db"
-			};
-			_entrySyncThread.Start();
+			_ = SyncDataBackground();
 		}
 
 	}
-	private async void SyncDataBackground()
+	private async Task SyncDataBackground()
 	{
 		try
 		{

@@ -39,7 +39,17 @@ internal sealed class PlaytimeService : IPlaytimeService
 					return [];
 				}
 				LoggingService.Logger.Information("Playtime segments successfully retrieved from the primary source.");
-				return await res.GroupBy(x => x.AppId).ToDictionaryAsync(x => x.Key, y => y.ToList(), cancellationToken: token).ConfigureAwait(false);
+				var ret = new Dictionary<uint, List<PlaytimeSlice>>();
+				await foreach(var item in res.WithCancellation(cancellationToken).ConfigureAwait(false))
+				{
+					ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(ret, item.AppId, out var exists);
+					if(!exists)
+					{
+						list = [];
+					}
+					list!.Add(item);
+				}
+				return ret;
 			}
 			catch(Exception ex)
 			{
@@ -85,7 +95,7 @@ internal sealed class PlaytimeService : IPlaytimeService
 						ref var pendingStack = ref CollectionsMarshal.GetValueRefOrAddDefault(pendingDates, pendingKey, out var exists)!;
 						if(!exists)
 						{
-							pendingStack = new Stack<string>();
+							pendingStack = [];
 						}
 						pendingStack.Push(pendingStartDate);
 					}
@@ -122,102 +132,5 @@ internal sealed class PlaytimeService : IPlaytimeService
 			yield break;
 		}
 	}
-
-	private static async Task<IEnumerable<IGrouping<uint, PlaytimeSlice>>?> GetSegmentsFromPrimary_OLD(CancellationToken cancellationToken = default) =>
-		await Task.Run(() => IOUtility.HandleTmpFileLifetime(
-		ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), filePath =>
-		{
-			var dates = new List<(string Date, uint AppId, bool IsEnd)>();
-
-			var segments = new List<PlaytimeSliceDTO>(capacity: 120);
-			foreach(var line in File.ReadAllLines(filePath))
-			{
-				if(OutParser.TryParse(line, "[{startDate}] AppID {appIdS} adding PID {pidIdS} as a tracked process {appPath}",
-					out string startDate, out uint appIdS, out int pidIdS, out string appPath))
-				{
-					dates.Add((startDate, appIdS, false));
-					continue;
-				}
-				// Remove any dangling start dates that don't have an end date, do not know if the whitespace indicates a new steam session
-				// so assume it does
-				if(string.IsNullOrWhiteSpace(line))
-				{
-					dates.RemoveLastWhile(date => !date.IsEnd);
-					continue;
-				}
-				if(OutParser.TryParse(line, "[{endDate}] AppID {appId} no longer tracking PID {pidId}, exit code {exitCode}",
-					out string endDate, out uint appId, out int pidId, out int exitCode))
-				{
-					dates.Add((endDate, appId, true));
-				}
-			}
-
-			if(dates.Count % 2 != 0)
-			{
-				dates.RemoveLastWhile(date => !date.IsEnd);
-			}
-			var groupedDates = dates.GroupBy(x => x.AppId);
-			List<IEnumerable<(string Date, uint AppId, bool IsEnd)>> groupedSegments = [];
-			foreach(var group in groupedDates)
-			{
-				List<(string Date, uint AppId, bool IsEnd)> localSegments = [];
-				// Thankfully order is preserved when doing groupings
-				var items = group.ToArray();
-				int index = 0;
-				while(index < items.Length)
-				{
-					if(items[index].IsEnd)
-					{
-						localSegments.Add(items[index]);
-						index++;
-						continue;
-					}
-					var startIdx = index;
-					var first = items[index];
-					while(index + 1 < items.Length && items[index + 1].AppId == first.AppId && !items[index + 1].IsEnd)
-					{
-						index++;
-					}
-					localSegments.Add(first);
-
-					index++;
-				}
-				var distinctSegments = localSegments.DistinctBy(static x => x.Date).ToList();
-				distinctSegments.RemoveLastWhile(distinct => !distinct.IsEnd);
-				int idx = distinctSegments.Count - 1;
-				while(idx >= 0)
-				{
-					while(idx > 0 && distinctSegments[idx].IsEnd && distinctSegments[idx - 1].IsEnd)
-					{
-						distinctSegments.RemoveAt(idx);
-						idx--;
-					}
-					idx--;
-				}
-				groupedSegments.Add(distinctSegments);
-			}
-			// I believe select many maintains order
-			return groupedSegments.Select(static y => y.Chunk(2).Select(static x =>
-			{
-				if(x.Length != 2)
-				{
-					throw new InvalidOperationException("Playtime segments must be in pairs of start and end dates.");
-				}
-
-				var startDateOffset = DateTimeOffset.ParseExact(
-						x[0].Date,
-						"yyyy-MM-dd HH:mm:ss",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.AssumeLocal);
-				var endDateOffset = DateTimeOffset.ParseExact(
-					x[1].Date,
-					"yyyy-MM-dd HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.AssumeLocal);
-				var dateDelta = endDateOffset - startDateOffset;
-				return new PlaytimeSlice { SessionStart = startDateOffset, SessionLength = dateDelta, AppId = x[0].AppId };
-			})).SelectMany(static x => x).GroupBy(static x => x.AppId);
-		})).ConfigureAwait(false);
-
 	private readonly record struct GameKey(uint AppId, int Pid);
 }

@@ -160,6 +160,9 @@ public partial class App : Application
 
 		ServiceProvider = serviceCollection.BuildServiceProvider();
 
+		_ = ServiceProvider.GetRequiredService<IPlaytimeService>().GetPlayimeSegments(
+			ServiceProvider.GetRequiredService<IAsyncLifetimeService>().CancellationToken);
+
 		OnSessionClose += (sender, e) =>
 		{
 			if(e.Cancel)
