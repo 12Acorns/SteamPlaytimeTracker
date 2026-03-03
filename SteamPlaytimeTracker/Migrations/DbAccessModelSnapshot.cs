@@ -39,7 +39,7 @@ namespace SteamPlaytimeTracker.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Age")
+                    b.Property<int?>("Age")
                         .HasColumnType("INTEGER")
                         .HasAnnotation("Relational:JsonPropertyName", "required_age");
 

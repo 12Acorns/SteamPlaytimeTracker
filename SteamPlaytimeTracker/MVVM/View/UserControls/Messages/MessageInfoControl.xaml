@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="SteamPlaytimeTracker.MVVM.View.UserControls.Messages.MessageInfoControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             d:DataContext="{d:DesignInstance Type=local:MessageInfoControl}"
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Messages"
+             mc:Ignorable="d" 
+             d:DesignHeight="80" d:DesignWidth="800"
+             MinHeight="30">
+    <Grid>
+        <Border BorderBrush="Gray" BorderThickness="0,1,0,1" Panel.ZIndex="1" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="40" />
+            </Grid.ColumnDefinitions>
+            <Border BorderThickness="0,0,2,0" BorderBrush="Black">
+                <TextBlock Text="{Binding Message, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Left"
+                       Foreground="LightGray" FontSize="14" TextWrapping="Wrap" />
+
+            </Border>
+            <Path Grid.Column="1" Data="{Binding IconData, RelativeSource={RelativeSource AncestorType=UserControl}}" VerticalAlignment="Center" HorizontalAlignment="Center"
+              RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" Stretch="Uniform" Width="20" Height="20"
+              Stroke="{Binding IconColourMultiplier, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+        </Grid>
+    </Grid>
+</UserControl>

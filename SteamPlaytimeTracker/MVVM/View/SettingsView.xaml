@@ -10,7 +10,8 @@
         xmlns:settings="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Settings"
         xmlns:localedata="clr-namespace:SteamPlaytimeTracker.Localization.Data"
         xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions" 
-        xmlns:global="clr-namespace:SteamPlaytimeTracker"
+        xmlns:global="clr-namespace:SteamPlaytimeTracker" 
+        d:DataContext="{d:DesignInstance Type=viewmodel:SettingsViewModel}"
         mc:Ignorable="d"
         d:DesignHeight="450" d:DesignWidth="800"
         Background="{StaticResource defaultGray}">
@@ -45,7 +46,32 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-
+                </Grid>
+                <Grid Name="Current_LoggingLevel">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="156" />
+                        <ColumnDefinition Width="0.8*" />
+                        <ColumnDefinition Width="0.15*" MinWidth="60" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectLogLevelKey}}" 
+                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
+                    <ComboBox Grid.Column="2" Margin="2" 
+                            ItemsSource="{Binding AvailableLogLevels}" 
+                            SelectedItem="{Binding SelectedLogLevel, Converter={StaticResource DefaultEnumToStringConverter}, Mode=TwoWay}" />
+                </Grid>
+                <Grid Name="Current_FontSelection">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="156" />
+                        <ColumnDefinition Width="0.8*" />
+                        <ColumnDefinition Width="0.15*" MinWidth="60" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Tmp" 
+                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
+                    <settings:SearchBarFilteredDropDownUC Grid.Column="2"
+                            SearchBarBackground="White"
+                            SearchBarTextColour="Black"
+                            SearchItemsSource="{Binding AvailableFontsView}"
+                            SelectedSearchItem="{Binding SelectedFont, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
             </ItemsControl>
         </ScrollViewer>

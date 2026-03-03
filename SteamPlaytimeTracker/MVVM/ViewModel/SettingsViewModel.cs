@@ -1,32 +1,41 @@
-﻿using SteamPlaytimeTracker.Services.Navigation;
+﻿using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
+using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Localization.Data;
-using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
+using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Data;
 using System.Diagnostics;
+using Serilog.Events;
 using System.Windows;
 using System.IO;
 using Serilog;
-using SteamPlaytimeTracker.Services.Localization;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
-	private readonly INavigationService _navigationService;
+	private readonly FontFamily[] _availableFonts;
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
 
+	
 	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService)
 	{
-		_navigationService = navigationService;
+		NavigationService = navigationService;
 		_logger = logger;
 		_config = config;
+
 		LocalizationService = localizationService;
 		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
+		AvailableLogLevels = Enum.GetNames<LogEventLevel>();
+		SelectedLogLevel = _config.AppData.LoggingData.LogLevel;
 
 		ConfirmSettingsCommand = new RelayCommand(o =>
 		{
@@ -41,7 +50,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 
 				_logger.Information("Successfully saved AppData", _config.AppData);
 
-				_navigationService.NavigateTo<HomeViewModel>();
+				NavigationService.NavigateTo<HomeViewModel>();
 			}
 		});
 		OpenLogDirCommand = new RelayCommand(o =>
@@ -72,13 +81,61 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			}
 		});
 		AvailableLocales = LocalizationManager.GetAvailableLocales().ToArray();
+
+		_availableFonts = Fonts.SystemFontFamilies.OrderBy(f => f.Source).ToArray();
+		AvailableFontsView = (ListCollectionView)CollectionViewSource.GetDefaultView(_availableFonts);
+		SelectedFont = new FontFamily(_config.AppData.StyleData.CurrentFont ?? "Segoe UI");
+
+		TextChangedFiltering = new(data =>
+		{
+			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, string text, ..])
+			{
+				return;
+			}
+			searchBar.SearchContent.IsDropDownOpen = true;
+			AvailableFontsView.Filter = item =>
+			{
+				return item is FontFamily fontFamily && text is string filterText &&
+					fontFamily.Source.Contains(filterText);
+			};
+		});
+		KeyInputCommand = new(data =>
+		{
+			if(data is not List<object> parameters || parameters is not [SearchBarFilteredDropDownUC searchBar, KeyEventArgs keyArgs])
+			{
+				return;
+			}
+			switch(keyArgs.Key)
+			{
+				case Key.Return or Key.Enter:
+					if(searchBar.SearchContent.SelectedIndex is -1)
+					{
+						if(AvailableFontsView.Count is 0)
+						{
+							return;
+						}
+						searchBar.SearchContent.SelectedIndex = 0;
+					}
+					if(searchBar.SearchContent.SelectedItem is FontFamily selectedFont)
+					{
+						SelectedFont = selectedFont;
+						searchBar.SearchContent.IsDropDownOpen = false;
+						searchBar.SearchContent.RemoveFocus();
+					}
+					searchBar.SearchContent.SelectedIndex = -1;
+					break;
+				case Key.Escape:
+					searchBar.SearchContent.IsDropDownOpen = false;
+					searchBar.SearchContent.RemoveFocus();
+					break;
+			}
+		});
 	}
 
 	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 	public ILocalizationService LocalizationService { get; }
-
-	public INavigationService NavigationService => _navigationService;
+	public INavigationService NavigationService { get; }
 	public string SteamInstallPath
 	{
 		get;
@@ -88,7 +145,27 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	} = string.Empty;
-	public LocaleData[] AvailableLocales { get; private set; } = [];
+	public string[] AvailableLogLevels { get; private set; }
+	public LogEventLevel SelectedLogLevel
+	{
+		get;
+		set
+		{
+			field = value;
+			LoggingService.LoggingLevelSwitcher.MinimumLevel = field;
+			_config.AppData.LoggingData.LogLevel = field;
+			OnPropertyChanged();
+		}
+	}
+	public LocaleData[] AvailableLocales
+	{
+		get;
+		private set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = [];
 	public LocaleData CurrentLocale
 	{
 		get
@@ -103,6 +180,33 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			OnPropertyChanged();
 		}
 	}
+	public ListCollectionView AvailableFontsView
+	{
+		get;
+		set
+		{
+			field = value;
+			OnPropertyChanged();
+		}
+	} = default!;
+	public FontFamily SelectedFont
+	{
+		get;
+		set
+		{
+			// temp fix, i do not know why this is getting called during a view change
+			if(value is null)
+			{
+				return;
+			}
+			field = value;
+			AddOrUpdateResource("DefaultFontFamily", field);
+			_config.AppData.StyleData.CurrentFont = field.Source;
+			OnPropertyChanged();
+		}
+	}
+	public RelayCommand TextChangedFiltering { get; }
+	public RelayCommand KeyInputCommand { get; }
 
 	private bool VerifySettings(string path, bool showMsgBox = false)
 	{

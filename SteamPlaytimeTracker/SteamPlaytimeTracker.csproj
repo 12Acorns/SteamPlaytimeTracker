@@ -13,14 +13,17 @@
 	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
-  <Target Name="CopyLocales" AfterTargets="Build">
+	<Target Name="CopyLocalesPublish" AfterTargets="Publish">
+		<Copy SourceFiles="@(LocaleFiles)" DestinationFiles="@(LocaleFiles->'$(ProjectDir)$(PublishDir)locale\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
+	<Target Name="CopyLocalesBuild" AfterTargets="Build">
       <ItemGroup>
   	    <!-- Include only files under resources\Locale and its subfolders -->
   	    <LocaleFiles Include="resources\Localization\**\*.*" />
       </ItemGroup>
   
       <Copy SourceFiles="@(LocaleFiles)" DestinationFiles="@(LocaleFiles->'$(OutDir)locale\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-  </Target>
+	</Target>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>embedded</DebugType>
@@ -35,11 +38,18 @@
   <ItemGroup>
     <None Remove="MVVM\View\SplashScreen1.png" />
     <None Remove="resources\Default-Tex.png" />
+    <None Remove="resources\Icons\Data_Alert.svg" />
+    <None Remove="resources\Icons\Error_Icon.svg" />
+    <None Remove="resources\Icons\Information_Icon.svg" />
+    <None Remove="resources\Icons\Notification.svg" />
+    <None Remove="resources\Icons\Warning.svg" />
+    <None Remove="resources\Info_Icon.png" />
     <None Remove="resources\Localization\locales\en-gb.json" />
     <None Remove="resources\Name-Order-Icon.png" />
     <None Remove="resources\Name-Order-IconCenter_First-Last.png" />
     <None Remove="resources\Name-Order-IconCenter_Last-First.png" />
     <None Remove="resources\Progress-Spinner-Mask.png" />
+    <None Remove="resources\settings_cog.svg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,37 +59,60 @@
   <ItemGroup>
     <PackageReference Include="Config.Net" Version="5.2.1" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.Common" Version="8.1.3" />
-    <PackageReference Include="FastEnum" Version="2.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="9.0.9" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7">
+    <PackageReference Include="EntityFrameworkCore.Exceptions.Sqlite" Version="8.1.3" />
+    <PackageReference Include="FastEnum" Version="2.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="OneOf.Monads" Version="1.21.0" />
+    <PackageReference Include="OneOf.Monads" Version="1.24.0" />
     <PackageReference Include="OutParser" Version="1.1.1" />
-    <PackageReference Include="Polly" Version="8.6.3" />
-    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-    <PackageReference Include="Polly.Extensions" Version="8.6.3" />
-    <PackageReference Include="Polly.RateLimiting" Version="8.6.3" />
-    <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
-    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.1.57" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.3" />
-    <PackageReference Include="System.Runtime.Caching" Version="9.0.8" />
+    <PackageReference Include="System.Linq.Async" Version="7.0.0" />
+    <PackageReference Include="System.Runtime.Caching" Version="10.0.3" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
-    <PackageReference Include="VirtualizingWrapPanel" Version="2.3.1" />
+    <PackageReference Include="VirtualizingWrapPanel" Version="2.3.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="resources\Default-Tex.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="resources\Icons\Data_Alert.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Error_Icon.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Information_Icon.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Notification.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Notification_Alert.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\Warning.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Info_Icon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="resources\Progress-Spinner-Mask.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Settings_Cog.svg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="resources\Sorting\Playtime-Order-Icon.png">

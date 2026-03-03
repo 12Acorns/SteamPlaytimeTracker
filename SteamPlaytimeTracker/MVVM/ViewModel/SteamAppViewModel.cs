@@ -1,5 +1,6 @@
 ﻿using ScottPlot;
 using ScottPlot.Plottables;
+using ScottPlot.Stylers;
 using ScottPlot.WPF;
 using SkiaSharp.Views.WPF;
 using SteamPlaytimeTracker.Core;
@@ -43,6 +44,15 @@ internal class SteamAppViewModel : Core.ViewModel
 			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, _localizationService[GlobalData.LocAppViewMonthPlaytimeViewKey], true),
 			new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, _localizationService[GlobalData.LocAppViewDayPlaytimeViewKey], false)
 		];
+
+		localizationService.PropertyChanged += (sender, args) =>
+		{
+			AvailableGraphingOptions = [
+				new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, _localizationService[GlobalData.LocAppViewYearPlaytimeViewKey], false),
+				new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, _localizationService[GlobalData.LocAppViewMonthPlaytimeViewKey], true),
+				new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, _localizationService[GlobalData.LocAppViewDayPlaytimeViewKey], false)
+			];
+		};
 	}
 
 	public INavigationService NavigationService { get; }
@@ -187,7 +197,7 @@ internal class SteamAppViewModel : Core.ViewModel
 
 	public override void OnLoad(params object[] args)
 	{
-		if(args.Length < 1 || args[0] is not SteamAppEntry app)
+		if(args is not [SteamAppEntry app, ..])
 		{
 			throw new ArgumentException("Expected a SteamApp object as the first argument.");
 		}
@@ -230,16 +240,11 @@ internal class SteamAppViewModel : Core.ViewModel
 			var endOfSpecifiedDate = new DateTime(startOfSpecifiedDate.Year + 1, 1, 1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
-		static (DateTime Start, DateTime End) GetStartAndEndOfMonth(string monthName)
+		(DateTime Start, DateTime End) GetStartAndEndOfMonth(string monthName)
 		{
+			var year = DateTime.ParseExact(Plot.Plot.Axes.Title.Label.Text, "yyyy", CultureInfo.InvariantCulture);
 			var startOfSpecifiedDate = DateTime.ParseExact(monthName, "MMMM", CultureInfo.InvariantCulture);
-			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
-
-			return (startOfSpecifiedDate, endOfSpecifiedDate);
-		}
-		static (DateTime Start, DateTime End) GetStartAndEndOfMonthFromMonthNum(int month)
-		{
-			var startOfSpecifiedDate = new DateTime(DateTime.Now.Year, month, 1);
+			startOfSpecifiedDate = new DateTime(year.Year, startOfSpecifiedDate.Month, 1);
 			var endOfSpecifiedDate = startOfSpecifiedDate.LastDayOfMonth() + TimeSpan.FromDays(1);
 			return (startOfSpecifiedDate, endOfSpecifiedDate);
 		}
@@ -267,7 +272,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				{
 					GraphViewSelectionId.YearPlaytimeId => GetStartAndEndOfYear(dateSpecified),
 					GraphViewSelectionId.MonthPlaytimeId => GetStartAndEndOfMonth(dateSpecified),
-					GraphViewSelectionId.DayPlaytimeId => GetStartAndEndOfMonthFromMonthNum(StartDate.Month),
+					GraphViewSelectionId.DayPlaytimeId => (StartDate, EndDate),
 					_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 				};
 				SelectedGraphingOption = AvailableGraphingOptions.First(x => x.Id.Id == Math.Min(SelectedGraphingOption.Id.Id + 1, 2));
@@ -345,7 +350,7 @@ internal class SteamAppViewModel : Core.ViewModel
 					Position = idx,
 					LineWidth = 1.5f,
 					ValueBase = 0,
-					FillColor = GlobalData.GetYearPlotColour(DateTime.ParseExact(x.Key, "yyyy", CultureInfo.InvariantCulture).Year),
+					FillColor = Plot.Plot.Add.GetNextColor(),
 				};
 			});
 
@@ -384,6 +389,53 @@ internal class SteamAppViewModel : Core.ViewModel
 		Plot.Plot.XLabel(_localizationService[GlobalData.LocMonthGraphY], 20);
 
 		return Plot.Plot.Add.Bars(playtimeByMonth.ToList());
+		//int idx = 1;
+		//var playtimeByMonth = game.PlaytimeSlices.Where(x => x.SessionStart.Ticks >= start && x.SessionStart.Ticks < end)
+		//	.GroupBy(x => new DateTime(x.SessionStart.Ticks).ToString("MMMM", CultureInfo.InvariantCulture))
+		//	.Select(x =>
+		//	{
+		//		var month = x.Key;
+		//		var yearSlices = x.GroupBy(y => y.SessionStart.Year);
+		//		return (Month: month, YearsInMonth: yearSlices);
+		//	})
+		//	.Select(x =>
+		//	{
+		//		var summedHoursInEachYearForMonth = x.YearsInMonth.Select(y => (Year: y.Key, Playtime: y.Sum(z => z.SessionLength.Ticks)));
+		//		return (x.Month, summedHoursInEachYearForMonth.Select(y =>
+		//		{
+		//			var playtimeHours = TimeSpan.FromTicks(y.Playtime).TotalHours;
+		//			return new Bar()
+		//			{
+		//				Value = playtimeHours,
+		//				ValueLabel = $"{x.Month} | {playtimeHours:n2}",
+		//				LabelOnTop = false,
+		//				Position = idx++,
+		//				ValueBase = 0,
+		//				FillColor = Palette.Default.GetColor(idx - 1),
+		//			};
+		//		}).ToList());
+		//	});
+
+		//Plot.Plot.Title(StartDate.ToString("yyyy", CultureInfo.InvariantCulture), 24);
+		//Plot.Plot.XLabel(_localizationService[GlobalData.LocMonthGraphY], 20);
+
+		//Plot.Plot.ShowLegend(Alignment.UpperLeft);
+		//var ticks = new List<Tick>();
+		//foreach(var yearsInMonth in playtimeByMonth)
+		//{
+		//	foreach(var year in yearsInMonth.Item2.Select(x => x.Label.Split('|')[0].Trim()).Distinct())
+		//	{
+		//		Plot.Plot.Legend.ManualItems.Add(
+		//			new LegendItem()
+		//			{
+		//				LabelText = year,
+		//				FillColor = Palette.Default.GetColor(DateTime.ParseExact(year, "MMMM", CultureInfo.InvariantCulture).Year)
+		//			});
+		//	}
+		//	ticks.Add(new Tick(yearsInMonth.Item2.Count / 2f, yearsInMonth.Month));
+		//}
+
+		//return Plot.Plot.Add.Bars(playtimeByMonth.SelectMany(x => x.Item2).ToList());
 	}
 	private BarPlot CreateDayPlaytimeBars(SteamAppEntry game)
 	{
@@ -441,6 +493,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			Color = _defaultGrayScottColour,
 			AntiAlias = false
 		};
+		Plot.Plot.Add.Palette = new ScottPlot.Palettes.Category10();
 	}
 	private void InitDateRange()
 	{
@@ -451,7 +504,6 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		MinStartDate = StartDate;
 		MaxEndDate = EndDate;
-
 	}
 	private void CleanUp()
 	{

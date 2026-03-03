@@ -98,9 +98,9 @@ public class OutlinedTextBlock : FrameworkElement
 	  typeof(OutlinedTextBlock),
 	  new FrameworkPropertyMetadata(TextWrapping.NoWrap, OnFormattedTextUpdated));
 
-	private FormattedText _FormattedText;
-	private Geometry _TextGeometry;
-	private Pen _Pen;
+	private FormattedText? _FormattedText;
+	private Geometry? _TextGeometry;
+	private Pen? _Pen;
 
 	public Brush Fill
 	{
@@ -206,11 +206,11 @@ public class OutlinedTextBlock : FrameworkElement
 
 		// the Math.Min call is important - without this constraint (which seems arbitrary, but is the maximum allowable text width), things blow up when availableSize is infinite in both directions
 		// the Math.Max call is to ensure we don't hit zero, which will cause MaxTextHeight to throw
-		_FormattedText.MaxTextWidth = Math.Min(3579139, w);
-		_FormattedText.MaxTextHeight = Math.Max(0.0001d, h);
+		_FormattedText?.MaxTextWidth = Math.Min(3579139, w);
+		_FormattedText?.MaxTextHeight = Math.Max(0.0001d, h);
 
 		// return the desired size
-		return new Size(Math.Ceiling(_FormattedText.Width), Math.Ceiling(_FormattedText.Height));
+		return new Size(Math.Ceiling(_FormattedText?.Width ?? 1), Math.Ceiling(_FormattedText?.Height ?? 1));
 	}
 
 	protected override Size ArrangeOverride(Size finalSize)
@@ -218,8 +218,8 @@ public class OutlinedTextBlock : FrameworkElement
 		EnsureFormattedText();
 
 		// update the formatted text with the final size
-		_FormattedText.MaxTextWidth = finalSize.Width;
-		_FormattedText.MaxTextHeight = Math.Max(0.0001d, finalSize.Height);
+		_FormattedText?.MaxTextWidth = finalSize.Width;
+		_FormattedText?.MaxTextHeight = Math.Max(0.0001d, finalSize.Height);
 
 		// need to re-generate the geometry now that the dimensions have changed
 		_TextGeometry = null;
@@ -293,6 +293,6 @@ public class OutlinedTextBlock : FrameworkElement
 		}
 
 		EnsureFormattedText();
-		_TextGeometry = _FormattedText.BuildGeometry(new Point(0, 0));
+		_TextGeometry = _FormattedText?.BuildGeometry(new Point(0, 0));
 	}
 }

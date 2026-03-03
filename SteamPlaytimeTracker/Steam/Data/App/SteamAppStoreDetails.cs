@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
 
@@ -19,7 +20,7 @@ public sealed class SteamStoreApp
 
 	[Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; } 
 	public SteamStoreAppData AppData { get; set; }
-	[NotMapped] public bool Exists => AppData is not null && AppData.Success && AppData.StoreData is not null;
+	[NotMapped] public bool Exists => AppData is { Success: true, StoreData: not null };
 }
 [DebuggerDisplay("{Success} | {StoreData}")]
 public sealed class SteamStoreAppData
@@ -29,7 +30,7 @@ public sealed class SteamStoreAppData
 	[JsonConstructor]
 	public SteamStoreAppData(bool success, SteamAppStoreDetails storeData) => (Success, StoreData) = (success, storeData);
 	[JsonIgnore, Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; }
-	[JsonPropertyName("success")] public bool Success { get; set; }
+	[JsonPropertyName("success"), MemberNotNullWhen(true, nameof(StoreData))] public bool Success { get; set; }
 	[JsonPropertyName("data")] public SteamAppStoreDetails? StoreData { get; set; } = default!;
 }
 [DebuggerDisplay("{Name} | {AppId} | {Age} | {IsFree}")]
@@ -37,12 +38,12 @@ public sealed class SteamAppStoreDetails
 {
 	private SteamAppStoreDetails() { }
 	[JsonConstructor]
-	public SteamAppStoreDetails(string appType, string name, uint appId, int age, bool isFree) =>
+	public SteamAppStoreDetails(string appType, string name, uint appId, int? age, bool isFree) =>
 		(AppType, Name, AppId, Age, IsFree) = (appType, name, appId, age, isFree);
 	[JsonIgnore, Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; }
 	[JsonPropertyName("type")] public string AppType { get; set; } = string.Empty;
 	[JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
 	[JsonPropertyName("steam_appid")] public uint AppId { get; set; }
-	[JsonPropertyName("required_age")] public int Age { get; set; }
+	[JsonPropertyName("required_age")] public int? Age { get; set; }
 	[JsonPropertyName("is_free")] public bool IsFree { get; set; }
 }

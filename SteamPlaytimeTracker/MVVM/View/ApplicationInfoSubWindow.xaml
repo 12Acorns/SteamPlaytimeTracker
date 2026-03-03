@@ -1,0 +1,45 @@
+﻿<Window x:Class="SteamPlaytimeTracker.MVVM.View.ApplicationInfoSubWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:msg="clr-namespace:SteamPlaytimeTracker.Utility.Messaging"
+        xmlns:cMsg="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Messages"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel" 
+        xmlns:steamplaytimetracker="clr-namespace:SteamPlaytimeTracker" 
+        xmlns:windowchrome="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.WindowChrome" 
+        xmlns:window="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel.Window" 
+        d:DataContext="{d:DesignInstance Type=window:ApplicationInfoWindowModel}"
+        mc:Ignorable="d"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        SizeChanged="Window_SizeChanged"
+        Topmost="False"
+        Style="{DynamicResource DefaultWindowStyle}"
+        Title="ApplicationInfoSubWindow" Height="450" Width="800">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CornerRadius="8" CaptionHeight="25" ResizeBorderThickness="3" />
+    </WindowChrome.WindowChrome>
+    <Grid Background="{StaticResource defaultGray}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <windowchrome:WindowChromeBar Title="{Binding Title}" SettingsButtonVisibility="Hidden" />
+        <vwp:VirtualizingItemsControl Grid.Row="1" ItemsSource="{Binding MessagesView}" VirtualizingPanel.VirtualizationMode="Recycling"
+                                      VerticalAlignment="Top" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <vwp:VirtualizingItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type msg:Message}">
+                    <cMsg:MessageInfoControl Message="{Binding Content}" IconData="{Binding IconData}" IconColourMultiplier="{Binding IconColour}"
+                                             MaxHeight="120"/>
+                </DataTemplate>
+            </vwp:VirtualizingItemsControl.ItemTemplate>
+        </vwp:VirtualizingItemsControl>
+    </Grid>
+</Window>

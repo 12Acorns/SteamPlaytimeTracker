@@ -15,8 +15,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 	public const double HeightScaleFactor = 1.5d;
 
 	private static readonly DependencyProperty _imageUrlProperty =
-		DependencyProperty.Register(nameof(ImageUrl), typeof(string), typeof(SteamCapsule),
-			new PropertyMetadata(OnImageUrlChanged));
+		DependencyProperty.Register(nameof(ImageUrl), typeof(string), typeof(SteamCapsule), new PropertyMetadata(OnImageUrlChanged));
 	private static readonly DependencyProperty _titleProperty =
 		DependencyProperty.Register(nameof(Title), typeof(string), typeof(SteamCapsule));
 	private static readonly DependencyProperty _command =
