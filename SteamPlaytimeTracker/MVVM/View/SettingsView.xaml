@@ -78,18 +78,20 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.5*" MinWidth="120" MaxWidth="450" />
+                <ColumnDefinition Width="0.25*" MinWidth="80" />
+                <ColumnDefinition Width="0.25*" MinWidth="120" MaxWidth="450" />
                 <ColumnDefinition Width="0.25*" MinWidth="80" />
                 <ColumnDefinition Width="0.25*" MinWidth="80" />
             </Grid.ColumnDefinitions>
 
-            <Border Background="LightGray" BorderThickness="1" BorderBrush="#FF707070">
-
-            </Border>
-            <Button Grid.Column="1" Name="btn_OpenLogs" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.OpenLogsKey}}"
+            <Button Name="btn_ExportData" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.ExportDataKey}}"
+                Command="{Binding ExportDataCommand}"
+                CommandParameter="{Binding ElementName=settingsView}"/>
+            <Border Grid.Column="1" Background="LightGray" BorderThickness="1" BorderBrush="#FF707070" />
+            <Button Grid.Column="2" Name="btn_OpenLogs" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.OpenLogsKey}}"
                 Command="{Binding OpenLogDirCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
-            <Button Grid.Column="2" Name="btn_ConfirmSettings" 
+            <Button Grid.Column="3" Name="btn_ConfirmSettings" 
                     Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.ConfirmKey}}"
                 Command="{Binding ConfirmSettingsCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>

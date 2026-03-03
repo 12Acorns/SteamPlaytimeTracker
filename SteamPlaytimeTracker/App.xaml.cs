@@ -238,20 +238,6 @@ public partial class App : Application
 		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 		base.OnStartup(e);
-
-		var exportService = ServiceProvider.GetRequiredService<ExportService>();
-		exportService.ExportPlaytimeDataAsync(Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports"),
-			$"PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss}.json").ContinueWith(task =>
-		{
-			if(task.IsFaulted)
-			{
-				logger.Error(task.Exception, "Failed to export playtime data");
-			}
-			else
-			{
-				logger.Information("Playtime data exported successfully");
-			}
-		});
 	}
 
 	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);

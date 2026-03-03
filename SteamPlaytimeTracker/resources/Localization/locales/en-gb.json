@@ -21,6 +21,7 @@
 		"settings.select-Localization": "Select Localization:",
 		"settings.select-log-level": "Select Log Level",
 		"settings.open-logs": "Open Logs",
+		"settings.export-data": "Export Data",
 
 		"global.confirm": "Confirm",
 		"global.settings": "Settings"

@@ -1,38 +1,43 @@
-﻿using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Events;
+using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.Localization.Data;
+using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Services.DataTransfer;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Localization.Data;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.SelfConfig;
-using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.IO;
-using System.Windows.Media;
-using System.Windows.Input;
-using System.Windows.Data;
 using System.Diagnostics;
-using Serilog.Events;
-using System.Windows;
 using System.IO;
-using Serilog;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
 internal sealed class SettingsViewModel : Core.ViewModel
 {
 	private readonly FontFamily[] _availableFonts;
+	private readonly ExportService _exportService;
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
 
 	
-	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService)
+	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService,
+		ExportService exportService)
 	{
 		NavigationService = navigationService;
 		_logger = logger;
 		_config = config;
 
 		LocalizationService = localizationService;
+		_exportService = exportService;
 		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
 		AvailableLogLevels = Enum.GetNames<LogEventLevel>();
 		SelectedLogLevel = _config.AppData.LoggingData.LogLevel;
@@ -80,6 +85,33 @@ internal sealed class SettingsViewModel : Core.ViewModel
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		});
+		ExportDataCommand = new(_ =>
+		{
+			var path = Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports");
+			var name = $"PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss_fff}.json";
+			_exportService.ExportPlaytimeDataAsync(path, name).ContinueWith(task =>
+			{
+				if(task.IsFaulted)
+				{
+					logger.Error(task.Exception, "Failed to export playtime data");
+					App.Current.Dispatcher.Invoke(() =>
+					{
+						MessageBox.Show("An error occurred while exporting playtime data. See logs for more information.", "Error Exporting Data",
+							MessageBoxButton.OK, MessageBoxImage.Error);
+					});
+				}
+				else
+				{
+					logger.Information("Playtime data exported successfully");
+					App.Current.Dispatcher.Invoke(() =>
+					{
+						MessageBox.Show($"Playtime data exported successfully. Path: {Path.Combine(path, name)}", "Export Successful",
+							MessageBoxButton.OK, MessageBoxImage.Information);
+					});
+				}
+			});
+		});
+
 		AvailableLocales = LocalizationManager.GetAvailableLocales().ToArray();
 
 		_availableFonts = Fonts.SystemFontFamilies.OrderBy(f => f.Source).ToArray();
@@ -132,6 +164,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		});
 	}
 
+	public RelayCommand ExportDataCommand { get; set; }
 	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 	public ILocalizationService LocalizationService { get; }

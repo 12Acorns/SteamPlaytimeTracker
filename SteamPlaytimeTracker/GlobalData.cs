@@ -148,6 +148,7 @@ internal static partial class GlobalData
 	public const string SelectLocalizationKey = "settings.select-Localization";
 	public const string SelectLogLevelKey = "settings.select-log-level";
 	public const string OpenLogsKey = "settings.open-logs";
+	public const string ExportDataKey = "settings.export-data";
 
 	public const string ConfirmKey = "global.confirm";
 	public const string SettingsLocKey = "global.settings";
