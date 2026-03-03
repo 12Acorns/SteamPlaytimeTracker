@@ -12,17 +12,17 @@
         <Border BorderBrush="Gray" BorderThickness="0,1,0,1" Panel.ZIndex="1" />
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="40" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="40" />
             </Grid.ColumnDefinitions>
-            <Path Data="{Binding IconData, RelativeSource={RelativeSource AncestorType=UserControl}}" VerticalAlignment="Center" HorizontalAlignment="Center"
-              RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" Stretch="Uniform" Width="20" Height="20"
-              Stroke="{Binding IconColourMultiplier, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-            <Border Grid.Column="1" BorderThickness="2,0,0,0" BorderBrush="Black">
+            <Border BorderThickness="0,0,2,0" BorderBrush="Black">
                 <TextBlock Text="{Binding Message, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Left"
                        Foreground="LightGray" FontSize="14" TextWrapping="Wrap" />
 
             </Border>
+            <Path Grid.Column="1" Data="{Binding IconData, RelativeSource={RelativeSource AncestorType=UserControl}}" VerticalAlignment="Center" HorizontalAlignment="Center"
+              RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" Stretch="Uniform" Width="20" Height="20"
+              Stroke="{Binding IconColourMultiplier, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
         </Grid>
     </Grid>
 </UserControl>

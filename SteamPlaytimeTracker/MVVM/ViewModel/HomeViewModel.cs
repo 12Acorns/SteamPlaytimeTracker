@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Update;
-using OneOf;
-using Serilog;
+﻿using Serilog;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
@@ -15,17 +13,14 @@ using SteamPlaytimeTracker.Services.Menu;
 using SteamPlaytimeTracker.Services.Messaging;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Services.Playtime;
-using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Capsule;
 using SteamPlaytimeTracker.Steam.Data.Playtime;
-using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Equality;
 using SteamPlaytimeTracker.Utility.Messaging;
 using SteamPlaytimeTracker.Utility.ObservableCollections;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Threading.Channels;
 using System.Windows.Data;
 using System.Windows.Threading;
@@ -145,10 +140,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		});
 	}
 
-	public RelayCommand NavigateToPlayTimeViewCommand => new(o =>
-	{
-		NavigationService.NavigateTo<SteamAppViewModel>(o!);
-	}, o => o is SteamAppEntry);
+	public RelayCommand NavigateToPlayTimeViewCommand => new(o => NavigationService.NavigateTo<SteamAppViewModel>(o!), o => o is SteamAppEntry);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
@@ -242,7 +234,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 	{
 		base.OnConstructed();
 		_logger.Debug("Loading local Steam apps and syncing database...");
-		_ = LoadDataStreamedAsync();
+		var loadStreamTask = LoadDataStreamedAsync();
+		loadStreamTask.ContinueWith(t =>
+		{
+			t.Exception!.Handle(ex =>
+			{
+				_logger.Error(ex, "An error occurred while loading local Steam apps.");
+				return true;
+			});
+		}, TaskContinuationOptions.OnlyOnFaulted);
 	}
 	private async Task LoadDataStreamedAsync()
 	{
@@ -259,23 +259,29 @@ internal sealed class HomeViewModel : Core.ViewModel
 		var localApps = await _appService.AllEntries(_lifetimeProvider.CancellationToken).ConfigureAwait(true);
 		SteamApps.AddRange(localApps);
 
-		// Long running, need to optimise
-		var diskApps = await _playtimeService.GetPlayimeSegments(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
-		var tasks = new ValueTask[diskApps.Count];
-		foreach(var lookup in diskApps.Index())
+		try
 		{
-			tasks[lookup.Index] = FetchAndQueueApp(lookup.Item.Key, _lifetimeProvider.CancellationToken);
+			// Long running, need to optimise
+			var diskApps = await _playtimeService.GetPlayimeSegments(_lifetimeProvider.CancellationToken).ConfigureAwait(false);
+			var tasks = new ValueTask[diskApps.Count];
+			foreach(var lookup in diskApps.Index())
+			{
+				tasks[lookup.Index] = FetchAndQueueApp(lookup.Item.Key, _lifetimeProvider.CancellationToken);
+			}
+			await ValueTaskEx.WhenAll(tasks).ConfigureAwait(false);
 		}
-		await ValueTaskEx.WhenAll(tasks).ConfigureAwait(false);
-
-		// After loading all data, syncronize data
-		_entrySyncThread = new Thread(SyncDataBackground)
+		finally
 		{
-			Priority = ThreadPriority.BelowNormal,
-			IsBackground = true,
-			Name = "Sync Apps To Db"
-		};
-		_entrySyncThread.Start();
+			// After loading all data, syncronize data
+			_entrySyncThread = new Thread(SyncDataBackground)
+			{
+				Priority = ThreadPriority.BelowNormal,
+				IsBackground = true,
+				Name = "Sync Apps To Db"
+			};
+			_entrySyncThread.Start();
+		}
+
 	}
 	private async void SyncDataBackground()
 	{
@@ -377,7 +383,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		{
 			App.Current.Dispatcher.Invoke(() =>
 			{
-				FooterText = $"Syncing {count} apps.";
+				FooterText = $"Syncing {Math.Min(count, _appReader.Count)} apps.";
 			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 			await _appReader.WaitToReadAsync(token).ConfigureAwait(true);
 			var addProcessed = 0;
@@ -386,6 +392,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			var queued = ArrayPool<SteamAppEntry>.Shared.Rent(count);
 			while(_appReader.TryRead(out var updatedEntry))
 			{
+				token.ThrowIfCancellationRequested();
 				if(processed >= count)
 				{
 					break;

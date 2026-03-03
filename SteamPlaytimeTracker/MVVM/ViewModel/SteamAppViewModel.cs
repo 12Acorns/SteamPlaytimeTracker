@@ -1,5 +1,6 @@
 ﻿using ScottPlot;
 using ScottPlot.Plottables;
+using ScottPlot.Stylers;
 using ScottPlot.WPF;
 using SkiaSharp.Views.WPF;
 using SteamPlaytimeTracker.Core;
@@ -349,7 +350,7 @@ internal class SteamAppViewModel : Core.ViewModel
 					Position = idx,
 					LineWidth = 1.5f,
 					ValueBase = 0,
-					FillColor = GlobalData.GetYearPlotColour(DateTime.ParseExact(x.Key, "yyyy", CultureInfo.InvariantCulture).Year),
+					FillColor = Plot.Plot.Add.GetNextColor(),
 				};
 			});
 
@@ -492,6 +493,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			Color = _defaultGrayScottColour,
 			AntiAlias = false
 		};
+		Plot.Plot.Add.Palette = new ScottPlot.Palettes.Category10();
 	}
 	private void InitDateRange()
 	{

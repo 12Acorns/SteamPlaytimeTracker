@@ -1,25 +1,29 @@
-﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
-using SteamPlaytimeTracker.Utility;
-using SteamPlaytimeTracker.IO;
-using OutParsing;
-using System.IO;
+﻿using OutParsing;
 using SteamPlaytimeTracker.DbObject;
-using System.Globalization;
-using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Services.Messaging;
+using SteamPlaytimeTracker.Steam.Data.Playtime;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Utility.Cache;
+using SteamPlaytimeTracker.Utility.Messaging;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+using System.Globalization;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SteamPlaytimeTracker.Services.Playtime;
 
 internal sealed class PlaytimeService : IPlaytimeService
 {
 	private readonly ICacheManager _cacheManager;
+	private readonly IMessageExchangeService _messageExchangeService;
 
-	public PlaytimeService(ICacheManager cacheManager)
+	public PlaytimeService(ICacheManager cacheManager, IMessageExchangeService messageExchangeService)
 	{
 		_cacheManager = cacheManager;
+		_messageExchangeService = messageExchangeService;
 	}
 
 	public async ValueTask<Dictionary<uint, List<PlaytimeSlice>>> GetPlayimeSegments(CancellationToken cancellationToken = default)
@@ -44,10 +48,24 @@ internal sealed class PlaytimeService : IPlaytimeService
 			}
 		}, token: cancellationToken);
 	}
-	private static IAsyncEnumerable<PlaytimeSlice> GetPlaytimeSegmentsPrimary(CancellationToken cancellationToken = default)
+	private async IAsyncEnumerable<PlaytimeSlice> GetPlaytimeSegmentsPrimary([EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
-		return IOUtility.HandleTmpFileLifetimeAsyncEnumerable(ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), 
-			filePath => ProcessFile(filePath, cancellationToken), cancellationToken: cancellationToken);
+		var result = (await IOUtility.HandleTmpFileLifetimeAsyncEnumerable(ApplicationPath.GetPath(GlobalData.MainTimeSliceCheckLookupName), 
+			filePath => ProcessFile(filePath, cancellationToken), cancellationToken: cancellationToken).ConfigureAwait(false)).DoIfError(failure =>
+		{
+			if(failure.FailureType is not IOUtility.IOFailure.IOFailureType.Copy)
+			{
+				return;
+			}
+			_messageExchangeService.AddMessage(new Message(MessageType.Error, "File Access",
+				$"Failed to read required files to generate playtime segments, " +
+				$"please ensure Steam is fully shut down before using the application. " +
+				$"After closing Steam, restart the application.\nFull Error: {failure.FailureException?.Message ?? ""}"));
+		}).DefaultWith(_ => AsyncEnumerable.Empty<PlaytimeSlice>());
+		await foreach(var item in result.WithCancellation(cancellationToken).ConfigureAwait(false))
+		{
+			yield return item;
+		}
 		static async IAsyncEnumerable<PlaytimeSlice> ProcessFile(string filePath, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 		{
 			var startDates = new Stack<(string Date, GameKey Key)>();

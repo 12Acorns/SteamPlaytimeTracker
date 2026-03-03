@@ -23,18 +23,20 @@ internal sealed class LocalSteamAppService : ILocalSteamAppService
 		_logger = logger;
 	}
 
-	public ValueTask<HashSet<uint>> GetLocalAppIds(CancellationToken token = default) => _cacheManager.GetAsync("LocalAppIds", LocalCacheDurationMinutes,
+	public async ValueTask<HashSet<uint>> GetLocalAppIds(CancellationToken token = default) => await _cacheManager.GetAsync("LocalAppIds", LocalCacheDurationMinutes,
 		async token =>
 	{
 		if(ApplicationPath.TryGetPath(GlobalData.MainTimeSliceCheckLookupName, out var primarySearchFile) && File.Exists(primarySearchFile))
 		{
-			return await GetLocalAppIdsPrimary(primarySearchFile, token).ToHashSetAsync(cancellationToken: token).ConfigureAwait(false);
+			return await (await GetLocalAppIdsPrimary(primarySearchFile, token).ConfigureAwait(false))
+				.ToHashSetAsync(cancellationToken: token).ConfigureAwait(false);
 		}
 		return [];
 	}, token: token);
-	private IAsyncEnumerable<uint> GetLocalAppIdsPrimary(string searchFile, CancellationToken token)
+	private async Task<IAsyncEnumerable<uint>> GetLocalAppIdsPrimary(string searchFile, CancellationToken token)
 	{
-		return IOUtility.HandleTmpFileLifetimeAsyncEnumerable(searchFile, tmpFile => GetIds(tmpFile, token), cancellationToken: token);
+		return (await IOUtility.HandleTmpFileLifetimeAsyncEnumerable(searchFile, tmpFile => GetIds(tmpFile, token), cancellationToken: token).ConfigureAwait(false))
+			.DefaultWith(_ => AsyncEnumerable.Empty<uint>());
 		async IAsyncEnumerable<uint> GetIds(string tmpFile, [EnumeratorCancellation] CancellationToken ct)
 		{
 			var seen = new ConcurrentDictionary<uint, byte>();
