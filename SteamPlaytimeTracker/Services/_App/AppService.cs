@@ -23,13 +23,13 @@ internal sealed class AppService : IAppService
 	private const int LocalAppCacheDurationMinutes = 15;
 
 	private readonly ILocalSteamAppService _localSteamAppService;
-	private readonly IAsyncLifetimeService _lifetimeService;
+	private readonly ILifetimeService _lifetimeService;
 	private readonly ISteamWebService _steamWebService;
 	private readonly ICacheManager _cacheManager;
 	private readonly ILogger _logger;
 	private readonly DbAccess _db;
 
-	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager, IAsyncLifetimeService lifetimeService,
+	public AppService(DbAccess db, ILogger logger, ICacheManager cacheManager, ILifetimeService lifetimeService,
 		ISteamWebService steamWebService, ILocalSteamAppService localSteamAppService)
 	{
 		_db = db;

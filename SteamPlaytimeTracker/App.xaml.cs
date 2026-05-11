@@ -35,6 +35,9 @@ using System.IO;
 using Serilog;
 using OneOf;
 using Polly;
+using SteamPlaytimeTracker.Services.Batching;
+using SteamPlaytimeTracker.DbObject;
+using Serilog.Configuration;
 
 namespace SteamPlaytimeTracker;
 
@@ -108,11 +111,21 @@ public partial class App : Application
 		serviceCollection.AddSingleton<ICacheManager, CacheManager>();
 		serviceCollection.AddSingleton<ISteamWebService, SteamWebService>();
 		serviceCollection.AddSingleton<ILogger, Logger>(provider => LoggingService.Logger);
-		serviceCollection.AddSingleton<IAsyncLifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
+		serviceCollection.AddSingleton<ILifetimeService, ApplicationEndAsyncLifetimeService>(provider => ApplicationEndAsyncLifetimeService.Default);
 		serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
 		serviceCollection.AddSingleton<LocalizationManager>();
 		serviceCollection.AddSingleton<ILocalSteamAppService, LocalSteamAppService>();
 		serviceCollection.AddSingleton<IPlaytimeService, PlaytimeService>();
+		serviceCollection.AddSingleton<IAppSynchronisationService, AppSynchronisationService>();
+		serviceCollection.AddSingleton<IBatchUpdateService<SteamAppEntry>, BatchUpdateService<SteamAppEntry>>();
+		serviceCollection.AddSingleton<BatchOptions>(provider => new BatchOptions
+		{
+			MaximumBatchSize = 16,
+			MaximumRetries = 3,
+			MinimumWaitInterval = TimeSpan.FromMilliseconds(500),
+			MaximumWaitInterval = TimeSpan.FromSeconds(30),
+			BaseGrowthFactor = 2.5f
+		});
 
 		serviceCollection.AddHttpClient(GlobalData.SteamHttpClientKey, client =>
 		{
@@ -161,7 +174,7 @@ public partial class App : Application
 		ServiceProvider = serviceCollection.BuildServiceProvider();
 
 		_ = ServiceProvider.GetRequiredService<IPlaytimeService>().GetPlayimeSegments(
-			ServiceProvider.GetRequiredService<IAsyncLifetimeService>().CancellationToken);
+			ServiceProvider.GetRequiredService<ILifetimeService>().CancellationToken);
 
 		OnSessionClose += (sender, e) =>
 		{

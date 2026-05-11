@@ -1,6 +1,6 @@
 ﻿namespace SteamPlaytimeTracker.Services.Lifetime;
 
-internal sealed class ApplicationEndAsyncLifetimeService : IAsyncLifetimeService
+internal sealed class ApplicationEndAsyncLifetimeService : ILifetimeService
 {
 	public static ApplicationEndAsyncLifetimeService Default { get; } = new();
 

@@ -10,6 +10,7 @@ using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Settings;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Services.DataTransfer;
+using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
 using System.Diagnostics;
@@ -27,10 +28,9 @@ internal sealed class SettingsViewModel : Core.ViewModel
 	private readonly ExportService _exportService;
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
-
 	
 	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService,
-		ExportService exportService)
+		ExportService exportService, LocalizationManager localizationManager, ILifetimeService lifetimeService)
 	{
 		NavigationService = navigationService;
 		_logger = logger;
@@ -89,30 +89,34 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		{
 			var path = Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports");
 			var name = $"PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss_fff}.json";
-			_exportService.ExportPlaytimeDataAsync(path, name).ContinueWith(task =>
+			var playtimeFullPath = Path.Combine(path, name);
+			_exportService.ExportAllPlaytimeDataAsync(path, name, lifetimeService.CancellationToken).ContinueWith(task =>
 			{
 				if(task.IsFaulted)
 				{
 					logger.Error(task.Exception, "Failed to export playtime data");
-					App.Current.Dispatcher.Invoke(() =>
+					Dispatcher.Invoke(() =>
 					{
 						MessageBox.Show("An error occurred while exporting playtime data. See logs for more information.", "Error Exporting Data",
 							MessageBoxButton.OK, MessageBoxImage.Error);
 					});
+					return;
 				}
-				else
+				logger.Information("Playtime data exported successfully");
+				Dispatcher.Invoke(() =>
 				{
-					logger.Information("Playtime data exported successfully");
-					App.Current.Dispatcher.Invoke(() =>
+					var res = MessageBox.Show(
+						messageBoxText: $"Playtime data exported successfully. Path: '{playtimeFullPath}'.\nPress Yes to copy path to clipboard.", 
+						caption: "Export Successful", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Information);
+					if(res is MessageBoxResult.Yes)
 					{
-						MessageBox.Show($"Playtime data exported successfully. Path: {Path.Combine(path, name)}", "Export Successful",
-							MessageBoxButton.OK, MessageBoxImage.Information);
-					});
-				}
+						Clipboard.SetText(playtimeFullPath);
+					}
+				});
 			});
 		});
 
-		AvailableLocales = LocalizationManager.GetAvailableLocales().ToArray();
+		AvailableLocales = localizationManager.GetAvailableLocales().ToArray();
 
 		_availableFonts = Fonts.SystemFontFamilies.OrderBy(f => f.Source).ToArray();
 		AvailableFontsView = (ListCollectionView)CollectionViewSource.GetDefaultView(_availableFonts);
@@ -125,11 +129,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 				return;
 			}
 			searchBar.SearchContent.IsDropDownOpen = true;
-			AvailableFontsView.Filter = item =>
-			{
-				return item is FontFamily fontFamily && text is string filterText &&
-					fontFamily.Source.Contains(filterText);
-			};
+			AvailableFontsView.Filter = item => item is FontFamily fontFamily && fontFamily.Source.Contains(text);
 		});
 		KeyInputCommand = new(data =>
 		{
@@ -140,9 +140,9 @@ internal sealed class SettingsViewModel : Core.ViewModel
 			switch(keyArgs.Key)
 			{
 				case Key.Return or Key.Enter:
-					if(searchBar.SearchContent.SelectedIndex is -1)
+					if(searchBar.SearchContent.SelectedIndex == -1)
 					{
-						if(AvailableFontsView.Count is 0)
+						if(AvailableFontsView.Count == 0)
 						{
 							return;
 						}

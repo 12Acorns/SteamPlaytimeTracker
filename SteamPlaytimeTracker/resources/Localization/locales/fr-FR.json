@@ -18,7 +18,8 @@
 		"settings.steam-install-title": "Sélectionnez le dossier d'installation de Steam",
 		"settings.steam-install-invalid": "Installation Steam non sélectionnée",
 		"settings.steam-install": "Emplacement d'installation Steam:",
-		"settings.select-Localization": "Sélectionnez Localisation:",
+		"settings.select-localization": "Sélectionnez Localisation:",
+		"settings.select-font": "Sélectionnez Localisation:",
 		"settings.select-log-level": "Sélectionnez le niveau de journalisation",
 		"settings.open-logs": "Journaux ouverts",
 

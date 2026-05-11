@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.IO;
+using SteamPlaytimeTracker.DbObject;
 
 namespace SteamPlaytimeTracker.Services.DataTransfer;
 
@@ -22,7 +23,7 @@ internal sealed class ExportService
 		_db = db;
 	}
 
-	public async Task ExportPlaytimeDataAsync(string path, string exportName, CancellationToken token = default)
+	public async Task ExportAllPlaytimeDataAsync(string path, string exportName, CancellationToken token = default)
 	{
 		Directory.CreateDirectory(path);
 		using var stream = new FileStream(Path.Combine(path, exportName), FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
@@ -33,5 +34,9 @@ internal sealed class ExportService
 		await JsonSerializer.SerializeAsync(stream, 
 			new PlaytimeExportStructureContainer(allPlaytimes.Select(g => new AppPlaytimeStructure(g)).ToList()), _options, token)
 			.ConfigureAwait(false);
+	}
+	public static void ExportPlaytimeData(Stream stream, SteamAppEntry appToExport)
+	{
+		JsonSerializer.Serialize(stream, new AppPlaytimeStructure(appToExport), _options);
 	}
 }

@@ -19,6 +19,23 @@ public sealed class CacheManager : ICacheManager
 		value = default!;
 		return false;
 	}
+	public void Set(string key, object data, TimeSpan maximumCacheTime, params ChangeMonitor[] monitors)
+	{
+		if(data == null)
+		{
+			return;
+		}
+		CacheItemPolicy policy = new()
+		{
+			AbsoluteExpiration = DateTimeOffset.UtcNow + maximumCacheTime,
+			Priority = CacheItemPriority.Default
+		};
+		_cache.Add(new CacheItem(key, data), policy);
+		foreach(var monitor in monitors)
+		{
+			policy.ChangeMonitors.Add(monitor);
+		}
+	}
 	public void Set(string key, object data, int cacheTimeMinutes = ICacheManager.DefaultCacheTime) => Set(key, data, TimeSpan.FromMinutes(cacheTimeMinutes));
 	public void Set(string key, object data, TimeSpan cacheTime)
 	{
@@ -30,7 +47,8 @@ public sealed class CacheManager : ICacheManager
 		CacheItemPolicy policy = new()
 		{
 			AbsoluteExpiration = DateTimeOffset.UtcNow + cacheTime,
-			Priority = CacheItemPriority.Default
+			Priority = CacheItemPriority.Default,
+
 		};
 
 		_cache.Add(new CacheItem(key, data), policy);

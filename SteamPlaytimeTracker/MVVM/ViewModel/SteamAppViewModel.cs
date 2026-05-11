@@ -1,17 +1,23 @@
-﻿using ScottPlot;
+﻿using Microsoft.Win32;
+using ScottPlot;
 using ScottPlot.Plottables;
 using ScottPlot.Stylers;
 using ScottPlot.WPF;
 using SkiaSharp.Views.WPF;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.DataTransfer;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
+using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.Services.DataTransfer;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -36,6 +42,40 @@ internal class SteamAppViewModel : Core.ViewModel
 			CleanUp();
 			NavigationService.NavigateTo<HomeViewModel>();
 		});
+		ExportPlaytimeCommand = new RelayCommand(o =>
+		{
+			// TODO: Move export logic to a service and inject here. Also add service to sanatise file name and handle edge cases like no playtime data, or failed exports
+			var app = SelectedApp.SteamApp!;
+			var exportDir = Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports");
+			var saveFileDialog = new SaveFileDialog
+			{
+				Filter = "JSON Files (*.json)|*.json",
+				DefaultExt = "json",
+				AddExtension = true,
+				FileName = $"{app.Name.Replace(':', ' ')}_{app.AppId}_PlaytimeExport_{DateTime.Now:yyyyMMddHHmmss}.json",
+				DefaultDirectory = exportDir,
+				InitialDirectory = exportDir
+			};
+			if(saveFileDialog.ShowDialog() ?? false)
+			{
+				using var stream = (FileStream)saveFileDialog.OpenFile();
+				if(stream is null)
+				{
+					MessageBox.Show("Failed to open file for export.", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+				ExportService.ExportPlaytimeData(stream, SelectedApp);
+				var res = MessageBox.Show(
+					messageBoxText: $"Playtime data exported successfully. Path: '{stream.Name}'.\nPress Yes to copy path to clipboard.",
+					caption: "Export Successful", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Information);
+				if(res is MessageBoxResult.Yes)
+				{
+					Clipboard.SetText(stream.Name);
+				}
+				return;
+			}
+			MessageBox.Show("Failed to open file for export.", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+		});
 		Plot = new();
 
 		// Likely issue, changing locale will likelty not update text. in future move to OnLoad
@@ -57,6 +97,7 @@ internal class SteamAppViewModel : Core.ViewModel
 
 	public INavigationService NavigationService { get; }
 	public RelayCommand SwitchBackToHomeViewCommand { get; }
+	public RelayCommand ExportPlaytimeCommand { get; }
 
 	public WpfPlot Plot { get; }
 	public string TotalPlaytimeText

@@ -23,6 +23,16 @@ internal static partial class GlobalData
 
 internal static partial class GlobalData
 {
+	internal static class Services
+	{
+		public const string ConfirmSettingsKey = "ConfirmSetting";
+		public const string OpenLogDirKey = "OpenLogDir";
+		public const string ExportDataKey = "ExportData";
+	}
+}
+
+internal static partial class GlobalData
+{
 	private const string SteamStoreDomainUrl = "https://store.steampowered.com";
 
 	public const string SteamHttpClientKey = "steam";
@@ -32,12 +42,13 @@ internal static partial class GlobalData
 
 internal static partial class GlobalData
 {
-	public const string AppVersion = "0.1.0";
+	public const string AppVersion = "0.2.0";
 }
 
 // Path related constants
 internal static partial class GlobalData
 {
+	public const string AvailableLocalesCacheKey = "AvailableLocales";
 	public const string MainTimeSliceCheckLookupName = "MainTimeSliceCheck";
 	public const string AppDataStoreLookupName = "AppDataStorePath";
 	public const string LocalizationLookupName = "LocaleEntries";
@@ -145,7 +156,8 @@ internal static partial class GlobalData
 	public const string SteamInstallFolderNotSelectedWarnignKey = "settings.steam-install-invalid";
 	public const string SteamInstallFolderTitleKey = "settings.steam-install-title";
 	public const string SteamInstallLocationKey = "settings.steam-install";
-	public const string SelectLocalizationKey = "settings.select-Localization";
+	public const string SelectLocalizationKey = "settings.select-localization";
+	public const string SelectFontKey = "settings.select-font";
 	public const string SelectLogLevelKey = "settings.select-log-level";
 	public const string OpenLogsKey = "settings.open-logs";
 	public const string ExportDataKey = "settings.export-data";

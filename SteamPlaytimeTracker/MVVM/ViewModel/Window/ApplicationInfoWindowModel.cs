@@ -12,11 +12,11 @@ namespace SteamPlaytimeTracker.MVVM.ViewModel.Window;
 internal sealed class ApplicationInfoWindowModel : MenuModel
 {
 	private readonly IMessageExchangeService _messageExchangeService;
-	private readonly IAsyncLifetimeService _asyncLifetimeService;
+	private readonly ILifetimeService _asyncLifetimeService;
 	private readonly ObservableCollection<Message> _messages = [];
 	private readonly SemaphoreSlim _messageRefreshLock = new(1, 1);
 
-	public ApplicationInfoWindowModel(IMessageExchangeService messageExchangeService, IAsyncLifetimeService asyncLifetimeService)
+	public ApplicationInfoWindowModel(IMessageExchangeService messageExchangeService, ILifetimeService asyncLifetimeService)
 	{
 		Title = "Application Info";
 		_messageExchangeService = messageExchangeService;
@@ -59,7 +59,7 @@ internal sealed class ApplicationInfoWindowModel : MenuModel
 			while(true)
 			{
 				await _messageRefreshLock.WaitAsync(TimeSpan.FromSeconds(4));
-				App.Current.Dispatcher.Invoke(SyncMessages, DispatcherPriority.Normal, _asyncLifetimeService.CancellationToken);
+				Dispatcher.Invoke(SyncMessages, DispatcherPriority.Normal, _asyncLifetimeService.CancellationToken);
 			}
 		}
 		catch { }

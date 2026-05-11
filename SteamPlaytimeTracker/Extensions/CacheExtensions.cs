@@ -1,4 +1,5 @@
 ﻿using SteamPlaytimeTracker.Utility.Cache;
+using System.Runtime.Caching;
 using ValueTaskSupplement;
 
 namespace SteamPlaytimeTracker.Extensions;
@@ -8,27 +9,28 @@ internal static class CacheExtensions
 {
 	private static readonly SemaphoreSlim _writeSemaphore = new(1, 1);
 
-	public static T Get<T>(this ICacheManager cacheManager, string key, Func<T> acquire) => 
-		Get(cacheManager, key, ICacheManager.DefaultCacheTime, acquire);
-	public static T Get<T>(this ICacheManager cacheManager, string key, TimeSpan cacheTime, Func<T> acquire) =>
-		Get(cacheManager, key, (int)cacheTime.TotalMinutes, acquire);
-	public static T Get<T>(this ICacheManager cacheManager, string key, int cacheTime, Func<T> acquire)
+	public static T GetOrAdd<T>(this ICacheManager cacheManager, string key, Func<T> acquire, params ChangeMonitor[] monitors) => 
+		GetOrAdd(cacheManager, key, ICacheManager.DefaultCacheTime, acquire, monitors);
+	public static T GetOrAdd<T>(this ICacheManager cacheManager, string key, int cacheTimeMinutes, Func<T> acquire, params ChangeMonitor[] monitors) =>
+		GetOrAdd(cacheManager, key, TimeSpan.FromMinutes(cacheTimeMinutes), acquire, monitors);
+	public static T GetOrAdd<T>(this ICacheManager cacheManager, string key, TimeSpan cacheTime, Func<T> acquire, params ChangeMonitor[] monitors)
 	{
 		if(cacheManager.TryGet(key, out T cached))
 		{
 			return cached;
 		}
 		var result = acquire() ?? throw new NullReferenceException("Acquire function returned null");
-		cacheManager.Set(key, result, cacheTime);
+		cacheManager.Set(key, result, cacheTime, monitors);
 		return result;
 	}
-	public static async ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, Func<CancellationToken, Task<T>> acquire, CancellationToken token = default) =>
-		await GetAsync(cacheManager, key, ICacheManager.DefaultCacheTime, acquire, token).ConfigureAwait(false);
-	public static async ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, TimeSpan cacheTime, Func<CancellationToken, Task<T>> acquire, 
-		CancellationToken token = default) => 
-		await GetAsync(cacheManager, key, (int)cacheTime.TotalMinutes, acquire, token).ConfigureAwait(false);
-	public static async ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, int cacheTime, Func<CancellationToken, Task<T>> acquire,
-		CancellationToken token = default)
+	public static ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, Func<CancellationToken, Task<T>> acquire, 
+		CancellationToken token = default, params ChangeMonitor[] monitors) =>
+		GetAsync(cacheManager, key, ICacheManager.DefaultCacheTime, acquire, token, monitors);
+	public static ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, int cacheTimeMinutes, Func<CancellationToken, Task<T>> acquire, 
+		CancellationToken token = default, params ChangeMonitor[] monitors) => 
+		GetAsync(cacheManager, key, TimeSpan.FromMinutes(cacheTimeMinutes), acquire, token, monitors);
+	public static async ValueTask<T> GetAsync<T>(this ICacheManager cacheManager, string key, TimeSpan cacheTime, Func<CancellationToken, Task<T>> acquire,
+		 CancellationToken token = default, params ChangeMonitor[] monitors)
 	{
 		if(cacheManager.TryGet(key, out T cached))
 		{
@@ -42,7 +44,7 @@ internal static class CacheExtensions
 				return cached;
 			}
 			var result = (await acquire(token).ConfigureAwait(false)) ?? throw new NullReferenceException("Acquire function returned null");
-			cacheManager.Set(key, result, cacheTime);
+			cacheManager.Set(key, result, cacheTime, monitors);
 			return result;
 		}
 		finally

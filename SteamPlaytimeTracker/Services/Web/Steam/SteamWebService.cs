@@ -48,7 +48,7 @@ internal sealed class SteamWebService : ISteamWebService
 		}
 
 		var idStr = appId.ToString();
-		return await _cacheManager.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTime: 15, async token =>
+		return await _cacheManager.GetAsync<OneOf<SteamStoreAppData, ParseResult, HttpStatusCode>>(idStr, cacheTimeMinutes: 15, async token =>
 		{
 			try
 			{

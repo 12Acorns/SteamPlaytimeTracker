@@ -1,4 +1,6 @@
-﻿namespace SteamPlaytimeTracker.Utility.Cache;
+﻿using System.Runtime.Caching;
+
+namespace SteamPlaytimeTracker.Utility.Cache;
 
 public interface ICacheManager
 {
@@ -6,6 +8,7 @@ public interface ICacheManager
 
 	T Get<T>(string key);
 	bool TryGet<T>(string key, out T value);
+	void Set(string key, object data, TimeSpan maximumCacheTime, params ChangeMonitor[] monitors);
 	void Set(string key, object data, TimeSpan cacheTime);
 	void Set(string key, object data, int cacheTimeMinutes = DefaultCacheTime);
 	bool IsSet(string key);

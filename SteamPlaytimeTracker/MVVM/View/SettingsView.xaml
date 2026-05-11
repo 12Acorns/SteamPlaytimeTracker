@@ -65,8 +65,8 @@
                         <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.15*" MinWidth="60" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="Tmp" 
-                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
+                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectFontKey}}" 
+                           HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" Height="26" VerticalAlignment="Center" />
                     <settings:SearchBarFilteredDropDownUC Grid.Column="2"
                             SearchBarBackground="White"
                             SearchBarTextColour="Black"

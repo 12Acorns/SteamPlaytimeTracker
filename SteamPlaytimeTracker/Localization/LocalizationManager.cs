@@ -6,6 +6,9 @@ using System.Reflection;
 using System.Text.Json;
 using System.IO;
 using Serilog;
+using SteamPlaytimeTracker.Utility.Cache;
+using SteamPlaytimeTracker.Extensions;
+using System.Runtime.Caching;
 
 namespace SteamPlaytimeTracker.Localization;
 
@@ -18,16 +21,19 @@ internal sealed class LocalizationManager
 
 	public static LocalizationManager? Instance { get; private set; }
 
-	public LocalizationManager(ILogger logger, AppConfig config)
+	private readonly ICacheManager _cacheManager;
+	private readonly AppConfig _config;
+	private readonly ILogger _logger;
+	private LocaleData? _locale;
+
+	public LocalizationManager(ILogger logger, AppConfig config, ICacheManager cacheManager)
 	{
 		_logger = logger;
 		_config = config;
+		_cacheManager = cacheManager;
 		Instance = this;
 	}
 
-	private readonly ILogger _logger;
-	private readonly AppConfig _config;
-	private LocaleData? _locale;
 
 	public LocaleData? Current => _locale;
 
@@ -66,18 +72,19 @@ internal sealed class LocalizationManager
 		_config.AppData.LocalizationData.LanguageCode = _locale.Code;
 		return true;
 	}
+	/// <exception cref="FileNotFoundException"></exception>
 	public void LoadLocale(string code)
 	{
 		var match = GetAvailableLocales().FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 		TryLoadLocale(match ?? throw new FileNotFoundException("Locale code not found in available locales.", code));
 	}
-	public static IEnumerable<LocaleData> GetAvailableLocales()
+	public IEnumerable<LocaleData> GetAvailableLocales() => _cacheManager.GetOrAdd(GlobalData.AvailableLocalesCacheKey, TimeSpan.FromHours(1), () =>
 	{
 		var localeDir = ApplicationPath.GetPath(GlobalData.LocalizationLookupName);
 		using var stream = File.OpenRead(Path.Combine(localeDir, GlobalData.LocaleMapFileName));
 		var container = JsonSerializer.Deserialize<LocaleContainer>(stream);
 		return container?.Locales ?? [];
-	}
+	});
 	private bool LoadEnGbLocaleEmbededAndDumpToDisk(string filePath) => LoadEmbededLocaleAndDumpToDisk(new LocaleData
 	{
 		Code = "en-gb",
