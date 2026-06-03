@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+	<ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AppServices.Common">
+      <HintPath>..\SteamPlaytimeTracker\Dependencies\AppServices.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="AppServices.Updater">
+      <HintPath>..\SteamPlaytimeTracker\Dependencies\AppServices.Updater.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

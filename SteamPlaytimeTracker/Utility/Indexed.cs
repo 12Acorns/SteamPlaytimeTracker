@@ -1,6 +1,9 @@
-﻿namespace SteamPlaytimeTracker.Utility;
+﻿using System.Runtime.InteropServices;
 
-internal sealed record Indexed<TItem>(int Index, TItem Item)
+namespace SteamPlaytimeTracker.Utility;
+
+[StructLayout(LayoutKind.Sequential)]
+internal readonly record struct Indexed<TItem>(int Index, TItem Item)
 {
 	public static implicit operator Indexed<TItem>((TItem Item, int Index) tuple) => new(tuple.Index, tuple.Item);
 	public static implicit operator Indexed<TItem>((int Index, TItem Item) tuple) => new(tuple.Index, tuple.Item);

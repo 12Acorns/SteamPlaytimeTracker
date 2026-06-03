@@ -3,6 +3,7 @@ using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
+using SteamPlaytimeTracker.MVVM.View.Windows;
 using SteamPlaytimeTracker.MVVM.ViewModel.Window;
 using SteamPlaytimeTracker.Services._App;
 using SteamPlaytimeTracker.Services.Batching;
@@ -72,13 +73,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 		{
 			var lookup = _appLookup(ref _appLookupCacheCount, ref _appLookupCache, SteamApps);
 			var entriesToUpdate = batch
-				.Select(x => (Entry: x, Updated: lookup.TryGetValue(x.SteamApp!.AppId, out var existing) ? existing : null))
-				.Where(x => x.Updated is not null).ToArray();
+				.Select<SteamAppEntry, (SteamAppEntry Entry, Indexed<SteamAppEntry>? Updated)>(x => (Entry: x, Updated: lookup.TryGetValue(x.SteamApp!.AppId, out var existing) ? existing : null))
+				.Where(x => x.Updated is not null)
+				.Cast<(SteamAppEntry Entry, Indexed<SteamAppEntry> Updated)>()
+				.ToArray();
 			Dispatcher.Invoke(() =>
 			{
 				foreach(var (entry, updated) in entriesToUpdate)
 				{
-					SteamApps[updated!.Index] = entry;
+					SteamApps[updated.Index] = entry;
 				}	
 			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 			var queued = ArrayPool<SteamAppEntry>.Shared.Rent(batch.Count);
@@ -93,6 +96,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				SteamApps.AddRange(queued);
 				HomeView.RefreshArrangement();
 			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
+			ArrayPool<SteamAppEntry>.Shared.Return(queued);
 		};
 		_queueProcessThread = new Thread(() => _appBatchingService.StartProcessing(_lifetimeProvider.CancellationToken))
 		{
@@ -149,12 +153,21 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 			_menuService.ShowMenu<ApplicationInfoWindowModel, ApplicationInfoSubWindow>();
 		});
+		OpenProcessTrackingMenu = new RelayCommand(_ =>
+		{
+			if(_menuService.Menus.TryPeek(out var menu) && menu.Menu is ProcessTrackingSelectionWindow)
+			{
+				return;
+			}
+			_menuService.ShowMenu<ProcessTrackingSelectionWindowModel, ProcessTrackingSelectionWindow>();
+		});
 	}
 
 	public RelayCommand NavigateToPlayTimeViewCommand => new(o => NavigationService.NavigateTo<SteamAppViewModel>(o!), o => o is SteamAppEntry);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }
+	public RelayCommand OpenProcessTrackingMenu { get; set; }
 	public RelayCommand OpenMessgaeMenu { get; set; }
 	public INavigationService NavigationService { get; set; }
 	public ConcurrentObservableCollection<SteamAppEntry> SteamApps

@@ -71,6 +71,7 @@ internal sealed class SettingsViewModel : Core.ViewModel
 				{
 					Directory.CreateDirectory(logDir);
 				}
+				
 				Process.Start(new ProcessStartInfo()
 				{
 					FileName = logDir,

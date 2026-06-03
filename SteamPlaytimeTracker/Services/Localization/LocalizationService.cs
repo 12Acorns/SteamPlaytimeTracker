@@ -30,26 +30,29 @@ internal class LocalizationService : ILocalizationService
 		get
 		{
 			var template = this[key];
-			if(template == key || string.IsNullOrEmpty(template))
+			if(template.Key == key || string.IsNullOrEmpty(template.Text))
 			{
-				return template;
+				return template.Text;
 			}
-			template = StringUtility.FormatNamed(template, paramaters);
-			if(template.Contains('{'))
+			var formatted = StringUtility.FormatNamed(template.Text, paramaters);
+			if(formatted.Contains('{'))
 			{
-				_logger.Warning("Translation for key: {Key} may be missing parameters. Resulting template: {Template}", key, template);
+				_logger.Warning("Translation for key: {Key} may be missing parameters. Resulting template: {Template}", key, formatted);
 			}
-			return template;
+			return formatted;
 		}
 	}
-	public string this[string key]
+	public LocalizedText this[string key]
 	{
 		get
 		{
 			if(_manager.TryGetTranslatedString(key, out var value))
-				return value;
+			{
+				return LocalizedText.Create(value, key, 0);
+			}
 			_logger.Warning("Missing translation for key: {Key}", key);
-			return $"[{key}]"; // obvious placeholder for missing keys
+			// placeholder for missing keys
+			return LocalizedText.Create($"[{key}]", key, 0);
 		}
 	}
 

@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Authentication;
+using System.Diagnostics;
+using System.Reflection;
+using System.Windows;
+using System.IO;
 
 namespace SteamPlaytimeTracker.IO;
 
@@ -67,11 +68,8 @@ internal static class ApplicationPath
 	}
 	public static string GetPath(string lookupName)
 	{
-		if(!TryGetPath(lookupName, out var globalPath))
-		{
-			return string.Empty;
-		}
-		return globalPath;
+		TryGetPath(lookupName, out var globalPath);
+		return globalPath ?? string.Empty;
 	}
 
 	private static string GetBasePath(ApplicationPathOption option) => option switch
@@ -79,16 +77,16 @@ internal static class ApplicationPath
 		ApplicationPathOption.AppData => _appData,
 		ApplicationPathOption.LocalAppData => _localAppData,
 		ApplicationPathOption.LocalLowAppData => OperatingSystem.IsWindows() ? _localAppData : Directory.CreateDirectory(Path.Combine(_appData, "LocalLow")).FullName,
-		ApplicationPathOption.ExeLocation => _exePath,
+		ApplicationPathOption.FileLocation => _exePath,
 		_ => _localAppData
 	};
 	private static string GetExePath()
 	{
 		var exePath = Environment.ProcessPath;
-		string exeDirectory;
+		string? exeDirectory;
 		if(!string.IsNullOrEmpty(exePath))
 		{
-			exeDirectory = Path.GetDirectoryName(exePath) ?? string.Empty;
+			exeDirectory = Path.GetDirectoryName(exePath);
 			if(!string.IsNullOrEmpty(exeDirectory))
 			{
 				return exeDirectory;
@@ -102,12 +100,17 @@ internal static class ApplicationPath
 		exePath = Assembly.GetEntryAssembly()?.Location ?? string.Empty;
 		if(!string.IsNullOrEmpty(exePath))
 		{
-			exeDirectory = Path.GetDirectoryName(exePath) ?? string.Empty;
+			exeDirectory = Path.GetDirectoryName(exePath);
 			if(!string.IsNullOrEmpty(exeDirectory))
 			{
 				return exeDirectory;
 			}
 		}
-		throw new AuthenticationException("Failed to determine executable path.");
+		MessageBox.Show("Failed to determine executable path. The application may not function correctly. Please ensure the application is properly installed and try again.",
+			"Critical Error Determining Executable Path!", MessageBoxButton.OK, MessageBoxImage.Error);
+		LoggingService.Logger.Fatal("Failed to find executable path. Please reinstall application!\nDumping stack: {entireStack}", 
+			new StackTrace().ToString());
+		Environment.Exit(1);
+		return string.Empty;
 	}
 }

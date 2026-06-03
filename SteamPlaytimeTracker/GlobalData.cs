@@ -4,6 +4,8 @@ using SteamPlaytimeTracker.Localization.Data;
 using System.Globalization;
 using System.IO;
 using ScottPlot;
+using Polly.CircuitBreaker;
+using System.Windows.Documents;
 
 namespace SteamPlaytimeTracker;
 
@@ -29,6 +31,11 @@ internal static partial class GlobalData
 		public const string OpenLogDirKey = "OpenLogDir";
 		public const string ExportDataKey = "ExportData";
 	}
+	internal static class Program
+	{
+		public const string GitHubRepoOwner = "12Acorns";
+		public const string GitHubRepoName = "SteamPlaytimeTracker";
+	}
 }
 
 internal static partial class GlobalData
@@ -42,7 +49,7 @@ internal static partial class GlobalData
 
 internal static partial class GlobalData
 {
-	public const string AppVersion = "0.2.0";
+	public static readonly System.Version AppVersion = new(0, 2, 0);
 }
 
 // Path related constants

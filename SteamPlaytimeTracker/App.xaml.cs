@@ -5,8 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Services.Web.Steam;
 using SteamPlaytimeTracker.Services.Messaging;
+using SteamPlaytimeTracker.Services.Batching;
 using SteamPlaytimeTracker.Services.Playtime;
 using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.MVVM.View.Windows;
+using SteamPlaytimeTracker.Services.Process;
 using SteamPlaytimeTracker.SelfConfig.Data;
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.MVVM.ViewModel;
@@ -17,13 +20,17 @@ using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.SelfConfig;
+using System.Diagnostics.CodeAnalysis;
 using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
+using AppServices.Common.Client;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.IO;
 using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows.Media;
+using AppServices.Updater;
 using System.Diagnostics;
 using System.Windows;
 using Polly.Timeout;
@@ -35,9 +42,6 @@ using System.IO;
 using Serilog;
 using OneOf;
 using Polly;
-using SteamPlaytimeTracker.Services.Batching;
-using SteamPlaytimeTracker.DbObject;
-using Serilog.Configuration;
 
 namespace SteamPlaytimeTracker;
 
@@ -57,32 +61,34 @@ public partial class App : Application
 			DefaultValue = FindResource(typeof(Window))
 		});
 
-		ApplicationPath.TryAddPath(GlobalData.LocalizationLookupName, ApplicationPathOption.ExeLocation, "locale");
+		ApplicationPath.TryAddPath(GlobalData.LocalizationLookupName, ApplicationPathOption.FileLocation, "locale");
 		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
 		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
 		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
 		ApplicationPath.TryAddPath(GlobalData.TmpFolderName, Directory.CreateTempSubdirectory("Steam Playtime Tracker").FullName, ApplicationPathOption.CustomGlobal);
 
-		var iConfigData = new ConfigurationBuilder<IAppData>()
+		var configData = new ConfigurationBuilder<IAppData>()
 			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
 			.Build();
 
-		iConfigData.AppVersion = GlobalData.AppVersion;
+		configData.AppVersion = GlobalData.AppVersion.ToString();
 
 		ApplicationPath.TryAddPath(GlobalData.MainTimeSliceCheckLookupName, ApplicationPathOption.CustomGlobal,
-			iConfigData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
+			configData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
 		serviceCollection.AddTransient(RequiredModel<HomeWindow, HomeWindowModel>);
 		serviceCollection.AddTransient(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
+		serviceCollection.AddTransient(RequiredModel<ProcessTrackingSelectionWindow, ProcessTrackingSelectionWindowModel>);
 		serviceCollection.AddSingleton(RequiredModel<SettingsView, SettingsViewModel>);
 		serviceCollection.AddSingleton(RequiredModel<HomeView, HomeViewModel>);
 		serviceCollection.AddSingleton(RequiredModel<SteamAppView, SteamAppViewModel>);
 
-		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(iConfigData));
+		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(configData));
 		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"), ServiceLifetime.Transient);
 		serviceCollection.AddSingleton<HomeWindowModel>();
 		serviceCollection.AddSingleton<ApplicationInfoWindowModel>();
+		serviceCollection.AddSingleton<ProcessTrackingSelectionWindowModel>();
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();
 		serviceCollection.AddSingleton<SteamAppViewModel>();
@@ -105,6 +111,7 @@ public partial class App : Application
 			return new MenuService(Factory);
 		});
 
+		serviceCollection.AddSingleton<IProcessListingService, ProcessListingService>();
 		serviceCollection.AddSingleton<IMessageExchangeService, ThreadedMessageExchangeService>();
 		serviceCollection.AddSingleton<INavigationService, ViewModelNavigationService>();
 		serviceCollection.AddSingleton<IAppService, AppService>();
@@ -201,6 +208,18 @@ public partial class App : Application
 
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		var config = ServiceProvider.GetRequiredService<AppConfig>();
+
+		if(LikelyNeedsUpdating(config.AppData.AppVersion))
+		{
+			var res = MessageBox.Show("A new version of Steam Playtime Tracker is available. Would you like to update now?", "Update Available",
+				MessageBoxButton.YesNo, MessageBoxImage.Information);
+			if(res is MessageBoxResult.Yes)
+			{
+				Update();
+			}
+		}
+
 		var db = ServiceProvider.GetRequiredService<DbAccess>();
 		var logger = ServiceProvider.GetRequiredService<ILogger>();
 		logger.Information("Applying database migrations...");
@@ -246,7 +265,6 @@ public partial class App : Application
 		logger.Information("Database migrations applied successfully.");
 
 		var localizer = ServiceProvider.GetRequiredService<ILocalizationService>();
-		var config = ServiceProvider.GetRequiredService<AppConfig>();
 		localizer.ChangeLocale(config.AppData.LocalizationData.LanguageCode);
 
 		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
@@ -265,4 +283,28 @@ public partial class App : Application
 	{
 		DataContext = provider.GetRequiredService<TModel>()
 	};
+	[DoesNotReturn]
+	private static void Update()
+	{
+		Process.Start(new ProcessStartInfo()
+		{
+			FileName = "Updater.exe",
+			UseShellExecute = true,
+			Arguments = $"--app-path \"{AppDomain.CurrentDomain.BaseDirectory}\""
+		});
+		Environment.Exit(0);
+	}
+	private static bool LikelyNeedsUpdating(string configVersionStr)
+	{
+		var assemblyVersion = GlobalData.AppVersion;
+		var configVersion = Version.Parse(configVersionStr);
+		if(configVersion != assemblyVersion)
+		{
+			return true;
+		}
+		var updateHelper = new UpdateHelper(new GitHubClient(GlobalData.Program.GitHubRepoOwner, GlobalData.Program.GitHubRepoName));
+		var newReleaseAvailableTask = updateHelper.NewReleaseAvailableAsync(assemblyVersion);
+		var (newRelease, _) = newReleaseAvailableTask.Result(TimeSpan.FromSeconds(10));
+		return newRelease;
+	}
 }

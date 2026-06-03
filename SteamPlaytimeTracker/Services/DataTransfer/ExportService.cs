@@ -1,9 +1,9 @@
 ﻿using SteamPlaytimeTracker.DataTransfer;
+using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.IO;
-using SteamPlaytimeTracker.DbObject;
 
 namespace SteamPlaytimeTracker.Services.DataTransfer;
 
@@ -23,10 +23,10 @@ internal sealed class ExportService
 		_db = db;
 	}
 
-	public async Task ExportAllPlaytimeDataAsync(string path, string exportName, CancellationToken token = default)
+	public async Task ExportAllPlaytimeDataAsync(string path, string fileName, CancellationToken token = default)
 	{
 		Directory.CreateDirectory(path);
-		using var stream = new FileStream(Path.Combine(path, exportName), FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+		using var stream = new FileStream(Path.Combine(path, fileName), FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 		var allPlaytimes = await _db.PlaytimeSlices
 			.Include(x => x.SteamAppEntry)
 				.ThenInclude(x => x.StoreDetails)

@@ -1,11 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36121.58
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11801.241
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamPlaytimeTracker", "SteamPlaytimeTracker\SteamPlaytimeTracker.csproj", "{CC87DFE1-656A-4869-A8E3-C58DFBE9EAA1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{1527D0C0-2402-4DD2-B631-A70A217AF3B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{987CD441-3BAB-41BD-A8AD-A70EE15C1346}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F6C7D01F-B31E-4410-BD04-B33A064DBC62}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +28,10 @@ Global
 		{1527D0C0-2402-4DD2-B631-A70A217AF3B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1527D0C0-2402-4DD2-B631-A70A217AF3B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1527D0C0-2402-4DD2-B631-A70A217AF3B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{987CD441-3BAB-41BD-A8AD-A70EE15C1346}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{987CD441-3BAB-41BD-A8AD-A70EE15C1346}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{987CD441-3BAB-41BD-A8AD-A70EE15C1346}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{987CD441-3BAB-41BD-A8AD-A70EE15C1346}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

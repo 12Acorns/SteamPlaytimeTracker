@@ -11,7 +11,10 @@
              xmlns:dbo="clr-namespace:SteamPlaytimeTracker.DbObject"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              xmlns:global="clr-namespace:SteamPlaytimeTracker"
-             xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions" xmlns:effects="clr-namespace:SteamPlaytimeTracker.Utility.Effects"
+             xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions" 
+             xmlns:effects="clr-namespace:SteamPlaytimeTracker.Utility.Effects" 
+             xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" 
+             d:DataContext="{d:DesignInstance Type=viewmodel:HomeViewModel}"
              mc:Ignorable="d" 
              Background="Transparent"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -49,11 +52,8 @@
         </Grid>
         <ListBox x:Name="lb_SteamEntries" Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
                  ItemContainerStyle="{StaticResource LBI_NoOutline}" Foreground="Transparent"
+                 VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.IsVirtualizing="True"
                  ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.CacheLengthUnit="Item"
-                 VirtualizingPanel.IsContainerVirtualizable="True"
-                 VirtualizingPanel.VirtualizationMode="Recycling" 
-                 VirtualizingPanel.ScrollUnit="Pixel"
                  ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0"
                  ItemTemplate="{StaticResource SteamAppEntryDataTemplate}" Grid.ColumnSpan="2"
                  SizeChanged="ListBox_SizeChanged">
@@ -71,12 +71,24 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="20" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{Binding FooterText}" HorizontalAlignment="Right" VerticalAlignment="Center"
                         Foreground="LightGray" FontSize="12" Margin="5,0,0,0" FontStyle="Italic"/>
             <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                          Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
                                          BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
+                <usercontrols:ExtendedButton.Content>
+                    <Image Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image.Effect>
+                            <effects:InvertEffect />
+                        </Image.Effect>
+                    </Image>
+                </usercontrols:ExtendedButton.Content>
+            </usercontrols:ExtendedButton>
+            <usercontrols:ExtendedButton Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                              Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
+                              BorderBrush="Transparent" Command="{Binding OpenProcessTrackingMenu}">
                 <usercontrols:ExtendedButton.Content>
                     <Image Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image.Effect>

@@ -1,13 +1,13 @@
 ﻿using SteamPlaytimeTracker.Localization.Data;
+using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.Extensions;
 using System.Diagnostics.CodeAnalysis;
 using SteamPlaytimeTracker.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.IO;
 using Serilog;
-using SteamPlaytimeTracker.Utility.Cache;
-using SteamPlaytimeTracker.Extensions;
 using System.Runtime.Caching;
 
 namespace SteamPlaytimeTracker.Localization;
@@ -78,13 +78,22 @@ internal sealed class LocalizationManager
 		var match = GetAvailableLocales().FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 		TryLoadLocale(match ?? throw new FileNotFoundException("Locale code not found in available locales.", code));
 	}
-	public IEnumerable<LocaleData> GetAvailableLocales() => _cacheManager.GetOrAdd(GlobalData.AvailableLocalesCacheKey, TimeSpan.FromHours(1), () =>
+	public IEnumerable<LocaleData> GetAvailableLocales()
 	{
 		var localeDir = ApplicationPath.GetPath(GlobalData.LocalizationLookupName);
-		using var stream = File.OpenRead(Path.Combine(localeDir, GlobalData.LocaleMapFileName));
-		var container = JsonSerializer.Deserialize<LocaleContainer>(stream);
-		return container?.Locales ?? [];
-	});
+		var localesMapFilePath = Path.Combine(localeDir, GlobalData.LocaleMapFileName);
+		if(!File.Exists(localesMapFilePath))
+		{
+			_logger.Warning("Locales map file not found: {LocalesMapFilePath}", localesMapFilePath);
+			return [];
+		}
+		return _cacheManager.GetOrAdd(GlobalData.AvailableLocalesCacheKey, TimeSpan.FromHours(1), () =>
+		{
+			using var stream = File.OpenRead(Path.Combine(localeDir, GlobalData.LocaleMapFileName));
+			var container = JsonSerializer.Deserialize<LocaleContainer>(stream);
+			return container?.Locales ?? [];
+		}, new HostFileChangeMonitor([localesMapFilePath]));
+	}
 	private bool LoadEnGbLocaleEmbededAndDumpToDisk(string filePath) => LoadEmbededLocaleAndDumpToDisk(new LocaleData
 	{
 		Code = "en-gb",

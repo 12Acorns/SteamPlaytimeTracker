@@ -11,6 +11,7 @@
 	<StartupObject>SteamPlaytimeTracker.App</StartupObject>
 	<SignAssembly>False</SignAssembly>
 	<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 	<Target Name="CopyLocalesPublish" AfterTargets="Publish">
@@ -81,7 +82,7 @@
     <PackageReference Include="System.Linq.Async" Version="7.0.0" />
     <PackageReference Include="System.Runtime.Caching" Version="10.0.3" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
-    <PackageReference Include="VirtualizingWrapPanel" Version="2.3.2" />
+    <PackageReference Include="VirtualizingWrapPanel" Version="2.5.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -137,5 +138,30 @@
 
   <ItemGroup>
     <Folder Include="resources\SplashScreen\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Updater\Updater.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AppServices.Common">
+      <HintPath>Dependencies\AppServices.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="AppServices.Updater">
+      <HintPath>Dependencies\AppServices.Updater.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="resources\EULA.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="resources\Icon_Lisence.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="resources\LISENCE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
