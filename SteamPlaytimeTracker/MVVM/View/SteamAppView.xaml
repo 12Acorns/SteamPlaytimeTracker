@@ -45,8 +45,8 @@
 
                 <Image Source="{Binding SelectedApp.SteamApp.ImageUrl}" Margin="5,5,5,0" />
                 <TextBlock Grid.Row="1" Text="{Binding SelectedApp.SteamApp.Name}" 
-                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top" 
-                           TextWrapping="Wrap" FontSize="18" Padding="5,0,5,0" />
+                           Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" 
+                           TextWrapping="Wrap" FontSize="12" Padding="5,0,5,0" />
             </Grid>
 
             <Grid Grid.Column="1">

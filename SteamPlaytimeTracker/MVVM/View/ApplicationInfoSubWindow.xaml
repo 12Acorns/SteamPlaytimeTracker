@@ -33,6 +33,7 @@
         </Grid.RowDefinitions>
         <windowchrome:WindowChromeBar Title="{Binding Title}" SettingsButtonVisibility="Hidden" />
         <vwp:VirtualizingItemsControl Grid.Row="1" ItemsSource="{Binding MessagesView}" VirtualizingPanel.VirtualizationMode="Recycling"
+                                      VirtualizingPanel.ScrollUnit="Pixel"
                                       VerticalAlignment="Top" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <vwp:VirtualizingItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type msg:Message}">

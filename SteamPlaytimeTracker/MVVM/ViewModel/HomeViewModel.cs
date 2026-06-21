@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using SteamPlaytimeTracker.Core;
 using SteamPlaytimeTracker.DbObject;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 using SteamPlaytimeTracker.MVVM.View.Windows;
@@ -12,12 +13,14 @@ using SteamPlaytimeTracker.Services.Menu;
 using SteamPlaytimeTracker.Services.Messaging;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Services.Playtime;
+using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Capsule;
 using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Comparer;
 using SteamPlaytimeTracker.Utility.Messaging;
 using SteamPlaytimeTracker.Utility.ObservableCollections;
 using System.Buffers;
+using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Threading;
 using ValueTaskSupplement;
@@ -60,6 +63,11 @@ internal sealed class HomeViewModel : Core.ViewModel
 		IPlaytimeService playtimeService, IMessageExchangeService messageExchangeService, IMenuService menuService, 
 		IAppSynchronisationService synchronisationService, IBatchUpdateService<SteamAppEntry> appBatchingService)
 	{
+		SteamApps = [];
+		SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
+		SteamAppsView.IsLiveSorting = true;
+		SteamAppsView.LiveSortingProperties.AddRange(["SteamApp.Name", nameof(SteamAppEntry.TotalPlaytime)]);
+
 		NavigationService = navigationService;
 		_messageExchangeService = messageExchangeService;
 		_playtimeService = playtimeService;
@@ -79,10 +87,13 @@ internal sealed class HomeViewModel : Core.ViewModel
 				.ToArray();
 			Dispatcher.Invoke(() =>
 			{
-				foreach(var (entry, updated) in entriesToUpdate)
+				using(SteamAppsView.DeferRefresh())
 				{
-					SteamApps[updated.Index] = entry;
-				}	
+					foreach(var (entry, updated) in entriesToUpdate)
+					{
+						SteamApps[updated.Index] = entry;
+					}	
+				}
 			}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 			var queued = ArrayPool<SteamAppEntry>.Shared.Rent(batch.Count);
 			var remaining = batch.Except(entriesToUpdate.Select(x => x.Entry)).ToArray();
@@ -116,14 +127,12 @@ internal sealed class HomeViewModel : Core.ViewModel
 				? GlobalData.PlaytimeOrderImagePathLastFirst
 				: GlobalData.PlaytimeOrderImagePathFirstLast;
 			CapsuleSortType = CapsuleSortType.Playtime;
+			var sortDir = sortAscending ? ListSortDirection.Ascending : ListSortDirection.Descending;
+			SteamAppsView.SortDescriptions.Clear();
+			SteamAppsView.SortDescriptions.Add(new(nameof(SteamAppEntry.TotalPlaytime), sortDir));
 			if(!sortAscending)
 			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: true);
 				CapsuleSortType |= CapsuleSortType.Ascending;
-			}
-			else
-			{
-				SteamAppsView.CustomSort = new AppPlaytimeComparer(descending: false);
 			}
 		});
 
@@ -134,14 +143,12 @@ internal sealed class HomeViewModel : Core.ViewModel
 				? GlobalData.NameOrderImagePathLastFirst
 				: GlobalData.NameOrderImagePathFirstLast;
 			CapsuleSortType = CapsuleSortType.Name;
+			var sortDir = sortAscending ? ListSortDirection.Ascending : ListSortDirection.Descending;
+			SteamAppsView.SortDescriptions.Clear();
+			SteamAppsView.SortDescriptions.Add(new("SteamApp.Name", sortDir));
 			if(!sortAscending)
 			{
 				CapsuleSortType |= CapsuleSortType.Ascending;
-				SteamAppsView.CustomSort = new AppNameComparer(false);
-			}
-			else
-			{
-				SteamAppsView.CustomSort = new AppNameComparer(true);
 			}
 		});
 		CapsuleSortType = CapsuleSortType.Name | CapsuleSortType.Ascending;
@@ -272,11 +279,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 	{
 		Dispatcher.Invoke(() =>
 		{
-			SteamApps = [];
-			SteamAppsView = (ListCollectionView)CollectionViewSource.GetDefaultView(SteamApps);
-			SteamAppsView.IsLiveSorting = true;
-
-			_logger.Debug("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
+			_logger.Information("Local Steam apps loaded. Found {count} apps", SteamApps.Count);
 		}, DispatcherPriority.Normal, cancellationToken: _lifetimeProvider.CancellationToken);
 
 		var localApps = await _appService.AllEntries(_lifetimeProvider.CancellationToken).ConfigureAwait(true);

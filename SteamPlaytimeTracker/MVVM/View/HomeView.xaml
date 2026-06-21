@@ -50,32 +50,51 @@
             <TextBlock Grid.Column="1" Text="{Binding CurrentSortType}" HorizontalAlignment="Left" VerticalAlignment="Center"
                        Foreground="LightGray" FontSize="18" />
         </Grid>
-        <ListBox x:Name="lb_SteamEntries" Grid.Row="1" Background="Transparent" ItemsSource="{Binding SteamAppsView}"
-                 ItemContainerStyle="{StaticResource LBI_NoOutline}" Foreground="Transparent"
-                 VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.IsVirtualizing="True"
-                 ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0"
-                 ItemTemplate="{StaticResource SteamAppEntryDataTemplate}" Grid.ColumnSpan="2"
-                 SizeChanged="ListBox_SizeChanged">
-            <ListBox.Resources>
+        <vwp:GridView x:Name="lb_SteamEntries" Grid.Row="1" ItemsSource="{Binding SteamAppsView}"
+                      ItemContainerStyle="{StaticResource LBI_NoOutline}" 
+                      ItemTemplate="{StaticResource SteamAppEntryDataTemplate}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="True" 
+                      VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="Transparent" Foreground="Transparent" 
+                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.CacheLengthUnit="Page" VirtualizingPanel.CacheLength="2" VirtualizingPanel.ScrollUnit="Pixel"
+                      VirtualizingPanel.VirtualizationMode="Recycling" BorderThickness="0"
+                      SizeChanged="ListBox_SizeChanged">
+            <vwp:GridView.Resources>
                 <Style TargetType="ScrollViewer" BasedOn="{StaticResource darkThemeScrollViewer}" />
-            </ListBox.Resources>
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <vwp:VirtualizingWrapPanel x:Name="wrapPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top" 
-                                               Orientation="Horizontal" Margin="2,2,2,0" AllowDifferentSizedItems="False" />
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-        </ListBox>
+            </vwp:GridView.Resources>
+        </vwp:GridView>
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="20" />
                 <ColumnDefinition />
                 <ColumnDefinition Width="20" />
                 <ColumnDefinition Width="20" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="{Binding FooterText}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Foreground="LightGray" FontSize="12" Margin="5,0,0,0" FontStyle="Italic"/>
+            <usercontrols:ExtendedButton Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                             Background="Transparent" Foreground="LightGray" HoverBackground="Transparent" HoverBorder="Transparent"
+                             BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
+                <usercontrols:ExtendedButton.Content>
+                    <Path Data="{StaticResource ExportFileSVGData}" 
+                       StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                       Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
+                </usercontrols:ExtendedButton.Content>
+            </usercontrols:ExtendedButton>
             <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
+                  Foreground="LightGray" BorderBrush="Transparent" Command="{Binding OpenProcessTrackingMenu}">
+                <usercontrols:ExtendedButton.Content>
+                    <Path Data="{StaticResource ImportFileSVGData}" 
+                       StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                       Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
+                </usercontrols:ExtendedButton.Content>
+            </usercontrols:ExtendedButton>
+            <TextBlock Grid.Column="2" Text="{Binding FooterText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Foreground="LightGray" FontSize="12" Margin="5,0,0,0" FontStyle="Italic"/>
+            <usercontrols:ExtendedButton Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center"
                                          Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
                                          BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
                 <usercontrols:ExtendedButton.Content>
@@ -86,15 +105,15 @@
                     </Image>
                 </usercontrols:ExtendedButton.Content>
             </usercontrols:ExtendedButton>
-            <usercontrols:ExtendedButton Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+            <usercontrols:ExtendedButton Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center"
                               Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
-                              BorderBrush="Transparent" Command="{Binding OpenProcessTrackingMenu}">
+                              Foreground="LightGray" BorderBrush="Transparent" Command="{Binding OpenProcessTrackingMenu}">
                 <usercontrols:ExtendedButton.Content>
-                    <Image Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Image.Effect>
-                            <effects:InvertEffect />
-                        </Image.Effect>
-                    </Image>
+                    <Path Data="{StaticResource ProcessesSVGData}" 
+                       StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                       Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                       Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
                 </usercontrols:ExtendedButton.Content>
             </usercontrols:ExtendedButton>
         </Grid>

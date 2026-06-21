@@ -23,6 +23,23 @@ internal sealed class SteamAppEntry
 		}
 	}
 	public List<PlaytimeSlice> PlaytimeSlices { get; set; } = [];
+	[NotMapped] public long TotalPlaytime
+	{
+		get
+		{
+			if(PlaytimeSlices.Count == 0)
+			{
+				return 0;
+			}
+			if(field == long.MinValue)
+			{
+				field = PlaytimeSlices.Sum(x => x.SessionLength.Ticks);
+			}
+			return field;
+		}
+		private set;
+	} = long.MinValue;
+	[NotMapped] public double TotalPlaytimeHours => TimeSpan.FromTicks(TotalPlaytime).TotalHours;
 
 	public override int GetHashCode()
 	{

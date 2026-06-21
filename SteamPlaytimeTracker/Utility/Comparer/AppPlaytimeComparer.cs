@@ -19,17 +19,9 @@ internal sealed class AppPlaytimeComparer : IComparer, IComparer<SteamAppEntry>
 		if(x == null) return - _return;
 		if(y == null) return _return;
 
-		var playtimeLeft = x.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
-		var playtimeRight = y.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
-		if(playtimeLeft > playtimeRight)
-		{
-			return _return;
-		}
-		if(playtimeLeft < playtimeRight)
-		{
-			return -_return;
-		}
-		return 0;
+		var playtimeLeft = TimeSpan.FromTicks(x.TotalPlaytime).TotalHours;
+		var playtimeRight = TimeSpan.FromTicks(y.TotalPlaytime).TotalHours;
+		return playtimeLeft.CompareTo(playtimeRight) * _return;
 	}
 	public int Compare(object? x, object? y)
 	{
@@ -42,5 +34,4 @@ internal sealed class AppPlaytimeComparer : IComparer, IComparer<SteamAppEntry>
 		}
 		return Compare(appLeft, appRight);
 	}
-
 }

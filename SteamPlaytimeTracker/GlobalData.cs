@@ -6,6 +6,7 @@ using System.IO;
 using ScottPlot;
 using Polly.CircuitBreaker;
 using System.Windows.Documents;
+using AppServices.Common.App;
 
 namespace SteamPlaytimeTracker;
 
@@ -49,7 +50,11 @@ internal static partial class GlobalData
 
 internal static partial class GlobalData
 {
-	public static readonly System.Version AppVersion = new(0, 2, 0);
+	public static readonly SemanticVersion AppVersion = new()
+	{
+		Version = new(0, 2, 0),
+		Type = new FullRelease()
+	};
 }
 
 // Path related constants

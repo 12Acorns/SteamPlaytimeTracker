@@ -9,26 +9,15 @@
              mc:Ignorable="d"
              d:DesignHeight="180" d:DesignWidth="120">
     <Border BorderThickness="0.5" BorderBrush="White" CornerRadius="5" Margin="1" IsHitTestVisible="True">
-        <Border.Background>
-            <ImageBrush Stretch="Fill" ImageSource="{Binding CapsuleImage, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-        </Border.Background>
-        <Grid Background="Transparent" IsHitTestVisible="True">
+        <Grid>
+            <Image x:Name="RenderImage" Stretch="Fill" IsHitTestVisible="False" />
             <usercontrols:ExtendedButton x:Name="btn_Capsule" Background="Transparent" BorderThickness="0" 
-                                     HoverBackground="#AAAAFFFF" HoverBorder="Transparent" PressedBackground="Blue"
-                                     Command="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                     CommandParameter="{Binding CommandParameter, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                         HoverBackground="#AAAAFFFF" HoverBorder="Transparent" PressedBackground="Blue"
+                                         Command="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         CommandParameter="{Binding CommandParameter, RelativeSource={RelativeSource AncestorType=UserControl}}">
             </usercontrols:ExtendedButton>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="0.6*" />
-                    <RowDefinition Height="0.08*" />
-                    <RowDefinition Height="0.1*" />
-                </Grid.RowDefinitions>
-
-                <TextBlock Grid.Row="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="White" 
-                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" Padding="0" 
-                           IsHitTestVisible="False" />
-                <Rectangle Grid.Row="1" Panel.ZIndex="-1" IsHitTestVisible="False">
+            <Grid VerticalAlignment="Bottom" Height="36" IsHitTestVisible="False">
+                <Rectangle Margin="0,0,0,16">
                     <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                             <GradientStop Color="Transparent" Offset="0.0" />
@@ -39,6 +28,15 @@
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
+
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                           Foreground="White" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center" 
+                           TextWrapping="Wrap" 
+                           FontSize="12" 
+                           Padding="4,0"
+                           Margin="0,0,0,16"/>
             </Grid>
         </Grid>
     </Border>

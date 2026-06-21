@@ -1,4 +1,4 @@
-﻿namespace Updater;
+﻿namespace Installer;
 
 partial class Form1
 {
@@ -36,7 +36,7 @@ partial class Form1
 		ReleaseAssetsLbl = new Label();
 		richTextBox1 = new RichTextBox();
 		checkBox1 = new CheckBox();
-		StartUpdateBtn = new Button();
+		StartInstallBtn = new Button();
 		progressBar1 = new ProgressBar();
 		SuspendLayout();
 		// 
@@ -129,17 +129,17 @@ partial class Form1
 		checkBox1.UseVisualStyleBackColor = true;
 		checkBox1.CheckedChanged += checkBox1_CheckedChanged;
 		// 
-		// StartUpdateBtn
+		// StartInstallBtn
 		// 
-		StartUpdateBtn.Enabled = false;
-		StartUpdateBtn.Location = new Point(1185, 875);
-		StartUpdateBtn.Margin = new Padding(4, 2, 4, 2);
-		StartUpdateBtn.Name = "StartUpdateBtn";
-		StartUpdateBtn.Size = new Size(201, 43);
-		StartUpdateBtn.TabIndex = 9;
-		StartUpdateBtn.Text = "Update";
-		StartUpdateBtn.UseVisualStyleBackColor = true;
-		StartUpdateBtn.Click += StartUpdateBtn_Click;
+		StartInstallBtn.Enabled = false;
+		StartInstallBtn.Location = new Point(1185, 875);
+		StartInstallBtn.Margin = new Padding(4, 2, 4, 2);
+		StartInstallBtn.Name = "StartInstallBtn";
+		StartInstallBtn.Size = new Size(201, 43);
+		StartInstallBtn.TabIndex = 9;
+		StartInstallBtn.Text = "Install";
+		StartInstallBtn.UseVisualStyleBackColor = true;
+		StartInstallBtn.Click += StartUpdateBtn_Click;
 		// 
 		// progressBar1
 		// 
@@ -155,7 +155,7 @@ partial class Form1
 		AutoScaleMode = AutoScaleMode.Font;
 		ClientSize = new Size(1395, 928);
 		Controls.Add(progressBar1);
-		Controls.Add(StartUpdateBtn);
+		Controls.Add(StartInstallBtn);
 		Controls.Add(checkBox1);
 		Controls.Add(richTextBox1);
 		Controls.Add(ReleaseAssetsLbl);
@@ -166,7 +166,7 @@ partial class Form1
 		FormBorderStyle = FormBorderStyle.FixedSingle;
 		Margin = new Padding(4, 2, 4, 2);
 		Name = "Form1";
-		Text = "Steam Playtime Trakcer Updater";
+		Text = "Steam Playtime Trakcer Installer";
 		Load += Form1_Load;
 		ResumeLayout(false);
 		PerformLayout();
@@ -182,6 +182,6 @@ partial class Form1
 	private Label ReleaseAssetsLbl;
 	private RichTextBox richTextBox1;
 	private CheckBox checkBox1;
-	private Button StartUpdateBtn;
+	private Button StartInstallBtn;
 	private ProgressBar progressBar1;
 }

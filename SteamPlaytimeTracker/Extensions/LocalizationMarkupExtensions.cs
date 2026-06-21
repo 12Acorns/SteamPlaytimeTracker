@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Services.Localization;
+﻿using SteamPlaytimeTracker.Services.Localization;
+using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 using System.Windows.Markup;
 using System.Windows.Data;
@@ -8,7 +8,7 @@ using System.Windows;
 namespace SteamPlaytimeTracker.Extensions;
 
 [MarkupExtensionReturnType(typeof(string))]
-internal class LocalizationExtensions : MarkupExtension
+internal class LocalizationMarkupExtensions : MarkupExtension
 {
 	public string Key { get; set; } = "[No Key]";
 

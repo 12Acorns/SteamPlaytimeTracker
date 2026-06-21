@@ -161,6 +161,7 @@ internal sealed record LocalizedText
 		}
 		return true;
 	}
+	public override string ToString() => Text;
 }
 internal enum FormatType
 {

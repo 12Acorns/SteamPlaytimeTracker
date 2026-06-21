@@ -12,7 +12,7 @@ internal static class ApplicationPath
 	private static readonly Dictionary<string, (string LocalPath, ApplicationPathOption Option)> _pathMap = [];
 	private static readonly string _localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 	private static readonly string _appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-	private static readonly string _exePath = GetExePath();
+	private static readonly string _exePath = GetExeFilePath();
 
 	public static void AddOrUpdatePath(string lookupName, ApplicationPathOption option, params ReadOnlySpan<string> relativePath) =>
 		AddOrUpdatePath(lookupName, Path.Combine(relativePath), option);
@@ -80,19 +80,9 @@ internal static class ApplicationPath
 		ApplicationPathOption.FileLocation => _exePath,
 		_ => _localAppData
 	};
-	private static string GetExePath()
+	private static string GetExeFilePath()
 	{
-		var exePath = Environment.ProcessPath;
-		string? exeDirectory;
-		if(!string.IsNullOrEmpty(exePath))
-		{
-			exeDirectory = Path.GetDirectoryName(exePath);
-			if(!string.IsNullOrEmpty(exeDirectory))
-			{
-				return exeDirectory;
-			}
-		}
-		exePath = AppDomain.CurrentDomain.BaseDirectory;
+		var exePath = AppDomain.CurrentDomain.BaseDirectory;
 		if(File.Exists(Path.Combine(exePath, "SteamPlaytimeTracker.exe")))
 		{
 			return exePath;
@@ -100,7 +90,7 @@ internal static class ApplicationPath
 		exePath = Assembly.GetEntryAssembly()?.Location ?? string.Empty;
 		if(!string.IsNullOrEmpty(exePath))
 		{
-			exeDirectory = Path.GetDirectoryName(exePath);
+			var exeDirectory = Path.GetDirectoryName(exePath);
 			if(!string.IsNullOrEmpty(exeDirectory))
 			{
 				return exeDirectory;

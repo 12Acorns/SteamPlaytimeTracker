@@ -24,10 +24,10 @@
         <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <ItemsControl Name="ictrl_Settings" Background="Transparent" HorizontalContentAlignment="Stretch">
                 <uc:FolderSelectView x:Name="fsv_SteamInstall"
-                    InstallIndicator="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallLocationKey}}"
-                    InstallPlaceholder="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderPlaceholderKey}}"
-                    InstallFolderTitle="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderTitleKey}}"
-                    InstallFolderNotSelectedWarning="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SteamInstallFolderNotSelectedWarnignKey}}" 
+                    InstallIndicator="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SteamInstallLocationKey}}"
+                    InstallPlaceholder="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SteamInstallFolderPlaceholderKey}}"
+                    InstallFolderTitle="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SteamInstallFolderTitleKey}}"
+                    InstallFolderNotSelectedWarning="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SteamInstallFolderNotSelectedWarnignKey}}" 
                     FolderPath="{Binding DataContext.SteamInstallPath, Mode=TwoWay, ElementName=settingsView}" />
                 <Grid Name="Current_Localization">
                     <Grid.ColumnDefinitions>
@@ -35,7 +35,7 @@
                         <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.15*" MinWidth="60" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectLocalizationKey}}" 
+                    <Label Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SelectLocalizationKey}}" 
                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
                     <ComboBox Grid.Column="2" Margin="2" 
                               ItemsSource="{Binding AvailableLocales}" 
@@ -53,7 +53,7 @@
                         <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.15*" MinWidth="60" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectLogLevelKey}}" 
+                    <Label Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SelectLogLevelKey}}" 
                             HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" />
                     <ComboBox Grid.Column="2" Margin="2" 
                             ItemsSource="{Binding AvailableLogLevels}" 
@@ -65,7 +65,7 @@
                         <ColumnDefinition Width="0.8*" />
                         <ColumnDefinition Width="0.15*" MinWidth="60" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.SelectFontKey}}" 
+                    <Label Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.SelectFontKey}}" 
                            HorizontalAlignment="Right" Foreground="LightGray" FontSize="12" Height="26" VerticalAlignment="Center" />
                     <settings:SearchBarFilteredDropDownUC Grid.Column="2"
                             SearchBarBackground="White"
@@ -84,15 +84,15 @@
                 <ColumnDefinition Width="0.25*" MinWidth="80" />
             </Grid.ColumnDefinitions>
 
-            <Button Name="btn_ExportData" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.ExportDataKey}}"
+            <Button Name="btn_ExportData" Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.ExportDataKey}}"
                 Command="{Binding ExportDataCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
             <Border Grid.Column="1" Background="LightGray" BorderThickness="1" BorderBrush="#FF707070" />
-            <Button Grid.Column="2" Name="btn_OpenLogs" Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.OpenLogsKey}}"
+            <Button Grid.Column="2" Name="btn_OpenLogs" Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.OpenLogsKey}}"
                 Command="{Binding OpenLogDirCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
             <Button Grid.Column="3" Name="btn_ConfirmSettings" 
-                    Content="{ext:LocalizationExtensions Key={x:Static global:GlobalData.ConfirmKey}}"
+                    Content="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.ConfirmKey}}"
                 Command="{Binding ConfirmSettingsCommand}"
                 CommandParameter="{Binding ElementName=settingsView}"/>
         </Grid>

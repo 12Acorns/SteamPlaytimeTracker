@@ -1,11 +1,14 @@
-using AppServiceUpdater = AppServices.Updater.Updater;
+using AppServices.Common.App;
 using AppServices.Common.Client;
 using AppServices.Updater;
+using System.Reflection;
+using AppServiceUpdater = AppServices.Updater.Updater;
 
 namespace Updater;
 
 public partial class Form1 : Form
 {
+	private readonly CancellationTokenSource _tokenSource;
 	private UpdateHelper _updateHelper;
 	private ListViewItem? _lastSelectedItem;
 	private bool _isUpdating;
@@ -13,6 +16,11 @@ public partial class Form1 : Form
 	public Form1(string path)
 	{
 		InitializeComponent();
+		_tokenSource = new CancellationTokenSource();
+		FormClosing += (sender, e) =>
+		{
+			_tokenSource.Cancel();
+		};
 		var githubClient = new GitHubClient("12Acorns", "SteamPlaytimeTracker");
 		_updateHelper = new UpdateHelper(githubClient);
 		Name = "Steam Playtime Trakcer Updater";
@@ -87,6 +95,11 @@ public partial class Form1 : Form
 	public Form1()
 	{
 		InitializeComponent();
+		_tokenSource = new CancellationTokenSource();
+		FormClosing += (sender, e) =>
+		{
+			_tokenSource.Cancel();
+		};
 		var githubClient = new GitHubClient("12Acorns", "SteamPlaytimeTracker");
 		_updateHelper = new UpdateHelper(githubClient);
 		Name = "Steam Playtime Trakcer Updater";
@@ -154,7 +167,7 @@ public partial class Form1 : Form
 
 	private void Form1_Load(object sender, EventArgs e)
 	{
-
+		richTextBox1.Rtf = File.ReadAllText("resources/EULA.rtf");
 	}
 
 	private void folderBrowserDialog1_HelpRequest(object sender, EventArgs e)
@@ -213,11 +226,32 @@ public partial class Form1 : Form
 			return;
 		}
 		_isUpdating = true;
+		var version = new SemanticVersion() { Version = new(0, 0, 0), Type = new FullRelease() };
 		var updater = new AppServiceUpdater(_updateHelper, InstallPathTxtBox.Text, "SteamPlaytimeTracker.exe");
 		_ = Task.Run(async () =>
 		{
+			try
+			{
+				var sptDLLPath = Directory.EnumerateFiles(InstallPathTxtBox.Text, "*.dll", new EnumerationOptions { RecurseSubdirectories = true })
+					.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).Equals("SteamPlaytimeTracker", StringComparison.InvariantCultureIgnoreCase));
+				if(sptDLLPath != null)
+				{
+					var steamPlaytimeTrackerDLL = Assembly.LoadFrom(sptDLLPath);
+					var globalDataClass = steamPlaytimeTrackerDLL.GetTypes().FirstOrDefault(x => x.Name.Equals("GlobalData", StringComparison.InvariantCultureIgnoreCase));
+					var versionField = globalDataClass?.GetField("AppVersion", BindingFlags.Static | BindingFlags.Public);
+					var appVersionObj = versionField?.GetValue(null);
+					var appVersion = versionField?.FieldType == typeof(string) 
+						? new SemanticVersion { Version = Version.Parse((string?)appVersionObj!), Type = new FullRelease() }
+						: (SemanticVersion?)appVersionObj;
+					if(appVersion.HasValue)
+					{
+						version = appVersion.Value;
+					}
+				}
+			}
+			catch(Exception ex) { }
 			var asset = _lastSelectedItem?.SubItems[0].Text!;
-			var updateTask = updater.TryUpdate(asset, new Version(0, 0, 0), true);
+			var updateTask = updater.TryUpdate(asset, currentVersion: version, true);
 			while(!updateTask.IsCompleted)
 			{
 				Invoke(() =>
@@ -264,12 +298,17 @@ public partial class Form1 : Form
 					updateTask?.Dispose();
 				}
 			});
-		}).ContinueWith(x =>
+		}, _tokenSource.Token).ContinueWith(x =>
 		{
 			MessageBox.Show($"Error: {x.Exception}");
 			_isUpdating = false;
-		}, TaskContinuationOptions.OnlyOnFaulted).ContinueWith(x => x.Dispose());
+		}, _tokenSource.Token, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Current).ContinueWith(x => x.Dispose(), _tokenSource.Token);
 	}
 	private bool CanUpdate() => checkBox1.Checked && !_isUpdating && AssetsLstView.FocusedItem is not null &&
 			InstallPathTxtBox.Text.Length > 0;
+
+	private void richTextBox1_TextChanged(object sender, EventArgs e)
+	{
+
+	}
 }

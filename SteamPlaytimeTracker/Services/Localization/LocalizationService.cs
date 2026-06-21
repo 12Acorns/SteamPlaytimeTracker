@@ -30,7 +30,7 @@ internal class LocalizationService : ILocalizationService
 		get
 		{
 			var template = this[key];
-			if(template.Key == key || string.IsNullOrEmpty(template.Text))
+			if(string.IsNullOrEmpty(template.Text) || template.IsEmpty || template.IsPlaceholder)
 			{
 				return template.Text;
 			}

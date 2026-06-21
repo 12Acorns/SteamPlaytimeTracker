@@ -34,7 +34,7 @@
             HoverBackground="#40808080" PressedBackground="{StaticResource translucentGray}"
             HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0"
             Click="btn_OpenInstallFolder_Click">
-            <TextBlock Text="{ext:LocalizationExtensions Key={x:Static global:GlobalData.FolderSelectOpenKey}}" 
+            <TextBlock Text="{ext:LocalizationMarkupExtensions Key={x:Static global:GlobalData.FolderSelectOpenKey}}" 
                        TextWrapping="Wrap" FontSize="16" />
         </local:ExtendedButton>
     </Grid>

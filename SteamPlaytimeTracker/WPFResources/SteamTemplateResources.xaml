@@ -8,8 +8,7 @@
                               Height="{Binding DataContext.UniformHeight, RelativeSource={RelativeSource AncestorType=ListBox}}"
                           Title="{Binding SteamApp.Name}"
                           ImageUrl="{Binding SteamApp.ImageUrl}"
-                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand,
-                                RelativeSource={RelativeSource AncestorType=ListBox}}"
+                          Command="{Binding DataContext.NavigateToPlayTimeViewCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                           CommandParameter="{Binding}">
         </ucsteam:SteamCapsule>
     </DataTemplate>

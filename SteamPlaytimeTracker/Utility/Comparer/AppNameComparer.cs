@@ -19,6 +19,6 @@ internal sealed class AppNameComparer : IComparer, IComparer<string>
 		{
 			throw new Exception($"Either argument passed to comparer is not of type {nameof(SteamAppEntry)}");
 		}
-		return Compare(appLeft.SteamApp.Name, appRight.SteamApp.Name);
+		return Compare(appLeft?.SteamApp?.Name, appRight?.SteamApp?.Name);
 	}
 }

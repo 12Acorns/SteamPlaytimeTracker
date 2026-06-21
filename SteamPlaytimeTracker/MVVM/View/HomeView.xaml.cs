@@ -22,7 +22,7 @@ public partial class HomeView : UserControl
 
 	private void ListBox_SizeChanged(object sender, SizeChangedEventArgs e)
 	{
-		if(sender is not ListBox lb)
+		if(sender is not ListBox lb || DataContext is not HomeViewModel vm)
 		{
 			return;
 		}
@@ -31,13 +31,9 @@ public partial class HomeView : UserControl
 		{
 			return;
 		}
-		var sX = vp.ActualWidth - vp.Margin.Right - vp.Margin.Left;
+		var sX = vp.ActualWidth - vp.Margin.Right - vp.Margin.Left - 0.5d;
 		var nItemsInRow = (int)Math.Max(1, sX / SteamCapsule.BaseWidth);
 		var newItemWidth = sX / nItemsInRow;
-		if(DataContext is not HomeViewModel vm)
-		{
-			return;
-		}
 		vm.UniformWidth = newItemWidth;
 		vm.UniformHeight = newItemWidth * SteamCapsule.HeightScaleFactor;
 		lb.InvalidateArrange();

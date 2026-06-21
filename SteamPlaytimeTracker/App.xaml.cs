@@ -180,9 +180,14 @@ public partial class App : Application
 
 		ServiceProvider = serviceCollection.BuildServiceProvider();
 
+		// tmp remedie, do not remove
+		// Causes playtime to be calculated/retrieved/scraped from disk during startup
+		// Makes percieved loading time quicker as we are doing the computation earlier rather than later
+		// Need to optimise in future
 		_ = ServiceProvider.GetRequiredService<IPlaytimeService>().GetPlayimeSegments(
 			ServiceProvider.GetRequiredService<ILifetimeService>().CancellationToken);
 
+		var logger = ServiceProvider.GetRequiredService<ILogger>();
 		OnSessionClose += (sender, e) =>
 		{
 			if(e.Cancel)
@@ -191,7 +196,6 @@ public partial class App : Application
 			}
 			if(ApplicationPath.TryGetPath(GlobalData.TmpFolderName, out var tmpDirectory) && Directory.Exists(tmpDirectory))
 			{
-				var logger = ServiceProvider.GetRequiredService<ILogger>();
 				try
 				{
 					Directory.Delete(tmpDirectory, true);
@@ -208,6 +212,7 @@ public partial class App : Application
 
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		base.OnStartup(e);
 		var config = ServiceProvider.GetRequiredService<AppConfig>();
 
 		if(LikelyNeedsUpdating(config.AppData.AppVersion))
@@ -271,7 +276,6 @@ public partial class App : Application
 
 		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
-		base.OnStartup(e);
 	}
 
 	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);
@@ -297,11 +301,6 @@ public partial class App : Application
 	private static bool LikelyNeedsUpdating(string configVersionStr)
 	{
 		var assemblyVersion = GlobalData.AppVersion;
-		var configVersion = Version.Parse(configVersionStr);
-		if(configVersion != assemblyVersion)
-		{
-			return true;
-		}
 		var updateHelper = new UpdateHelper(new GitHubClient(GlobalData.Program.GitHubRepoOwner, GlobalData.Program.GitHubRepoName));
 		var newReleaseAvailableTask = updateHelper.NewReleaseAvailableAsync(assemblyVersion);
 		var (newRelease, _) = newReleaseAvailableTask.Result(TimeSpan.FromSeconds(10));

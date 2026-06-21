@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Utility.Cache;
-using SteamPlaytimeTracker.Extensions;
-using System.Windows.Media.Imaging;
 using SteamPlaytimeTracker.Core;
-using System.Windows.Controls;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.Utility.Cache;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace SteamPlaytimeTracker.MVVM.View.UserControls.Steam;
 
@@ -60,6 +60,7 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		set
 		{
 			field = value;
+			RenderImage.Source = field;
 			PropertyChanged.OnPropertyChanged(this);
 		}
 	}
@@ -70,10 +71,12 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		var url = (string)e.NewValue;
 		if(capsule._imageCache.TryGet<BitmapImage>(url, out var bmp))
 		{
+			bmp.DecodePixelWidth = (int)capsule.Width;
 			capsule.CapsuleImage = bmp;
 			return;
 		}
 		bmp = LoadBitmap(url);
+		bmp.DecodePixelWidth = (int)capsule.Width;
 		capsule._imageCache.Set(url, bmp, TimeSpan.FromHours(2));
 		capsule.CapsuleImage = bmp;
 	}

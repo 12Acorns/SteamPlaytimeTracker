@@ -1,5 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-                    xmlns:converter="clr-namespace:SteamPlaytimeTracker.Utility.Converter">
+                    xmlns:converter="clr-namespace:SteamPlaytimeTracker.Utility.Converter"
+                    xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions">
     <converter:EnumToStringConverter x:Key="DefaultEnumToStringConverter" />
+    <ext:AspectRatioConverterExtension x:Key="AspectRatioConverter" />
 </ResourceDictionary>

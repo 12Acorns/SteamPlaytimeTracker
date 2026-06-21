@@ -43,6 +43,7 @@
     <None Remove="resources\Icons\Error_Icon.svg" />
     <None Remove="resources\Icons\Information_Icon.svg" />
     <None Remove="resources\Icons\Notification.svg" />
+    <None Remove="resources\Icons\processes.svg" />
     <None Remove="resources\Icons\Warning.svg" />
     <None Remove="resources\Info_Icon.png" />
     <None Remove="resources\Localization\locales\en-gb.json" />
@@ -75,7 +76,7 @@
     <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="OneOf.Monads" Version="1.24.0" />
     <PackageReference Include="OutParser" Version="1.1.1" />
-    <PackageReference Include="ScottPlot.WPF" Version="5.1.57" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.1.58" />
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
@@ -102,6 +103,9 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="resources\Icons\Notification_Alert.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="resources\Icons\processes.svg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="resources\Icons\Warning.svg">
@@ -141,26 +145,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Updater\Updater.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AppServices.Common">
-      <HintPath>Dependencies\AppServices.Common.dll</HintPath>
+      <HintPath>..\Common\Dependencies\AppServices.Common.dll</HintPath>
     </Reference>
     <Reference Include="AppServices.Updater">
-      <HintPath>Dependencies\AppServices.Updater.dll</HintPath>
+      <HintPath>..\Common\Dependencies\AppServices.Updater.dll</HintPath>
     </Reference>
   </ItemGroup>
-
+	
   <ItemGroup>
-    <None Update="resources\EULA.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="resources\Icon_Lisence.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="resources\LISENCE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

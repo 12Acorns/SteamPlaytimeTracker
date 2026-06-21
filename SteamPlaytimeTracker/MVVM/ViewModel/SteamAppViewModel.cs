@@ -266,7 +266,6 @@ internal class SteamAppViewModel : Core.ViewModel
 			GraphViewSelectionId.DayPlaytimeId => CreateDayPlaytimeBars(SelectedApp),
 			_ => throw new ArgumentOutOfRangeException(nameof(SelectedGraphingOption), "Invalid graphing option selected.")
 		};
-
 		AddEventHandleToPlot(barPlot);
 
 		barPlot.ValueLabelStyle.ForeColor = ScottPlot.Colors.White;
