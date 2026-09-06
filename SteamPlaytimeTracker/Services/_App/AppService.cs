@@ -51,7 +51,7 @@ internal sealed class AppService : IAppService
 	{
 		try
 		{
-			return await _cacheManager.GetAsync($"GEA_{appId}", async token => 
+			return await _cacheManager.GetIfNotNullAsync($"GEA_{appId}", async token => 
 				await _db.UserApps
 						.Include(x => x.StoreDetails)
 							.ThenInclude(x => x.AppData)
@@ -80,15 +80,8 @@ internal sealed class AppService : IAppService
 		}, token: token).ConfigureAwait(false);
 	}
 
-	public async ValueTask<OneOf<SteamStoreAppData?, ParseResult, HttpStatusCode>> GetStoreAppDetailsAsync(uint appId, CancellationToken token = default)
-	{
-		var localApps = await _localSteamAppService.GetLocalAppIds(token).ConfigureAwait(false);
-		if(!localApps.Contains(appId))
-		{
-			return null;
-		}
-		return (await _steamWebService.GetAppDetails(appId, token).ConfigureAwait(false)).MapT0(appData => appData.Success ? appData : null);
-	}
+	public async ValueTask<OneOf<SteamStoreAppData?, ParseResult, HttpStatusCode>> GetStoreAppDetailsAsync(uint appId, CancellationToken token = default) => 
+		(await _steamWebService.GetAppDetails(appId, token).ConfigureAwait(false)).MapT0(appData => appData.Success ? appData : null);
 
 	private async ValueTask<IEnumerable<SteamStoreAppData>> GetLocalAppsPrimaryAsync(string searchFile, CancellationToken token) => 
 		await IOUtility.HandleTmpFileLifetimeAsync(searchFile, async tmpTile =>

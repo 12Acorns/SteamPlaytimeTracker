@@ -34,7 +34,6 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
 using ValueTaskSupplement;
-using WpfToolkit.Controls;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel;
 
@@ -188,11 +187,17 @@ internal sealed class HomeViewModel : Core.ViewModel
 			_importInProgress = true;
 			try
 			{
-				using var selectedFileStream = new OpenFileDialog()
+				var importFileDialog = new OpenFileDialog()
 				{
 					Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-				}.OpenFile();
-				var importedPlaytimes = await JsonSerializer.DeserializeAsync<PlaytimeExportStructureContainer>(selectedFileStream, _options);
+				};
+				if(importFileDialog.ShowDialog() == false)
+				{
+					MessageBox.Show("Failed to open file selection dialog to import playtime.", "File selection error!", MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+				using var importedFileStream = importFileDialog.OpenFile();
+				var importedPlaytimes = await JsonSerializer.DeserializeAsync<PlaytimeExportStructureContainer>(importedFileStream, _options);
 				foreach(var app in importedPlaytimes.Structure)
 				{
 					// TODO
@@ -212,18 +217,18 @@ internal sealed class HomeViewModel : Core.ViewModel
 					if(appEntry is null)
 					{
 						var storeDetails = await _appService.GetStoreAppDetailsAsync((uint)app.AppId, _lifetimeProvider.CancellationToken);
-						if(!storeDetails.IsT0)
+						if(!storeDetails.IsT0 || storeDetails.AsT0 is null)
 						{
 							continue;
 						}
+						storeDetails.AsT0!.Id = storeDetails.AsT0.StoreData!.Id = (int)storeDetails.AsT0.StoreData.AppId;
 						appEntry = new SteamAppEntry()
 						{
 							StoreDetails = storeDetails.AsT0!,
 							PlaytimeSlices = importedSlices
 						};
 						_dbAccess.UserApps.Add(appEntry);
-						_dbAccess.SteamStoreApps.Add(storeDetails.AsT0!);
-						_dbAccess.PlaytimeSlices.AddRange(appEntry.PlaytimeSlices);
+						_appBatchingService.TryEnqueue(appEntry);
 						continue;
 					}
 					var dbSlices = appEntry.PlaytimeSlices;
@@ -234,16 +239,17 @@ internal sealed class HomeViewModel : Core.ViewModel
 
 					var orderedIntervals = PlaytimeUtility.CorrectIntervalOverlap(dbSlices.Concat(importedSlices).ToList());
 					appEntry.PlaytimeSlices = orderedIntervals;
-					_dbAccess.PlaytimeSlices.UpdateRange(orderedIntervals);
 					_dbAccess.UserApps.Update(appEntry);
+					_dbAccess.PlaytimeSlices.UpdateRange(orderedIntervals);
 				}
 				await _dbAccess.SaveChangesAsync();
+				MessageBox.Show("Successfully imported playtime data.", "Success!", MessageBoxButton.OK, MessageBoxImage.Information);
 			}
 			catch(Exception ex)
 			{
 				_logger.Error(ex, "An error occurred while importing playtime data.");
 				_messageExchangeService.AddMessage(new Message(MessageType.Error, "IO", $"An error occurred while importing playtime data. Error: \'{ex}\'"));
-				MessageBox.Show("An error occurred while importing playtime data. See logs or messages for more information.", "Error Importing Data",
+				MessageBox.Show("An error occurred while importing playtime data. See logs or messages for further information.", "Error Importing Data",
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 			finally
@@ -280,6 +286,15 @@ internal sealed class HomeViewModel : Core.ViewModel
 					}
 				});
 			});
+		});
+
+		App.OnSessionClose.Subscribe(OrderedEventPriority.Default, (sender, e) =>
+		{
+			if(_importInProgress)
+			{
+				MessageBox.Show("Import in progress, please wait");
+				e.Cancel = true;
+			}
 		});
 	}
 
@@ -461,7 +476,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 				PlaytimeSlices = segmentsForEntry
 			};
 			_synchronisationService.EnqueueForDbSync(entry);
-			var success = _appBatchingService.TryEnqueue(entry);
+			_appBatchingService.TryEnqueue(entry);
 		}
 		catch(Exception ex) when (ex is not OperationCanceledException)
 		{

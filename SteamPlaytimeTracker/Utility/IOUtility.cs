@@ -10,12 +10,12 @@ namespace SteamPlaytimeTracker.Utility;
 
 internal static class IOUtility
 {
-	private const FileOptions DefaultOptions = FileOptions.SequentialScan | FileOptions.Asynchronous;
-	private const int DefaultBufferSize = 8192;
+	private const FileOptions _DefaultOptions = FileOptions.SequentialScan | FileOptions.Asynchronous;
+	private const int _DefaultBufferSize = 8192;
 	/// <summary>
 	/// Streams lines from a file asyncronously, exceptions are not catched.
 	/// </summary>
-	public static async IAsyncEnumerable<string> ReadLinesAsync(string filePath, int bufferSize = DefaultBufferSize, Encoding? encoding = null,
+	public static async IAsyncEnumerable<string> ReadLinesAsync(string filePath, int bufferSize = _DefaultBufferSize, Encoding? encoding = null,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 		ArgumentOutOfRangeException.ThrowIfLessThan(bufferSize, 1);
@@ -27,7 +27,7 @@ internal static class IOUtility
 			cancellationToken = ApplicationEndAsyncLifetimeService.Default.CancellationToken;
 		}
 
-		await using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, DefaultOptions);
+		await using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, _DefaultOptions);
 		using var reader = new StreamReader(fileStream, encoding, detectEncodingFromByteOrderMarks: true);
 		string? line;
 		while((line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false)) != null)
@@ -42,7 +42,7 @@ internal static class IOUtility
 	/// <summary>
 	/// Streams lines from a file, exceptions are not catched.
 	/// </summary>
-	public static IEnumerable<string> ReadLines(string filePath, int bufferSize = DefaultBufferSize, Encoding? encoding = null)
+	public static IEnumerable<string> ReadLines(string filePath, int bufferSize = _DefaultBufferSize, Encoding? encoding = null)
 	{
 		ArgumentOutOfRangeException.ThrowIfLessThan(bufferSize, 1);
 		ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -64,7 +64,7 @@ internal static class IOUtility
 	/// <exception cref="IOException"></exception>
 	/// <exception cref="FileNotFoundException"></exception>
 	/// <exception cref="OperationCanceledException"></exception>
-	public static async Task<(CopyResult CopyResult, Option<IOFailure> Failure)> CopyAsync(string fromPath, string toPath, int bufferSize = DefaultBufferSize * 10, CancellationToken cancellationToken = default)
+	public static async Task<(CopyResult CopyResult, Option<IOFailure> Failure)> CopyAsync(string fromPath, string toPath, int bufferSize = _DefaultBufferSize * 10, CancellationToken cancellationToken = default)
 	{
 		try
 		{
@@ -79,12 +79,12 @@ internal static class IOUtility
 			{
 				return (CopyResult.FileNotFound, new None());
 			}
-			await using var sourceStream = new FileStream(fromPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, DefaultOptions);
-			await using var destinationStream = new FileStream(toPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, DefaultOptions);
+			await using var sourceStream = new FileStream(fromPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, _DefaultOptions);
+			await using var destinationStream = new FileStream(toPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, _DefaultOptions);
 			await sourceStream.CopyToAsync(destinationStream, bufferSize, cancellationToken).ConfigureAwait(false);
 			return (CopyResult.Success, new None());
 		}
-		catch(Exception ex) when(ex is IOException || ex is UnauthorizedAccessException)
+		catch(Exception ex) when(ex is IOException or UnauthorizedAccessException)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1} due to insufficient file privilege.\n" +
 				"This could be due to Steam being open or application needs admin privileges. The former can be resolved " +
@@ -104,7 +104,7 @@ internal static class IOUtility
 				FailureException = ex
 			});
 		}
-		catch(TaskCanceledException ex)
+		catch(OperationCanceledException ex)
 		{
 			LoggingService.Logger.Error(ex, "Failed to copy file from {0} to {1} because the operation was cancelled", fromPath, toPath);
 			return (CopyResult.OperationCancelled, new IOFailure
@@ -124,7 +124,7 @@ internal static class IOUtility
 		}
 	}
 	public static async Task<Result<IOFailure, IAsyncEnumerable<T>>> HandleTmpFileLifetimeAsyncEnumerable<T>(string originalFilePath, Func<string, IAsyncEnumerable<T>> asyncFunc,
-		int bufferSize = DefaultBufferSize, CancellationToken cancellationToken = default)
+		int bufferSize = _DefaultBufferSize, CancellationToken cancellationToken = default)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
 		var tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), tmpFileName);
@@ -153,7 +153,7 @@ internal static class IOUtility
 		}
 	}
 	public static async ValueTask<T?> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 
-		int bufferSize = DefaultBufferSize * 10, CancellationToken cancellationToken = default)
+		int bufferSize = _DefaultBufferSize * 10, CancellationToken cancellationToken = default)
 	{
 		var tmpFileName = $"{Guid.NewGuid()}_{Path.GetFileName(originalFilePath)}";
 		var tmpFilePath = Path.Combine(ApplicationPath.GetPath(GlobalData.TmpFolderName), tmpFileName);
@@ -174,18 +174,7 @@ internal static class IOUtility
 		}
 		finally
 		{
-			try
-			{
-				if(File.Exists(tmpFilePath))
-				{
-					File.Delete(tmpFilePath);
-					LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
-				}
-			}
-			catch(Exception e)
-			{
-				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
-			}
+			TryDeleteFile(tmpFilePath);
 		}
 	}
 	public static T? HandleTmpFileLifetime<T>(string originalFilePath, Func<string, T> func)
@@ -205,18 +194,7 @@ internal static class IOUtility
 		}
 		finally
 		{
-			try
-			{
-				if(File.Exists(tmpFilePath))
-				{
-					File.Delete(tmpFilePath);
-					LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
-				}
-			}
-			catch(Exception e)
-			{
-				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
-			}
+			TryDeleteFile(tmpFilePath);
 		}
 	}
 	public static void TryDeleteFile(string filePath)

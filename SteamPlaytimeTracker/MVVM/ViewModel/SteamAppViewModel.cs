@@ -42,6 +42,10 @@ internal class SteamAppViewModel : Core.ViewModel
 			CleanUp();
 			NavigationService.NavigateTo<HomeViewModel>();
 		});
+		ImportPlaytimeCommand = new RelayCommand(o =>
+		{
+
+		});
 		ExportPlaytimeCommand = new RelayCommand(o =>
 		{
 			// TODO: Move export logic to a service and inject here. Also add service to sanatise file name and handle edge cases like no playtime data, or failed exports
@@ -52,7 +56,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				Filter = "JSON Files (*.json)|*.json",
 				DefaultExt = "json",
 				AddExtension = true,
-				FileName = $"{app.Name.Replace(':', ' ')}_{app.AppId}_PlaytimeExport_{DateTime.Now:yyyyMMddHHmmss}.json",
+				FileName = $"{app.Name.Replace(':', ' ')}_{app.AppId}_PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss_fff}.json",
 				DefaultDirectory = exportDir,
 				InitialDirectory = exportDir
 			};
@@ -78,7 +82,6 @@ internal class SteamAppViewModel : Core.ViewModel
 		});
 		Plot = new();
 
-		// Likely issue, changing locale will likelty not update text. in future move to OnLoad
 		AvailableGraphingOptions = [
 			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, _localizationService[GlobalData.LocAppViewYearPlaytimeViewKey].Text, false),
 			new GrapthViewSelectionData(GraphViewSelectionId.MonthPlaytime, _localizationService[GlobalData.LocAppViewMonthPlaytimeViewKey].Text, true),
@@ -97,6 +100,7 @@ internal class SteamAppViewModel : Core.ViewModel
 
 	public INavigationService NavigationService { get; }
 	public RelayCommand SwitchBackToHomeViewCommand { get; }
+	public RelayCommand ImportPlaytimeCommand { get; }
 	public RelayCommand ExportPlaytimeCommand { get; }
 
 	public WpfPlot Plot { get; }

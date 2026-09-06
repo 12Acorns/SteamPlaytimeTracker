@@ -41,12 +41,46 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="0.4*" MinHeight="200" MaxHeight="400" />
                     <RowDefinition Height="0.6*" />
+                    <RowDefinition Height="20" />
                 </Grid.RowDefinitions>
 
                 <Image Source="{Binding SelectedApp.SteamApp.ImageUrl}" Margin="5,5,5,0" />
                 <TextBlock Grid.Row="1" Text="{Binding SelectedApp.SteamApp.Name}" 
                            Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" 
                            TextWrapping="Wrap" FontSize="12" Padding="5,0,5,0" />
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="20" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <usercontrols:ExtendedButton Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Background="Transparent" Foreground="LightGray" HoverBackground="Transparent" HoverBorder="Transparent"
+                         BorderBrush="Transparent" Command="{Binding ExportPlaytimeCommand}" ToolTip="Export data">
+                        <usercontrols:ExtendedButton.Content>
+                            
+                            <Path Data="{StaticResource ExportFileSVGData}" 
+                               StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                               Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                               Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                               Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
+                        </usercontrols:ExtendedButton.Content>
+                    </usercontrols:ExtendedButton>
+                    
+                    <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
+                          Foreground="LightGray" BorderBrush="Transparent" Command="{Binding ImportDataCommand}" ToolTip="Import data">
+                        <usercontrols:ExtendedButton.Content>
+                            
+                            <Path Data="{StaticResource ImportFileSVGData}" 
+                               StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                               Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                               Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
+                               Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
+                        </usercontrols:ExtendedButton.Content>
+                    </usercontrols:ExtendedButton>
+                </Grid>
             </Grid>
 
             <Grid Grid.Column="1">
@@ -123,16 +157,6 @@
                                             Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" 
                                             Visibility="{Binding EndDatePickerVisiblity}" />
                                     </Grid>
-                                </Grid>
-                                <Grid Grid.Column="1" HorizontalAlignment="Right">
-                                    <usercontrols:ExtendedButton Width="25" Height="25" Background="Transparent" Foreground="LightGray" 
-                                             BorderThickness="0" HoverBackground="DimGray" PressedBackground="Gray" IsHitTestVisible="True"
-                                             Command="{Binding ExportPlaytimeCommand}">
-                                        <Path Data="{StaticResource ExportFileSVGData}"
-                                           StrokeThickness="0" Fill="LightGray" Margin="3" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                           Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
-                                           Stretch="Uniform" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
-                                    </usercontrols:ExtendedButton>
                                 </Grid>
                             </Grid>
                         </Grid>

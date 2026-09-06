@@ -52,4 +52,36 @@ internal static class CacheExtensions
 			_writeSemaphore.Release();
 		}
 	}
+	public static ValueTask<T?> GetIfNotNullAsync<T>(this ICacheManager cacheManager, string key, Func<CancellationToken, Task<T>> acquire,
+		CancellationToken token = default, params ChangeMonitor[] monitors) =>
+		GetIfNotNullAsync(cacheManager, key, ICacheManager.DefaultCacheTime, acquire, token, monitors);
+	public static ValueTask<T?> GetIfNotNullAsync<T>(this ICacheManager cacheManager, string key, int cacheTimeMinutes, Func<CancellationToken, Task<T>> acquire,
+		CancellationToken token = default, params ChangeMonitor[] monitors) =>
+		GetIfNotNullAsync(cacheManager, key, TimeSpan.FromMinutes(cacheTimeMinutes), acquire, token, monitors);
+	public static async ValueTask<T?> GetIfNotNullAsync<T>(this ICacheManager cacheManager, string key, TimeSpan cacheTime, Func<CancellationToken, Task<T>> acquire,
+		 CancellationToken token = default, params ChangeMonitor[] monitors)
+	{
+		if(cacheManager.TryGet(key, out T cached))
+		{
+			return cached;
+		}
+		await _writeSemaphore.WaitAsync(token).ConfigureAwait(false);
+		try
+		{
+			if(cacheManager.TryGet(key, out cached))
+			{
+				return cached;
+			}
+			var result = await acquire(token).ConfigureAwait(false);
+			if(result is not null)
+			{
+				cacheManager.Set(key, result, cacheTime, monitors);
+			}
+			return result;
+		}
+		finally
+		{
+			_writeSemaphore.Release();
+		}
+	}
 }

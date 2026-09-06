@@ -1,54 +1,55 @@
-﻿using SteamPlaytimeTracker.Services.Localization;
-using SteamPlaytimeTracker.MVVM.ViewModel.Window;
-using SteamPlaytimeTracker.Services.DataTransfer;
-using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.Services.Web.Steam;
-using SteamPlaytimeTracker.Services.Messaging;
-using SteamPlaytimeTracker.Services.Batching;
-using SteamPlaytimeTracker.Services.Playtime;
-using SteamPlaytimeTracker.Services.Lifetime;
-using SteamPlaytimeTracker.MVVM.View.Windows;
-using SteamPlaytimeTracker.Services.Process;
-using SteamPlaytimeTracker.SelfConfig.Data;
-using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.MVVM.ViewModel;
-using SteamPlaytimeTracker.Services._App;
-using SteamPlaytimeTracker.Services.Disk;
-using SteamPlaytimeTracker.Services.Menu;
-using SteamPlaytimeTracker.Utility.Cache;
-using SteamPlaytimeTracker.Localization;
-using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.SelfConfig;
-using System.Diagnostics.CodeAnalysis;
-using SteamPlaytimeTracker.MVVM.View;
-using SteamPlaytimeTracker.DbObject;
-using Microsoft.EntityFrameworkCore;
-using AppServices.Common.Client;
-using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.IO;
-using System.Windows.Controls;
-using System.ComponentModel;
-using System.Windows.Media;
+﻿using AppServices.Common.Client;
 using AppServices.Updater;
-using System.Diagnostics;
-using System.Windows;
-using Polly.Timeout;
-using Serilog.Core;
-using Polly.Retry;
-using System.Net;
 using Config.Net;
-using System.IO;
-using Serilog;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using Polly;
+using Polly.Retry;
+using Polly.Timeout;
+using Serilog;
+using Serilog.Core;
+using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.DbObject;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.IO;
+using SteamPlaytimeTracker.Localization;
+using SteamPlaytimeTracker.MVVM.View;
+using SteamPlaytimeTracker.MVVM.View.Windows;
+using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.MVVM.ViewModel.Window;
+using SteamPlaytimeTracker.SelfConfig;
+using SteamPlaytimeTracker.SelfConfig.Data;
+using SteamPlaytimeTracker.Services._App;
+using SteamPlaytimeTracker.Services.Batching;
+using SteamPlaytimeTracker.Services.DataTransfer;
+using SteamPlaytimeTracker.Services.Disk;
+using SteamPlaytimeTracker.Services.Lifetime;
+using SteamPlaytimeTracker.Services.Localization;
+using SteamPlaytimeTracker.Services.Menu;
+using SteamPlaytimeTracker.Services.Messaging;
+using SteamPlaytimeTracker.Services.Navigation;
+using SteamPlaytimeTracker.Services.Playtime;
+using SteamPlaytimeTracker.Services.Process;
+using SteamPlaytimeTracker.Services.Web.Steam;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.Utility;
+using SteamPlaytimeTracker.Utility.Cache;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Net;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SteamPlaytimeTracker;
 
 public partial class App : Application
 {
-	public static event EventHandler<CancelEventArgs>? OnSessionClose;
-	public static event EventHandler<SessionEndingCancelEventArgs>? OnSessionEndingA;
+	internal static OrderedEventInvoker<CancelEventArgs>? OnSessionClose => field ??= new();
+	internal static OrderedEventInvoker<SessionEndingCancelEventArgs>? OnSessionEndingA => field ??= new();
 
 	public static ServiceProvider ServiceProvider { get; private set; } = default!;
 
@@ -186,7 +187,7 @@ public partial class App : Application
 			ServiceProvider.GetRequiredService<ILifetimeService>().CancellationToken);
 
 		var logger = ServiceProvider.GetRequiredService<ILogger>();
-		OnSessionClose += (sender, e) =>
+		OnSessionClose.Subscribe(OrderedEventPriority.Default, (sender, e) =>
 		{
 			if(e.Cancel)
 			{
@@ -205,7 +206,7 @@ public partial class App : Application
 				}
 				logger.Information("Deleted temporary directory: {TmpDirectory}", tmpDirectory);
 			}
-		};
+		});
 	}
 
 	protected override void OnStartup(StartupEventArgs e)

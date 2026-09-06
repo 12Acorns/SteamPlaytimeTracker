@@ -18,6 +18,9 @@ public sealed class SteamStoreApp
 	public SteamStoreApp(SteamStoreAppData appData) : this((int)appData.StoreData!.AppId, appData) { }
 	public static implicit operator SteamStoreApp(SteamStoreAppData appData) => new((int)appData.StoreData!.AppId, appData);
 
+	/// <summary>
+	/// Id is not auto-generated
+	/// </summary>
 	[Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; } 
 	public SteamStoreAppData AppData { get; set; }
 	[NotMapped] public bool Exists => AppData is { Success: true, StoreData: not null };
@@ -29,6 +32,9 @@ public sealed class SteamStoreAppData
 
 	[JsonConstructor]
 	public SteamStoreAppData(bool success, SteamAppStoreDetails storeData) => (Success, StoreData) = (success, storeData);
+	/// <summary>
+	/// Id is not auto-generated
+	/// </summary>
 	[JsonIgnore, Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; }
 	[JsonPropertyName("success"), MemberNotNullWhen(true, nameof(StoreData))] public bool Success { get; set; }
 	[JsonPropertyName("data")] public SteamAppStoreDetails? StoreData { get; set; } = default!;
@@ -40,6 +46,9 @@ public sealed class SteamAppStoreDetails
 	[JsonConstructor]
 	public SteamAppStoreDetails(string appType, string name, uint appId, int? age, bool isFree) =>
 		(AppType, Name, AppId, Age, IsFree) = (appType, name, appId, age, isFree);
+	/// <summary>
+	/// Id is not auto-generated
+	/// </summary>
 	[JsonIgnore, Key, DatabaseGenerated(DatabaseGeneratedOption.None)] public int Id { get; set; }
 	[JsonPropertyName("type")] public string AppType { get; set; } = string.Empty;
 	[JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
