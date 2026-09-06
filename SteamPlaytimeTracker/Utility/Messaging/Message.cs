@@ -2,7 +2,7 @@
 
 namespace SteamPlaytimeTracker.Utility.Messaging;
 
-internal readonly record struct Message(MessageType Type, string? Catagory, string Content)
+internal sealed record Message(MessageType Type, MessageCatagory? Catagory, string Content)
 {
 	public SolidColorBrush IconColour => Type switch
 	{

@@ -1,5 +1,6 @@
 ﻿using SteamPlaytimeTracker.Extensions;
 using System.Threading.Channels;
+using System.Buffers;
 using Serilog;
 
 namespace SteamPlaytimeTracker.Services.Batching;
@@ -26,40 +27,43 @@ internal sealed class BatchUpdateService<T> : IBatchUpdateService<T>
 		_logger = logger;
 	}
 
-	public void Enqueue(T item)
+	public bool TryEnqueue(T item)
 	{
-		_enqueueSlim.Wait();
-		_dataWriter.WriteAsync(item).AsTask().ContinueWith(t => 
+		try
 		{
-			if(t.IsFaulted && !t.IsCanceled)
-			{
-				_logger.Error(t.Exception, "An error occurred while enqueuing an item to the batch update service.");
-			}
-			_enqueueSlim.Release();
-		});
+			_enqueueSlim.Wait();
+			return _dataWriter.TryWrite(item);
+		}
+		finally
+		{
+			_enqueueSlim.TryRelease();
+		}
 	}
-	public async void StartProcessing(CancellationToken token)
+	public void StartProcessing(CancellationToken token)
 	{
 		var timingSemaphore = new SemaphoreSlim(1, 1);
 		int currentRetriesFromTime = 0;
 		int growthFactor = 1;
-		var currentWaitTime = _options.MaximumWaitInterval;
-		try
+		var currentWaitTime = _options.MinimumWaitInterval;
+		_ = Task.Run(async () =>
 		{
-			while(true)
+			try
 			{
-				token.ThrowIfCancellationRequested();
-				await ProcessIfCountOrTimePasses(token: token).ConfigureAwait(false);
+				while(true)
+				{
+					token.ThrowIfCancellationRequested();
+					await ProcessIfCountOrTimePasses(token: token).ConfigureAwait(false);
+				}
 			}
-		}
-		catch(Exception ex) when(ex is not OperationCanceledException)
-		{
-			_logger.Error(ex, "An error occurred while processing the app queue.");
-		}
-		finally
-		{
-			timingSemaphore.TryRelease();
-		}
+			catch(Exception ex) when(ex is not OperationCanceledException)
+			{
+				_logger.Error(ex, "An error occurred while processing the app queue.");
+			}
+			finally
+			{
+				timingSemaphore.TryRelease();
+			}
+		}, token);
 
 		async ValueTask ProcessIfCountOrTimePasses(CancellationToken token)
 		{
@@ -69,24 +73,39 @@ internal sealed class BatchUpdateService<T> : IBatchUpdateService<T>
 				currentRetriesFromTime++;
 				if(currentRetriesFromTime >= _options.MaximumRetries)
 				{
-					currentWaitTime *= Math.Pow(_options.BaseGrowthFactor, growthFactor++);
+					var tmp = unchecked(currentWaitTime * Math.Pow(_options.BaseGrowthFactor, growthFactor++));
+					if(tmp < currentWaitTime)
+					{
+						tmp = currentWaitTime;
+					}
+					currentWaitTime = tmp;
 					if(currentWaitTime > _options.MaximumWaitInterval)
 					{
 						currentWaitTime = _options.MaximumWaitInterval;
+						growthFactor--;
 					}
 					currentRetriesFromTime = 0;
 				}
 				return;
 			}
-
 			currentWaitTime = _options.MinimumWaitInterval;
 			currentRetriesFromTime = 0;
 			growthFactor = 1;
+
+			var currentDequeueed = 0;
+			var entryQueue = ArrayPool<T>.Shared.Rent(_options.MaximumBatchSize);
+			while(currentDequeueed < _options.MaximumBatchSize && _dataReader.Count > 0)
+			{
+				entryQueue[currentDequeueed++] = await _dataReader.ReadAsync(token).ConfigureAwait(false);
+			}
+			BatchReady?.Invoke(entryQueue.ToList()[..currentDequeueed]);
+			ArrayPool<T>.Shared.Return(entryQueue);
 		}
 		async Task ProcessAfterTime(TimeSpan time, CancellationToken token)
 		{
 			try
 			{
+				await timingSemaphore.WaitAsync(token).ConfigureAwait(false);
 				await timingSemaphore.WaitAsync(time, token).ConfigureAwait(false);
 				var items = new List<T>();
 				while(_dataReader.TryRead(out var item) && items.Count < _options.MaximumBatchSize)
@@ -95,11 +114,7 @@ internal sealed class BatchUpdateService<T> : IBatchUpdateService<T>
 				}
 				BatchReady?.Invoke(items);
 			}
-			catch(OperationCanceledException)
-			{
-				// Ignore cancellation exceptions, as they are expected during shutdown.
-			}
-			catch(Exception ex)
+			catch(Exception ex) when(ex is not OperationCanceledException)
 			{
 				_logger.Error(ex, "An error occurred while waiting to process a batch.");
 			}

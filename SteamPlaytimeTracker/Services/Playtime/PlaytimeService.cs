@@ -7,9 +7,6 @@ using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Utility;
 using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.Utility.Messaging;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -26,32 +23,36 @@ internal sealed class PlaytimeService : IPlaytimeService
 		_messageExchangeService = messageExchangeService;
 	}
 
-	public async ValueTask<Dictionary<uint, List<PlaytimeSlice>>> GetPlayimeSegments(CancellationToken cancellationToken = default)
+	public async ValueTask<Dictionary<uint, List<PlaytimeSlice>>> GetPlayimeIntervalsMap(CancellationToken cancellationToken = default)
 	{
 		return await _cacheManager.GetAsync("PlaytimeCache", 15, async token =>
 		{
 			try
 			{
-				var res = GetPlaytimeSegmentsPrimary(cancellationToken);
-				if(res is null)
+				var primaryIntervals = GetPlaytimeSegmentsPrimary(cancellationToken);
+				if(primaryIntervals is null)
 				{
 					LoggingService.Logger.Warning("No playtime segments could be retrieved from the primary source.");
 					return [];
 				}
 				LoggingService.Logger.Information("Playtime segments successfully retrieved from the primary source.");
-				var ret = new Dictionary<uint, List<PlaytimeSlice>>();
-				await foreach(var item in res.WithCancellation(cancellationToken).ConfigureAwait(false))
+				var parsedIntervals = new Dictionary<uint, List<PlaytimeSlice>>();
+				await foreach(var interval in primaryIntervals.WithCancellation(cancellationToken).ConfigureAwait(false))
 				{
-					ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(ret, item.AppId, out var exists);
+					ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(parsedIntervals, interval.AppId, out var exists);
 					if(!exists)
 					{
 						list = [];
 					}
-					list!.Add(item);
+					list!.Add(interval);
 				}
-				return ret;
+				foreach(var intervals in parsedIntervals)
+				{
+					parsedIntervals[intervals.Key] = PlaytimeUtility.CorrectIntervalOverlap(intervals.Value);
+				}
+				return parsedIntervals;
 			}
-			catch(Exception ex)
+			catch(Exception ex) when(ex is not OperationCanceledException)
 			{
 				LoggingService.Logger.Error(ex, "An error occurred while retrieving playtime segments from the primary source.");
 				return [];
@@ -129,6 +130,7 @@ internal sealed class PlaytimeService : IPlaytimeService
 					}
 				}
 			}
+			IOUtility.TryDeleteFile(filePath);
 			yield break;
 		}
 	}

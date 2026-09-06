@@ -4,6 +4,7 @@ using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.IO;
 using Serilog;
+using EntityFramework.Exceptions.Sqlite;
 
 namespace SteamPlaytimeTracker;
 
@@ -23,6 +24,8 @@ internal sealed class DbAccess : DbContext
 	public DbSet<PlaytimeSlice> PlaytimeSlices { get; private set; }
 	public DbSet<SteamAppEntry> UserApps { get; private set; }
 	public DbSet<SteamStoreApp> SteamStoreApps { get; private set; }
+	public DbSet<SteamStoreAppData> SteamStoreAppsData { get; private set; }
+	public DbSet<SteamAppStoreDetails> SteamStoreAppsDetails { get; private set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -45,7 +48,7 @@ internal sealed class DbAccess : DbContext
 			.HasOne(e => e.StoreData)
 			.WithOne()
 			.HasForeignKey<SteamStoreAppData>("SteamAppStoreDetailsId")
-			.IsRequired();
+			.IsRequired(false);
 	}
 
 	private static DbContextOptions<DbAccess> RefreshConnection()
@@ -53,6 +56,7 @@ internal sealed class DbAccess : DbContext
 		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
 		return new DbContextOptionsBuilder<DbAccess>()
 			.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}")
+			.UseExceptionProcessor()
 			.Options;
 	}
 }

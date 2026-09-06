@@ -41,7 +41,6 @@ internal sealed class AppService : IAppService
 	}
 
 	public async ValueTask<List<SteamAppEntry>> AllEntries(CancellationToken token) => await _db.UserApps
-			.AsNoTracking()
 			.Include(x => x.StoreDetails)
 				.ThenInclude(x => x.AppData)
 				.ThenInclude(x => x.StoreData)
@@ -54,7 +53,6 @@ internal sealed class AppService : IAppService
 		{
 			return await _cacheManager.GetAsync($"GEA_{appId}", async token => 
 				await _db.UserApps
-						.AsNoTracking()
 						.Include(x => x.StoreDetails)
 							.ThenInclude(x => x.AppData)
 							.ThenInclude(x => x.StoreData)

@@ -1,4 +1,5 @@
-﻿using SteamPlaytimeTracker.Core;
+﻿using SteamPlaytimeTracker.Services.Menu;
+using SteamPlaytimeTracker.Core;
 
 namespace SteamPlaytimeTracker.Services.Navigation;
 
@@ -6,20 +7,25 @@ class ViewModelNavigationService : ObservableObject, INavigationService
 {
 	private readonly Func<Type, object[], ViewModel> _modelViewFactory;
 
-	public ViewModelNavigationService(Func<Type, object[], ViewModel> modelViewFactory)
+	public ViewModelNavigationService(IMenuService menuService, Func<Type, object[], ViewModel> modelViewFactory)
 	{
+		MenuService = menuService;
 		_modelViewFactory = modelViewFactory ?? throw new ArgumentNullException(nameof(modelViewFactory));
 	}
 	public ViewModel CurrentView
 	{
-		get => field;
+		get;
 		set
 		{
 			field = value;
 			OnPropertyChanged();
 		}
 	}
-	public void NavigateTo<TViewModel>(params object[] @params) where TViewModel : ViewModel
+
+	public IMenuService MenuService { get; }
+
+	public void NavigateTo<TViewModel>(params object[] @params)
+		where TViewModel : ViewModel
 	{
 		CurrentView = _modelViewFactory(typeof(TViewModel), @params);
 	}

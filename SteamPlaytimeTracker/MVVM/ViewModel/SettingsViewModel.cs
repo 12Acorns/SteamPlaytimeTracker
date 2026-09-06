@@ -25,19 +25,17 @@ namespace SteamPlaytimeTracker.MVVM.ViewModel;
 internal sealed class SettingsViewModel : Core.ViewModel
 {
 	private readonly FontFamily[] _availableFonts;
-	private readonly ExportService _exportService;
 	private readonly AppConfig _config;
 	private readonly ILogger _logger;
 	
 	public SettingsViewModel(INavigationService navigationService, ILogger logger, AppConfig config, ILocalizationService localizationService,
-		ExportService exportService, LocalizationManager localizationManager, ILifetimeService lifetimeService)
+		LocalizationManager localizationManager, ILifetimeService lifetimeService)
 	{
 		NavigationService = navigationService;
 		_logger = logger;
 		_config = config;
 
 		LocalizationService = localizationService;
-		_exportService = exportService;
 		SteamInstallPath = _config.AppData.SteamInstallData.SteamInstallationFolder ?? string.Empty;
 		AvailableLogLevels = Enum.GetNames<LogEventLevel>();
 		SelectedLogLevel = _config.AppData.LoggingData.LogLevel;
@@ -85,36 +83,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 				MessageBox.Show("Failed to open log directory. See logs for more information.", "Error Opening Log Directory",
 					MessageBoxButton.OK, MessageBoxImage.Error);
 			}
-		});
-		ExportDataCommand = new(_ =>
-		{
-			var path = Path.Combine(ApplicationPath.GetPath(GlobalData.AppDataStoreLookupName), "Exports");
-			var name = $"PlaytimeExport_{DateTime.Now:yyyyMMdd_HHmmss_fff}.json";
-			var playtimeFullPath = Path.Combine(path, name);
-			_exportService.ExportAllPlaytimeDataAsync(path, name, lifetimeService.CancellationToken).ContinueWith(task =>
-			{
-				if(task.IsFaulted)
-				{
-					logger.Error(task.Exception, "Failed to export playtime data");
-					Dispatcher.Invoke(() =>
-					{
-						MessageBox.Show("An error occurred while exporting playtime data. See logs for more information.", "Error Exporting Data",
-							MessageBoxButton.OK, MessageBoxImage.Error);
-					});
-					return;
-				}
-				logger.Information("Playtime data exported successfully");
-				Dispatcher.Invoke(() =>
-				{
-					var res = MessageBox.Show(
-						messageBoxText: $"Playtime data exported successfully. Path: '{playtimeFullPath}'.\nPress Yes to copy path to clipboard.", 
-						caption: "Export Successful", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Information);
-					if(res is MessageBoxResult.Yes)
-					{
-						Clipboard.SetText(playtimeFullPath);
-					}
-				});
-			});
 		});
 
 		AvailableLocales = localizationManager.GetAvailableLocales().ToArray();
@@ -165,7 +133,6 @@ internal sealed class SettingsViewModel : Core.ViewModel
 		});
 	}
 
-	public RelayCommand ExportDataCommand { get; set; }
 	public RelayCommand OpenLogDirCommand { get; set; }
 	public RelayCommand ConfirmSettingsCommand { get; set; }
 	public ILocalizationService LocalizationService { get; }

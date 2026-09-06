@@ -79,7 +79,7 @@ internal sealed class SteamWebService : ISteamWebService
 				_logger.Error(jEx, "Failed to parse app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.FailedToParse);
 				return ParseResult.FailedToParse;
 			}
-			catch(Exception ex)
+			catch(Exception ex) when(ex is not OperationCanceledException)
 			{
 				_logger.Error(ex, "Failed to fetch app details from Steam API for app {0}. Parse Result: {1}", idStr, ParseResult.UnkownError);
 				return ParseResult.UnkownError;

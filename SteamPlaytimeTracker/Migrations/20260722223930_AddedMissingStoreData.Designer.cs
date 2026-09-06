@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SteamPlaytimeTracker;
 
@@ -10,9 +11,11 @@ using SteamPlaytimeTracker;
 namespace SteamPlaytimeTracker.Migrations
 {
     [DbContext(typeof(DbAccess))]
-    partial class DbAccessModelSnapshot : ModelSnapshot
+    [Migration("20260722223930_AddedMissingStoreData")]
+    partial class AddedMissingStoreData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.11");
@@ -89,7 +92,7 @@ namespace SteamPlaytimeTracker.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("SteamAppStoreDetailsId")
+                    b.Property<int>("SteamAppStoreDetailsId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("Success")
@@ -152,7 +155,9 @@ namespace SteamPlaytimeTracker.Migrations
                 {
                     b.HasOne("SteamPlaytimeTracker.Steam.Data.App.SteamAppStoreDetails", "StoreData")
                         .WithOne()
-                        .HasForeignKey("SteamPlaytimeTracker.Steam.Data.App.SteamStoreAppData", "SteamAppStoreDetailsId");
+                        .HasForeignKey("SteamPlaytimeTracker.Steam.Data.App.SteamStoreAppData", "SteamAppStoreDetailsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("StoreData");
                 });

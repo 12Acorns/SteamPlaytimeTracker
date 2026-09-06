@@ -3,10 +3,8 @@ using System.Runtime.CompilerServices;
 using SteamPlaytimeTracker.IO;
 using System.Text;
 using System.IO;
-using System.Collections.Concurrent;
-using OneOf.Monads;
-using OneOf.Types;
 using None = OneOf.Monads.None;
+using OneOf.Monads;
 
 namespace SteamPlaytimeTracker.Utility;
 
@@ -142,7 +140,7 @@ internal static class IOUtility
 				};
 			}
 			LoggingService.Logger.Information("Copied file to temporary location: {0}", tmpFilePath);
-			return (Result<IOFailure, IAsyncEnumerable<T>>)asyncFunc(tmpFilePath);
+			return Result<IOFailure, IAsyncEnumerable<T>>.Success(asyncFunc(tmpFilePath));
 		}
 		catch(Exception ex)
 		{
@@ -152,21 +150,6 @@ internal static class IOUtility
 				FailureType = IOFailure.IOFailureType.Other,
 				FailureException = ex
 			};
-		}
-		finally
-		{
-			try
-			{
-				if(File.Exists(tmpFilePath))
-				{
-					File.Delete(tmpFilePath);
-					LoggingService.Logger.Information("Deleted tmp file from: {0}", tmpFilePath);
-				}
-			}
-			catch(Exception e)
-			{
-				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
-			}
 		}
 	}
 	public static async ValueTask<T?> HandleTmpFileLifetimeAsync<T>(string originalFilePath, Func<string, ValueTask<T>> asyncFunc, 
@@ -234,6 +217,21 @@ internal static class IOUtility
 			{
 				LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", tmpFilePath);
 			}
+		}
+	}
+	public static void TryDeleteFile(string filePath)
+	{
+		try
+		{
+			if(File.Exists(filePath))
+			{
+				File.Delete(filePath);
+				LoggingService.Logger.Information("Deleted tmp file from: {0}", filePath);
+			}
+		}
+		catch(Exception e)
+		{
+			LoggingService.Logger.Error(e, "Failed to delete tmp file from: {0}", filePath);
 		}
 	}
 	internal readonly record struct IOFailure

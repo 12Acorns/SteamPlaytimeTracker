@@ -72,7 +72,7 @@
             </Grid.ColumnDefinitions>
             <usercontrols:ExtendedButton Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                              Background="Transparent" Foreground="LightGray" HoverBackground="Transparent" HoverBorder="Transparent"
-                             BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
+                             BorderBrush="Transparent" Command="{Binding ExportDataCommand}">
                 <usercontrols:ExtendedButton.Content>
                     <Path Data="{StaticResource ExportFileSVGData}" 
                        StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
@@ -83,7 +83,7 @@
             </usercontrols:ExtendedButton>
             <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                   Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
-                  Foreground="LightGray" BorderBrush="Transparent" Command="{Binding OpenProcessTrackingMenu}">
+                  Foreground="LightGray" BorderBrush="Transparent" Command="{Binding ImportDataCommand}">
                 <usercontrols:ExtendedButton.Content>
                     <Path Data="{StaticResource ImportFileSVGData}" 
                        StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
@@ -96,7 +96,7 @@
                         Foreground="LightGray" FontSize="12" Margin="5,0,0,0" FontStyle="Italic"/>
             <usercontrols:ExtendedButton Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center"
                                          Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
-                                         BorderBrush="Transparent" Command="{Binding OpenMessgaeMenu}">
+                                         BorderBrush="Transparent" Command="{Binding OpenMessageMenu}">
                 <usercontrols:ExtendedButton.Content>
                     <Image Source="/resources/Info_Icon.png" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image.Effect>

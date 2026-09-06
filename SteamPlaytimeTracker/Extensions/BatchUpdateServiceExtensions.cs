@@ -10,7 +10,7 @@ internal static class BatchUpdateServiceExtensions
 		{
 			foreach(var item in items)
 			{
-				batchUpdateService.Enqueue(item);
+				batchUpdateService.TryEnqueue(item);
 			}
 		}
 	}

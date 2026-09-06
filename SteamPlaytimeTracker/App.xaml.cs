@@ -63,8 +63,8 @@ public partial class App : Application
 
 		ApplicationPath.TryAddPath(GlobalData.LocalizationLookupName, ApplicationPathOption.FileLocation, "locale");
 		ApplicationPath.TryAddPath(GlobalData.AppDataStoreLookupName, "Steam Playtime Tracker");
-		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "AppData.json");
-		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appusage.db");
+		ApplicationPath.TryAddPath(GlobalData.ConfigPathLookupName, "Steam Playtime Tracker", "settings.json");
+		ApplicationPath.TryAddPath(GlobalData.DbLookupName, "Steam Playtime Tracker", "appdata.db");
 		ApplicationPath.TryAddPath(GlobalData.TmpFolderName, Directory.CreateTempSubdirectory("Steam Playtime Tracker").FullName, ApplicationPathOption.CustomGlobal);
 
 		var configData = new ConfigurationBuilder<IAppData>()
@@ -92,24 +92,7 @@ public partial class App : Application
 		serviceCollection.AddSingleton<HomeViewModel>();
 		serviceCollection.AddSingleton<SettingsViewModel>();
 		serviceCollection.AddSingleton<SteamAppViewModel>();
-		serviceCollection.AddSingleton<IMenuService, MenuService>(provider =>
-		{
-			(MenuModel Model, Window Menu) Factory(Type modelType, Type menuType, object[] @params)
-			{
-				var logger = provider.GetRequiredService<ILogger>();
-				var model = (MenuModel)provider.GetRequiredService(modelType);
-				var menu = (Window)provider.GetRequiredService(menuType);
-				if(!model.IsConstructed)
-				{
-					model.OnConstructed();
-					logger.Information("Post-Constructed MenuModel: {MenuModelType}", modelType.FullName);
-				}
-				model.OnLoad(@params);
-				logger.Information("Loaded MenuModel: {MenuModelType}", modelType.FullName);
-				return (model, menu);
-			}
-			return new MenuService(Factory);
-		});
+		serviceCollection.AddSingleton<IMenuService, MenuService>();
 
 		serviceCollection.AddSingleton<IProcessListingService, ProcessListingService>();
 		serviceCollection.AddSingleton<IMessageExchangeService, ThreadedMessageExchangeService>();
@@ -131,7 +114,22 @@ public partial class App : Application
 			MaximumRetries = 3,
 			MinimumWaitInterval = TimeSpan.FromMilliseconds(500),
 			MaximumWaitInterval = TimeSpan.FromSeconds(30),
-			BaseGrowthFactor = 2.5f
+			BaseGrowthFactor = 1.5f
+		});
+
+		serviceCollection.AddSingleton<MenuService.ModelFactory>(provider => (modelType, menuType, @params) =>
+		{
+			var logger = provider.GetRequiredService<ILogger>();
+			var model = (MenuModel)provider.GetRequiredService(modelType);
+			var menu = (Window)provider.GetRequiredService(menuType);
+			if(!model.IsConstructed)
+			{
+				model.OnConstructed();
+				logger.Information("Post-Constructed MenuModel: {MenuModelType}", modelType.FullName);
+			}
+			model.OnLoad(@params);
+			logger.Information("Loaded MenuModel: {MenuModelType}", modelType.FullName);
+			return (model, menu);
 		});
 
 		serviceCollection.AddHttpClient(GlobalData.SteamHttpClientKey, client =>
@@ -184,7 +182,7 @@ public partial class App : Application
 		// Causes playtime to be calculated/retrieved/scraped from disk during startup
 		// Makes percieved loading time quicker as we are doing the computation earlier rather than later
 		// Need to optimise in future
-		_ = ServiceProvider.GetRequiredService<IPlaytimeService>().GetPlayimeSegments(
+		_ = ServiceProvider.GetRequiredService<IPlaytimeService>().GetPlayimeIntervalsMap(
 			ServiceProvider.GetRequiredService<ILifetimeService>().CancellationToken);
 
 		var logger = ServiceProvider.GetRequiredService<ILogger>();
@@ -275,6 +273,10 @@ public partial class App : Application
 		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
 
 		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
+		AppDomain.CurrentDomain.FirstChanceException += (self, ex) =>
+		{
+			Debug.WriteLine(ex.Exception);
+		};
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 	}
 

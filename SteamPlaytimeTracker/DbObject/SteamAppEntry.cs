@@ -19,7 +19,7 @@ internal sealed class SteamAppEntry
 			{
 				return default;
 			}
-			return new() { Id = StoreDetails.Id, AppId = StoreDetails.AppData.StoreData!.AppId, Name = StoreDetails.AppData.StoreData.Name ?? "N/A" };
+			return new() { AppId = StoreDetails.AppData.StoreData!.AppId, Name = StoreDetails.AppData.StoreData.Name ?? "N/A" };
 		}
 	}
 	public List<PlaytimeSlice> PlaytimeSlices { get; set; } = [];
@@ -45,7 +45,7 @@ internal sealed class SteamAppEntry
 	{
 		var hash = new HashCode();
 		hash.Add(StoreDetails.Id);
-		foreach(var segment in PlaytimeSlices)
+		foreach(var segment in PlaytimeSlices.OrderBy(x => x.SessionStart))
 		{
 			hash.Add(segment.GetHashCode());
 		}

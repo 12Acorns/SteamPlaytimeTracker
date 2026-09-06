@@ -84,7 +84,10 @@ internal sealed class ConcurrentObservableCollection<T> : IList, IList<T>, INoti
 			var startIdx = _items.Count;
 			_items.AddRange(items);
 			PropertyChanged?.OnPropertyChanged(this, nameof(Count));
-			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[startIdx], startIdx));
+			for(int i = startIdx; i < _items.Count; i++)
+			{
+				CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[i], i));
+			}
 		}
 		finally
 		{
@@ -102,27 +105,6 @@ internal sealed class ConcurrentObservableCollection<T> : IList, IList<T>, INoti
 		try
 		{
 			var startIdx = _items.Count;
-			if(items is T[] itemsArr)
-			{
-				_items.AddRange(items);
-				PropertyChanged?.OnPropertyChanged(this, nameof(Count));
-				CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[startIdx], startIdx));
-				return;
-			}
-			if(items is IList<T> itemsILisG)
-			{
-				_items.AddRange(itemsILisG);
-				PropertyChanged?.OnPropertyChanged(this, nameof(Count));
-				CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[startIdx], startIdx));
-				return;
-			}
-			if(items is IList itemsILis)
-			{
-				_items.AddRange(items);
-				PropertyChanged?.OnPropertyChanged(this, nameof(Count));
-				CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[startIdx], startIdx));
-				return;
-			}
 			_items.AddRange(items);
 			PropertyChanged?.OnPropertyChanged(this, nameof(Count));
 			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, _items[startIdx], startIdx));

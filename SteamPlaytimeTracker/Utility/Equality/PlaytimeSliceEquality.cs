@@ -17,4 +17,7 @@ internal sealed class PlaytimeSliceEquality : IEqualityComparer<PlaytimeSlice>
 	}
 
 	public int GetHashCode([DisallowNull] PlaytimeSlice obj) => obj.GetHashCode();
+
+	public static bool SequencesEqual(IEnumerable<PlaytimeSlice> first, IEnumerable<PlaytimeSlice> second) =>
+		first.OrderBy(x => x.SessionStart).Aggregate(0, HashCode.Combine) == second.OrderBy(x => x.SessionStart).Aggregate(0, HashCode.Combine);
 }
