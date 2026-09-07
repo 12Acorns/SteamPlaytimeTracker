@@ -142,8 +142,8 @@
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Start Date:" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                        <DatePicker Grid.Column="1" Text="{Binding StartDateText, Mode=TwoWay}" SelectedDate="{Binding StartDate, Mode=TwoWay}"
-                                            DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}" 
+                                        <DatePicker Style="{DynamicResource ModernDateTimeFieldStyle}" Grid.Column="1" Text="{Binding StartDateText, Mode=TwoWay}" SelectedDate="{Binding StartDate, Mode=TwoWay}"
+                                            DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
                                             Margin="1,0,0,0" BorderThickness="0" />
                                     </Grid>
                                     <Grid Grid.Column="1" VerticalAlignment="Center">
