@@ -78,7 +78,7 @@ public partial class App : Application
 			configData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
-		serviceCollection.AddTransient(RequiredModel<HomeWindow, HomeWindowModel>);
+		serviceCollection.AddSingleton(RequiredModel<HomeWindow, HomeWindowModel>);
 		serviceCollection.AddTransient(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
 		serviceCollection.AddTransient(RequiredModel<ProcessTrackingSelectionWindow, ProcessTrackingSelectionWindowModel>);
 		serviceCollection.AddSingleton(RequiredModel<SettingsView, SettingsViewModel>);
@@ -274,10 +274,20 @@ public partial class App : Application
 		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
 
 		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
-		AppDomain.CurrentDomain.FirstChanceException += (self, ex) =>
+		var navigationService = ServiceProvider.GetRequiredService<INavigationService>();
+		navigationService.OnNavigatedTo.Subscribe(OrderedEventPriority.Default, (sender, e) =>
 		{
-			Debug.WriteLine(ex.Exception);
-		};
+			if(menuService.Menus.FirstOrDefault(x => x.Model is HomeWindowModel).Model is not HomeWindowModel homeMenuModel)
+			{
+				return;
+			}
+			homeMenuModel.SettingsButtonVisibility = e.ViewModel switch
+			{
+				SettingsViewModel => Visibility.Hidden,
+				_ => Visibility.Visible,
+			};
+		});
+
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 	}
 

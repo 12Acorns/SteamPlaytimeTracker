@@ -1,5 +1,6 @@
 ﻿using SteamPlaytimeTracker.Services.Menu;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Utility;
 
 namespace SteamPlaytimeTracker.Services.Navigation;
 
@@ -23,10 +24,12 @@ class ViewModelNavigationService : ObservableObject, INavigationService
 	}
 
 	public IMenuService MenuService { get; }
+	public OrderedEventInvoker<NavigagtionEventArgs> OnNavigatedTo { get; } = new();
 
 	public void NavigateTo<TViewModel>(params object[] @params)
 		where TViewModel : ViewModel
 	{
 		CurrentView = _modelViewFactory(typeof(TViewModel), @params);
+		OnNavigatedTo.Invoke(this, new NavigagtionEventArgs(CurrentView, @params));
 	}
 }

@@ -77,7 +77,4 @@ public partial class FolderSelectView : UserControl, INotifyPropertyChanged
 		}
 		tb_AppInstall.Visibility = Visibility.Hidden;
 	}
-
-	private void OnPropertyChanged([CallerMemberName] string? propName = null) =>
-		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
 }
