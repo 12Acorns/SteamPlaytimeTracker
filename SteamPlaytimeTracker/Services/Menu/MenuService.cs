@@ -1,6 +1,7 @@
 ﻿using ScottPlot.Colormaps;
 using Serilog;
 using SteamPlaytimeTracker.Core;
+using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Services.Lifetime;
 using System.Windows;
 using System.Windows.Threading;

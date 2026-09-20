@@ -9,7 +9,7 @@
              xmlns:data="clr-namespace:SteamPlaytimeTracker.Graphing.Data" 
              xmlns:viewmodel="clr-namespace:SteamPlaytimeTracker.MVVM.ViewModel" 
              d:DataContext="{d:DesignInstance Type=viewmodel:SteamAppViewModel}"
-             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View"
+             xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View" xmlns:modern="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Modern"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="{StaticResource defaultGray}">
@@ -54,12 +54,12 @@
                         <ColumnDefinition Width="20" />
                         <ColumnDefinition Width="20" />
                     </Grid.ColumnDefinitions>
-                    
+
                     <usercontrols:ExtendedButton Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                          Background="Transparent" Foreground="LightGray" HoverBackground="Transparent" HoverBorder="Transparent"
                          BorderBrush="Transparent" Command="{Binding ExportPlaytimeCommand}" ToolTip="Export data">
                         <usercontrols:ExtendedButton.Content>
-                            
+
                             <Path Data="{StaticResource ExportFileSVGData}" 
                                StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
@@ -67,12 +67,12 @@
                                Stretch="Uniform" StrokeEndLineCap="Flat" StrokeStartLineCap="Flat" />
                         </usercontrols:ExtendedButton.Content>
                     </usercontrols:ExtendedButton>
-                    
+
                     <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                           Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
                           Foreground="LightGray" BorderBrush="Transparent" Command="{Binding ImportDataCommand}" ToolTip="Import data">
                         <usercontrols:ExtendedButton.Content>
-                            
+
                             <Path Data="{StaticResource ImportFileSVGData}" 
                                StrokeThickness="0.2" Margin="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
@@ -136,34 +136,24 @@
                                         <ColumnDefinition />
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
-                                    <Grid VerticalAlignment="Center">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Start Date:" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                        <DatePicker Style="{DynamicResource ModernDateTimeFieldStyle}" Grid.Column="1" Text="{Binding StartDateText, Mode=TwoWay}" SelectedDate="{Binding StartDate, Mode=TwoWay}"
-                                            DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
-                                            Margin="1,0,0,0" BorderThickness="0" />
-                                    </Grid>
-                                    <Grid Grid.Column="1" VerticalAlignment="Center">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="End Date:" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                        <DatePicker Grid.Column="1" Text="{Binding EndDateText, Mode=TwoWay}" SelectedDate="{Binding EndDate, Mode=TwoWay}"
-                                            DisplayDateStart="{Binding MinStartDate}" DisplayDateEnd="{Binding MaxEndDate}"
-                                            Margin="1,0,0,0" BorderThickness="0" IsEnabled="{Binding ShowEndDatePicker}" 
-                                            Visibility="{Binding EndDatePickerVisiblity}" />
-                                    </Grid>
+                                    <modern:ModernDatePicker BlankDateText="Start Date" Width="120" Padding="5 0 0 0" 
+                                                             MaximumAllowedDate="{Binding GraphingDates.MaximumDateAllowed}"
+                                                             MinimumAllowedDate="{Binding GraphingDates.MinimumDateAllowed}"
+                                                             SelectedDate="{Binding GraphingDates.XAML_SetStartDate, Mode=OneWayToSource}"/>
+                                    <modern:ModernDatePicker Grid.Column="1" BlankDateText="End Date" Width="120" Margin="5 0 0 0" />
                                 </Grid>
                             </Grid>
                         </Grid>
 
                     </Grid>
                     <Grid Grid.Row="1">
-                        <TextBlock Text="{Binding TotalPlaytimeText}" Foreground="White" Background="Transparent" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="179*"/>
+                            <ColumnDefinition Width="67*"/>
+                            <ColumnDefinition Width="394*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding TotalPlaytimeText}" Foreground="White" Background="Transparent" Grid.ColumnSpan="3" />
+                        <TextBlock Text="{Binding GraphingDates.StartDate, Mode=OneWay}" Foreground="White"/>
                     </Grid>
                 </Grid>
             </Grid>

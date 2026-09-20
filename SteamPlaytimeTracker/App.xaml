@@ -16,6 +16,13 @@
                 <ResourceDictionary Source="/WPFResources/MiscResources.xaml" />
                 <ResourceDictionary Source="/WPFResources/ScrollTypeResources.xaml" />
                 <ResourceDictionary Source="/WPFResources/ConverterResources.xaml" />
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/ModernDatePickerResource.xaml" />
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/ModernCalanderSwitchResource.xaml" />
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/DayOfWeekResource.xaml" />
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/CalanderBoxResource.xaml" />
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/CalanderBoxItemResource.xaml" />
+                <ResourceDictionary Source="/WPFResources/ChevronArrowResource.xaml"/>
+                <ResourceDictionary Source="/WPFResources/ModernStyles/DatePicker/ChevronButtonResource.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             
             <DataTemplate DataType="{x:Type viewModel:HomeViewModel}">

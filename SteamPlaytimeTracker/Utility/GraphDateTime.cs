@@ -1,12 +1,52 @@
-﻿namespace SteamPlaytimeTracker.Utility;
+﻿using SteamPlaytimeTracker.Extensions;
+using System.ComponentModel;
+
+namespace SteamPlaytimeTracker.Utility;
 
 internal sealed record GraphDateTime
 {
+	private event Action? _propertyChanged;
+
+	public GraphDateTime(DateTime timestamp, Action? propertyChanged = null)
+	{
+		StartDate = timestamp;
+		EndDate = timestamp;
+
+		MinimumDateAllowed = DateTime.MinValue;
+		MaximumDateAllowed = DateTime.MaxValue;
+
+		_propertyChanged = propertyChanged;
+	}
+	
+	private GraphDateTime() { }
+
 	public DateTime StartDate { get; private set; }
 	public DateTime EndDate { get; private set; }
 	public DateTime MinimumDateAllowed { get; private set; }
 	public DateTime MaximumDateAllowed { get; private set; }
-	
+
+	/// <summary>
+	/// Only to be used by xaml bindings to act as function calls implicetly
+	/// </summary>
+	public DateTime XAML_SetStartDate
+	{
+		set
+		{
+			SetStartDate(value);
+			_propertyChanged?.Invoke();
+		}
+	}
+	/// <summary>
+	/// Only to be used by xaml bindings to act as function calls implicetly
+	/// </summary>
+	public DateTime XAML_SetEndDate
+	{
+		set
+		{
+			SetEndDate(value);
+			_propertyChanged?.Invoke();
+		}
+	}
 	public void SetStartDate(DateTime startDate)
 	{
 		ArgumentOutOfRangeException.ThrowIfLessThan(startDate, MinimumDateAllowed);

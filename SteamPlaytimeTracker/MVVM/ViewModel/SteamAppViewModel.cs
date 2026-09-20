@@ -1,24 +1,17 @@
 ﻿using Microsoft.Win32;
-using ScottPlot;
-using ScottPlot.Plottables;
-using ScottPlot.Stylers;
 using ScottPlot.WPF;
 using SkiaSharp.Views.WPF;
 using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.DataTransfer;
 using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Graphing.Data;
 using SteamPlaytimeTracker.IO;
-using SteamPlaytimeTracker.MVVM.View;
 using SteamPlaytimeTracker.Services.DataTransfer;
 using SteamPlaytimeTracker.Services.Localization;
 using SteamPlaytimeTracker.Services.Navigation;
 using SteamPlaytimeTracker.Utility;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -80,7 +73,7 @@ internal class SteamAppViewModel : Core.ViewModel
 			}
 			MessageBox.Show("Failed to open file for export.", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
 		});
-		Plot = new();
+		PlaytimePlot = new();
 
 		AvailableGraphingOptions = [
 			new GrapthViewSelectionData(GraphViewSelectionId.YearPlaytime, _localizationService[GlobalData.LocAppViewYearPlaytimeViewKey].Text, false),
@@ -96,6 +89,7 @@ internal class SteamAppViewModel : Core.ViewModel
 				new GrapthViewSelectionData(GraphViewSelectionId.DayPlaytime, _localizationService[GlobalData.LocAppViewDayPlaytimeViewKey].Text, false)
 			];
 		};
+		EndDatePickerVisiblity = Visibility.Visible;
 	}
 
 	public INavigationService NavigationService { get; }
@@ -103,7 +97,7 @@ internal class SteamAppViewModel : Core.ViewModel
 	public RelayCommand ImportPlaytimeCommand { get; }
 	public RelayCommand ExportPlaytimeCommand { get; }
 
-	public WpfPlot Plot { get; }
+	public WpfPlot PlaytimePlot { get; private set; }
 	public string TotalPlaytimeText
 	{
 		get;
@@ -137,16 +131,6 @@ internal class SteamAppViewModel : Core.ViewModel
 		set
 		{
 			field = value;
-			OnPropertyChanged();
-		}
-	}
-	public bool ShowEndDatePicker
-	{
-		get;
-		set
-		{
-			field = value;
-			EndDatePickerVisiblity = !field ? Visibility.Hidden : Visibility.Visible;
 			OnPropertyChanged();
 		}
 	}
@@ -189,6 +173,11 @@ internal class SteamAppViewModel : Core.ViewModel
 
 	public override void OnLoad(params object[] args)
 	{
+
+		GraphingDates = new(DateTime.Now, () => OnPropertyChanged(nameof(GraphingDates)));
+		GraphingDates.SetMinimumAllowedDate(DateTime.Now.AddMonths(-1));
+		GraphingDates.SetMaximumAllowedDate(DateTime.Now.AddMonths(1));
+		return;
 		if(args is not [SteamAppEntry app, ..])
 		{
 			throw new ArgumentException("Expected a SteamApp object as the first argument.");
@@ -196,6 +185,9 @@ internal class SteamAppViewModel : Core.ViewModel
 
 		SelectedApp = app;
 		SelectedGraphingOption = AvailableGraphingOptions.FirstOrDefault(x => x.IsSelectedByDefault);
+
+		PlaytimePlot = new();
+		PlaytimePlot.ConfigureDarkTheme();
 
 		var totalPlaytimeHours = SelectedApp.PlaytimeSlices.Sum(x => x.SessionLength.TotalHours);
 		TotalPlaytimeText = _localizationService[GlobalData.LocPlaytimeHoursText, (Key: "Playtime Hours", Value: $"{totalPlaytimeHours:n2}")];

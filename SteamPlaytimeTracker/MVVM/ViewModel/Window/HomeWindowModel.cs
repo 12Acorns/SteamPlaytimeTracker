@@ -15,14 +15,15 @@ internal sealed class HomeWindowModel : MenuModel
 		Title = Random.Shared.Next(0, 1000) == 28 ? "OwO :3" : "Playtime Tracker";
 		NavigationService = navigationService;
 
-		if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))
-		{
-			NavigationService.NavigateTo<SettingsViewModel>();
-		}
-		else
-		{
-			NavigationService.NavigateTo<HomeViewModel>();
-		}
+		NavigationService.NavigateTo<SteamAppViewModel>();
+		//if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))
+		//{
+		//	NavigationService.NavigateTo<SettingsViewModel>();
+		//}
+		//else
+		//{
+		//	NavigationService.NavigateTo<HomeViewModel>();
+		//}
 	}
 
 	public INavigationService NavigationService

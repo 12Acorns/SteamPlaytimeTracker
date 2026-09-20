@@ -1,0 +1,7 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Geometry x:Key="ChevronLeftArrow">M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z</Geometry>
+    <Geometry x:Key="ChevronRightArrow">M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z</Geometry>
+    <Geometry x:Key="ChevronUpArrow">M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z</Geometry>
+    <Geometry x:Key="ChevronDownArrow">M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z</Geometry>
+</ResourceDictionary>
