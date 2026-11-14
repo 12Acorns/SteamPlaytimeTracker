@@ -237,7 +237,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 						continue;
 					}
 
-					var orderedIntervals = PlaytimeUtility.CorrectIntervalOverlap(dbSlices.Concat(importedSlices).ToList());
+					var orderedIntervals = PlaytimeUtility.CorrectIntervalOverlapV2(dbSlices.Concat(importedSlices).ToList());
 					appEntry.PlaytimeSlices = orderedIntervals;
 					_dbAccess.UserApps.Update(appEntry);
 					_dbAccess.PlaytimeSlices.UpdateRange(orderedIntervals);
@@ -288,7 +288,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 			});
 		});
 
-		App.OnSessionClose.Subscribe(OrderedEventPriority.Default, (sender, e) =>
+		App.OnSessionClose.Value.Subscribe(OrderedEventPriority.Default, (sender, e) =>
 		{
 			if(_importInProgress)
 			{
@@ -298,7 +298,7 @@ internal sealed class HomeViewModel : Core.ViewModel
 		});
 	}
 
-	public RelayCommand NavigateToPlayTimeViewCommand => new(o => NavigationService.NavigateTo<SteamAppViewModel>(o!), o => o is SteamAppEntry);
+	public RelayCommand NavigateToPlayTimeViewCommand => new(o => NavigationService.NavigateTo<SteamAppViewModel>(new AppDTO((SteamAppEntry)o!)), o => o is SteamAppEntry);
 	public RelayCommand SwitchToSettingsMenuCommand { get; set; }
 	public RelayCommand PlaytimeOrderButtonCommand { get; set; }
 	public RelayCommand NameOrderButtonCommand { get; set; }

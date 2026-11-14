@@ -2,7 +2,6 @@
 using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Utility.Cache;
 using SteamPlaytimeTracker.Extensions;
-using SteamPlaytimeTracker.DbObject;
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.Utility;

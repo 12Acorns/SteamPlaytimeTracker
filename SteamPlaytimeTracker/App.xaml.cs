@@ -10,7 +10,6 @@ using Polly.Timeout;
 using Serilog;
 using Serilog.Core;
 using SteamPlaytimeTracker.Core;
-using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.IO;
 using SteamPlaytimeTracker.Localization;
@@ -22,6 +21,7 @@ using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.SelfConfig.Data;
 using SteamPlaytimeTracker.Services._App;
 using SteamPlaytimeTracker.Services.Batching;
+using SteamPlaytimeTracker.Services.ChromeBar;
 using SteamPlaytimeTracker.Services.DataTransfer;
 using SteamPlaytimeTracker.Services.Disk;
 using SteamPlaytimeTracker.Services.Lifetime;
@@ -48,8 +48,8 @@ namespace SteamPlaytimeTracker;
 
 public partial class App : Application
 {
-	internal static OrderedEventInvoker<CancelEventArgs>? OnSessionClose => field ??= new();
-	internal static OrderedEventInvoker<SessionEndingCancelEventArgs>? OnSessionEndingA => field ??= new();
+	internal static Lazy<OrderedEventInvoker<CancelEventArgs>> OnSessionClose { get; } = new(() => new(), true);
+	internal static Lazy<OrderedEventInvoker<SessionEndingCancelEventArgs>> OnSessionEndingA { get; } = new(() => new(), true);
 
 	public static ServiceProvider ServiceProvider { get; private set; } = default!;
 
@@ -72,19 +72,22 @@ public partial class App : Application
 			.UseJsonFile(ApplicationPath.GetPath(GlobalData.ConfigPathLookupName))
 			.Build();
 
-		configData.AppVersion = GlobalData.AppVersion.ToString();
-
 		ApplicationPath.TryAddPath(GlobalData.MainTimeSliceCheckLookupName, ApplicationPathOption.CustomGlobal,
 			configData.SteamInstallData.SteamInstallationFolder ?? "", GlobalData.MainSliceCheckLocalPath);
 
 		var serviceCollection = new ServiceCollection();
-		serviceCollection.AddSingleton(RequiredModel<HomeWindow, HomeWindowModel>);
-		serviceCollection.AddTransient(RequiredModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
-		serviceCollection.AddTransient(RequiredModel<ProcessTrackingSelectionWindow, ProcessTrackingSelectionWindowModel>);
-		serviceCollection.AddSingleton(RequiredModel<SettingsView, SettingsViewModel>);
-		serviceCollection.AddSingleton(RequiredModel<HomeView, HomeViewModel>);
-		serviceCollection.AddSingleton(RequiredModel<SteamAppView, SteamAppViewModel>);
+		serviceCollection.AddSingleton(InitaliseModel<HomeWindow, HomeWindowModel>);
+		serviceCollection.AddTransient(InitaliseModel<ApplicationInfoSubWindow, ApplicationInfoWindowModel>);
+		serviceCollection.AddTransient(InitaliseModel<ProcessTrackingSelectionWindow, ProcessTrackingSelectionWindowModel>);
+		serviceCollection.AddSingleton(InitaliseModel<SettingsView, SettingsViewModel>);
+		serviceCollection.AddSingleton(InitaliseModel<HomeView, HomeViewModel>);
+		serviceCollection.AddSingleton(InitaliseModel<SteamAppView, SteamAppViewModel>);
 
+		serviceCollection.AddSingleton<IChromeBarOptions, ChromeBarOptions>(_ => new ChromeBarOptions()
+		{
+			SettingsButtonVisibility = Visibility.Visible,
+			GoToPreviousMenuButtonVisibility = Visibility.Hidden
+		});
 		serviceCollection.AddSingleton<AppConfig>(provider => new AppConfig(configData));
 		serviceCollection.AddDbContext<DbAccess>(options => options.UseSqlite($"Data Source={ApplicationPath.GetPath(GlobalData.DbLookupName)}"), ServiceLifetime.Transient);
 		serviceCollection.AddSingleton<HomeWindowModel>();
@@ -187,7 +190,7 @@ public partial class App : Application
 			ServiceProvider.GetRequiredService<ILifetimeService>().CancellationToken);
 
 		var logger = ServiceProvider.GetRequiredService<ILogger>();
-		OnSessionClose.Subscribe(OrderedEventPriority.Default, (sender, e) =>
+		OnSessionClose.Value.Subscribe(OrderedEventPriority.Default, (sender, e) =>
 		{
 			if(e.Cancel)
 			{
@@ -214,7 +217,7 @@ public partial class App : Application
 		base.OnStartup(e);
 		var config = ServiceProvider.GetRequiredService<AppConfig>();
 
-		if(LikelyNeedsUpdating(config.AppData.AppVersion))
+		if(config.AppData.UpdateBehaviour.AutoUpdate && LikelyNeedsUpdating())
 		{
 			var res = MessageBox.Show("A new version of Steam Playtime Tracker is available. Would you like to update now?", "Update Available",
 				MessageBoxButton.YesNo, MessageBoxImage.Information);
@@ -273,33 +276,34 @@ public partial class App : Application
 
 		Resources["DefaultFontFamily"] = new FontFamily(config.AppData.StyleData.CurrentFont ?? "Segoe UI");
 
+		var chromeBarOptionsService = ServiceProvider.GetRequiredService<IChromeBarOptions>();
 		var menuService = ServiceProvider.GetRequiredService<IMenuService>();
 		var navigationService = ServiceProvider.GetRequiredService<INavigationService>();
 		navigationService.OnNavigatedTo.Subscribe(OrderedEventPriority.Default, (sender, e) =>
 		{
-			if(menuService.Menus.FirstOrDefault(x => x.Model is HomeWindowModel).Model is not HomeWindowModel homeMenuModel)
+			if(!menuService.TryGetModel<HomeWindowModel>(out _))
 			{
 				return;
 			}
-			homeMenuModel.SettingsButtonVisibility = e.ViewModel switch
-			{
-				SettingsViewModel => Visibility.Hidden,
-				_ => Visibility.Visible,
-			};
+			chromeBarOptionsService.SettingsButtonVisibility = (e.ViewModel is SettingsViewModel) ? Visibility.Hidden : Visibility.Visible;
 		});
 
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 	}
 
-	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose?.Invoke(sender, e);
-	private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e) => OnSessionEndingA?.Invoke(this, e);
+	public static void Application_Closing(object sender, CancelEventArgs e) => OnSessionClose.Value.Invoke(sender, e);
+	private void Application_SessionEnding(object sender, SessionEndingCancelEventArgs e) => OnSessionEndingA.Value.Invoke(this, e);
 
-	private static TView RequiredModel<TView, TModel>(IServiceProvider provider)
+	private static TView InitaliseModel<TView, TModel>(IServiceProvider provider)
 		where TView : ContentControl, new()
-		where TModel : notnull => new()
+		where TModel : notnull
 	{
-		DataContext = provider.GetRequiredService<TModel>()
-	};
+		return new TView()
+		{
+			DataContext = provider.GetRequiredService<TModel>()
+		};
+	}
+
 	[DoesNotReturn]
 	private static void Update()
 	{
@@ -311,7 +315,7 @@ public partial class App : Application
 		});
 		Environment.Exit(0);
 	}
-	private static bool LikelyNeedsUpdating(string configVersionStr)
+	private static bool LikelyNeedsUpdating()
 	{
 		var assemblyVersion = GlobalData.AppVersion;
 		var updateHelper = new UpdateHelper(new GitHubClient(GlobalData.Program.GitHubRepoOwner, GlobalData.Program.GitHubRepoName));

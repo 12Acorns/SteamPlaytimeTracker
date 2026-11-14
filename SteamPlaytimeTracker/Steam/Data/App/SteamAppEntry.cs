@@ -1,10 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using SteamPlaytimeTracker.Steam.Data.Playtime;
+﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
 using System.ComponentModel.DataAnnotations;
-using SteamPlaytimeTracker.Steam.Data.App;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
-namespace SteamPlaytimeTracker.DbObject;
+namespace SteamPlaytimeTracker.Steam.Data.App;
 
 [DebuggerDisplay("{Id} | {SteamApp} || {PlaytimeSlices.Count}")]
 internal sealed class SteamAppEntry

@@ -1,7 +1,7 @@
 ﻿using Serilog;
-using SteamPlaytimeTracker.DbObject;
 using SteamPlaytimeTracker.Services.Lifetime;
 using SteamPlaytimeTracker.Services.Messaging;
+using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Utility.Equality;
 using SteamPlaytimeTracker.Utility.Messaging;

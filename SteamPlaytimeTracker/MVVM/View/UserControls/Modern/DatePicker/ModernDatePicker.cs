@@ -1,9 +1,7 @@
 ﻿using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Modern.Chevron;
 using SteamPlaytimeTracker.MVVM.View.UserControls.Modern.DatePicker;
-using SteamPlaytimeTracker.Utility;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;

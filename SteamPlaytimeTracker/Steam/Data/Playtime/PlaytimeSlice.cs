@@ -2,9 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using SteamPlaytimeTracker.DbObject;
 using System.Globalization;
 using System.Diagnostics;
+using SteamPlaytimeTracker.Steam.Data.App;
 
 namespace SteamPlaytimeTracker.Steam.Data.Playtime;
 
@@ -47,18 +47,18 @@ internal sealed class PlaytimeSlice
 	}
 
 	[Key] public int Id { get; set; }
-	[JsonPropertyName("start")] public DateTimeOffset SessionStart { get; set; } 
-	[JsonPropertyName("duration")] public TimeSpan SessionLength { get; set; }  
+	[JsonPropertyName("start")] public DateTimeOffset SessionStart { get; set; }
+	[JsonPropertyName("duration")] public TimeSpan SessionLength { get; set; }
 	[NotMapped] public uint AppId { get; set; }
 	[JsonIgnore] public SteamAppEntry SteamAppEntry { get; set; } = null!;
 
-	[NotMapped]
-	public DateTimeOffset SessionEnd => SessionStart + SessionLength;
+	[NotMapped] public DateTimeOffset SessionEnd => SessionStart + SessionLength;
 
 	public static bool operator ==(PlaytimeSlice? @this, PlaytimeSlice? other) =>
-		(@this is not null && other is not null) &&
+		ReferenceEquals(@this, other) ||
+		(@this is not null && other is not null &&
 		@this.SessionStart == other.SessionStart &&
-		@this.SessionLength == other.SessionLength;
+		@this.SessionLength == other.SessionLength);
 	public static bool operator !=(PlaytimeSlice? @this, PlaytimeSlice? other) => !(@this == other);
 
 	public override int GetHashCode() => HashCode.Combine(SessionStart, SessionLength);

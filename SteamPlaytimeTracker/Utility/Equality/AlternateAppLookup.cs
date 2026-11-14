@@ -1,5 +1,4 @@
-﻿using SteamPlaytimeTracker.DbObject;
-using SteamPlaytimeTracker.Steam.Data.App;
+﻿using SteamPlaytimeTracker.Steam.Data.App;
 using System.Diagnostics.CodeAnalysis;
 
 namespace SteamPlaytimeTracker.Utility;

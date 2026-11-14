@@ -7,7 +7,7 @@
     </Style>
     <Style TargetType="{x:Type datepicker:CalanderBoxItem}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="#666666" />
+        <Setter Property="Foreground" Value="#BB333333" />
         <Setter Property="Width" Value="20" />
         <Setter Property="Height" Value="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=Self}}" />
         <Setter Property="Template">
@@ -19,14 +19,14 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsCurrentMonth" Value="True">
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="#303030" />
                         </Trigger>
                         <Trigger Property="IsCurrentDate" Value="True">
-                            <Setter Property="Background" Value="#454545" />
+                            <Setter Property="Background" Value="#999999" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="#FFFFFF" />
+                            <Setter Property="Background" Value="CornflowerBlue" />
                             <Setter Property="Foreground" Value="#000000" />
                         </Trigger>
                     </ControlTemplate.Triggers>

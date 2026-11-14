@@ -71,22 +71,24 @@ public partial class SteamCapsule : UserControl, INotifyPropertyChanged
 		var url = (string)e.NewValue;
 		if(capsule._imageCache.TryGet<BitmapImage>(url, out var bmp))
 		{
-			bmp.DecodePixelWidth = (int)capsule.Width;
+			bmp.DecodePixelWidth = (int)capsule.ActualWidth;
+			bmp.DecodePixelHeight = (int)capsule.ActualHeight;
 			capsule.CapsuleImage = bmp;
 			return;
 		}
-		bmp = LoadBitmap(url);
-		bmp.DecodePixelWidth = (int)capsule.Width;
+		bmp = LoadBitmap(url, capsule);
 		capsule._imageCache.Set(url, bmp, TimeSpan.FromHours(2));
 		capsule.CapsuleImage = bmp;
 	}
-	private static BitmapImage LoadBitmap(string url)
+	private static BitmapImage LoadBitmap(string url, SteamCapsule capsule)
 	{
 		var bmp = new BitmapImage();
 		bmp.BeginInit();
 		bmp.UriSource = new Uri(url, UriKind.Absolute);
 		bmp.CacheOption = BitmapCacheOption.OnLoad;
 		bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+		bmp.DecodePixelWidth = (int)capsule.ActualWidth;
+		bmp.DecodePixelHeight = (int)capsule.ActualHeight;
 		bmp.EndInit();
 		return bmp;
 	}

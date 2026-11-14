@@ -2,8 +2,6 @@
 using SteamPlaytimeTracker.Localization;
 using SteamPlaytimeTracker.SelfConfig;
 using SteamPlaytimeTracker.Core;
-using System.IO;
-using System.Windows;
 
 namespace SteamPlaytimeTracker.MVVM.ViewModel.Window;
 
@@ -15,27 +13,21 @@ internal sealed class HomeWindowModel : MenuModel
 		Title = Random.Shared.Next(0, 1000) == 28 ? "OwO :3" : "Playtime Tracker";
 		NavigationService = navigationService;
 
+#if DEBUG_TEST_STEAM_APP_VIEW
 		NavigationService.NavigateTo<SteamAppViewModel>();
-		//if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))
-		//{
-		//	NavigationService.NavigateTo<SettingsViewModel>();
-		//}
-		//else
-		//{
-		//	NavigationService.NavigateTo<HomeViewModel>();
-		//}
+#else
+		if(!Directory.Exists(config.AppData.SteamInstallData.SteamInstallationFolder))
+		{
+			NavigationService.NavigateTo<SettingsViewModel>();
+		}
+		else
+		{
+			NavigationService.NavigateTo<HomeViewModel>();
+		}
+#endif
 	}
 
 	public INavigationService NavigationService
-	{
-		get;
-		set
-		{
-			field = value;
-			OnPropertyChanged();
-		}
-	}
-	public Visibility SettingsButtonVisibility
 	{
 		get;
 		set

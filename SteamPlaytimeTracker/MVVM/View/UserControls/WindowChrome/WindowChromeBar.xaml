@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:usercontrols="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls"
-             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:local="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.WindowChrome" 
              d:DataContext="{d:DesignInstance Type=local:WindowChromeBar}"
              mc:Ignorable="d" 
@@ -18,7 +17,7 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" Source="{StaticResource ApplicationIcoPath}"
+        <Image Grid.Column="0" Source="{StaticResource ApplicationIcon}"
            RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased" 
            Margin="4" />
         <TextBlock Grid.Column="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Foreground="LightGray" VerticalAlignment="Center" />
@@ -26,9 +25,9 @@
                                  HoverBackground="DimGray" PressedBackground="Gray"
                                  Command="{Binding SettingsCommand}"
                                  IsHitTestVisible="True"
-                                 Visibility="{Binding DataContext.SettingsButtonVisibility, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                 Visibility="{Binding Options.SettingsButtonVisibility, Mode=OneWay, NotifyOnSourceUpdated=True}"
                                  WindowChrome.IsHitTestVisibleInChrome="True">
-            <Path Data="{StaticResource WindowSettingsMenuSVGIcon}" 
+            <Path Data="{StaticResource WindowSettingsMenuSVGIcon}"
                StrokeThickness="1" Margin="3" VerticalAlignment="Center" HorizontalAlignment="Center"
                Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType={x:Type usercontrols:ExtendedButton}}}"
                Stretch="Uniform" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />

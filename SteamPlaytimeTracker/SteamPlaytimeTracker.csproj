@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
 	<LangVersion>preview</LangVersion>
-    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <TargetFramework>net11.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -29,6 +29,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>embedded</DebugType>
     <FileAlignment>512</FileAlignment>
+    <DefineConstants>$(DefineConstants);DEBUG_TEST_STEAM_APP_VIEW</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -81,6 +82,7 @@
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
     <PackageReference Include="Sigil" Version="5.0.0" />
     <PackageReference Include="System.Linq.Async" Version="7.0.0" />
     <PackageReference Include="System.Runtime.Caching" Version="10.0.3" />

@@ -1,6 +1,5 @@
 ﻿using SteamPlaytimeTracker.Steam.Data.Playtime;
 using SteamPlaytimeTracker.Steam.Data.App;
-using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using SteamPlaytimeTracker.IO;
 using Serilog;

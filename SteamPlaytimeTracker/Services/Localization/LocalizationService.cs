@@ -24,24 +24,6 @@ internal class LocalizationService : ILocalizationService
 		_config = config;
 		_manager = manager;
 	}
-
-	public string this[string key, params (string Key, object Value)[] paramaters]
-	{
-		get
-		{
-			var template = this[key];
-			if(string.IsNullOrEmpty(template.Text) || template.IsEmpty || template.IsPlaceholder)
-			{
-				return template.Text;
-			}
-			var formatted = StringUtility.FormatNamed(template.Text, paramaters);
-			if(formatted.Contains('{'))
-			{
-				_logger.Warning("Translation for key: {Key} may be missing parameters. Resulting template: {Template}", key, formatted);
-			}
-			return formatted;
-		}
-	}
 	public LocalizedText this[string key]
 	{
 		get
@@ -67,5 +49,20 @@ internal class LocalizationService : ILocalizationService
 		_manager.LoadLocale(code);
 		_config.AppData.LocalizationData.LanguageCode = code;
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
+	}
+
+	public string GetFormattedTranslation(string key, params (string Key, object Value)[] paramaters)
+	{
+		var template = this[key];
+		if(string.IsNullOrWhiteSpace(template.Text) || template.IsEmpty || template.IsPlaceholder)
+		{
+			return template.Text;
+		}
+		var formatted = StringUtility.FormatNamed(template.Text, paramaters);
+		if(formatted.Contains('{'))
+		{
+			_logger.Warning("Translation for key: {Key} may be missing parameters. Resulting template: {Template}", key, formatted);
+		}
+		return formatted;
 	}
 }

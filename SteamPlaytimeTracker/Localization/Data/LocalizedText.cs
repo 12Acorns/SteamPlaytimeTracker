@@ -1,15 +1,19 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
+using System.Numerics;
 using System.Text;
 
 namespace SteamPlaytimeTracker.Localization.Data;
 
 internal sealed record LocalizedText
 {
+	private const ushort EMPTY_CODE_MAP = ushort.MaxValue;
+
 	public static LocalizedText Empty => new()
 	{
 		Text = string.Empty,
 		Key = string.Empty,
-		CodeMapIndex = ushort.MaxValue,
+		CodeMapIndex = EMPTY_CODE_MAP,
 		DistinctTextReplacementCount = 0,
 		FormatType = FormatType.None
 	};
@@ -21,7 +25,7 @@ internal sealed record LocalizedText
 	public ushort CodeMapIndex { get; private init; }
 	public int DistinctTextReplacementCount { get; init; }
 	public FormatType FormatType { get; private init; }
-	public bool IsEmpty => CodeMapIndex == ushort.MaxValue;
+	public bool IsEmpty => CodeMapIndex == EMPTY_CODE_MAP;
 	public bool IsPlaceholder => Text.StartsWith('[') && Text.EndsWith(']') && Text.Length > 2 && Text.AsSpan()[1..^1].SequenceEqual(Key);
 
 	/// <summary>
@@ -84,19 +88,22 @@ internal sealed record LocalizedText
 	{
 		var workingText = text.AsSpan();
 		var formatMap = new Dictionary<string, int>().GetAlternateLookup<ReadOnlySpan<char>>();
-		bool? keepAsNumberized = null;
+		var formatType = FormatType.None;
 		int indexOfFormatBegin;
 		var largestFormatIndex = -1;
 		while((indexOfFormatBegin = workingText.IndexOf('{')) > -1)
 		{
 			var indexOfFormatEnd = workingText.IndexOf('}');
 			var textInsideFormat = workingText.Slice(indexOfFormatBegin + 1, indexOfFormatEnd - indexOfFormatBegin - 1);
-			if(keepAsNumberized == null)
+			if(formatType is FormatType.None)
 			{
-				keepAsNumberized = IsNumberized(textInsideFormat);
-				if(keepAsNumberized.Value)
+				formatType = IsNumberized(textInsideFormat, out int numberizedValue) switch
 				{
-					var numberizedValue = int.Parse(textInsideFormat);
+					true => FormatType.Numberized,
+					false => FormatType.Named
+				};
+				if(formatType is FormatType.Numberized)
+				{
 					largestFormatIndex = Math.Max(largestFormatIndex, numberizedValue);
 				}
 				else
@@ -111,11 +118,15 @@ internal sealed record LocalizedText
 				workingText = workingText[(indexOfFormatEnd + 1)..];
 				continue;
 			}
-			if(keepAsNumberized.Value && !IsNumberized(textInsideFormat))
+			if(formatType is FormatType.Numberized)
 			{
-				return Empty;
+				if(!IsNumberized<int>(textInsideFormat, out int numberizedValue))
+				{
+					return Empty;
+				}
+				largestFormatIndex = Math.Max(largestFormatIndex, numberizedValue);
 			}
-			else if(!keepAsNumberized.Value)
+			else
 			{
 				ref var formatIndex = ref CollectionsMarshal.GetValueRefOrAddDefault(formatMap, textInsideFormat, out var exists);
 				if(!exists)
@@ -123,11 +134,6 @@ internal sealed record LocalizedText
 					formatIndex = largestFormatIndex + 1;
 					largestFormatIndex = formatIndex;
 				}
-			}
-			else
-			{
-				var numberizedValue = int.Parse(textInsideFormat);
-				largestFormatIndex = Math.Max(largestFormatIndex, numberizedValue);
 			}
 			workingText = workingText[(indexOfFormatEnd + 1)..];
 		}
@@ -137,29 +143,18 @@ internal sealed record LocalizedText
 			Key = key,
 			CodeMapIndex = codeMapIndex,
 			DistinctTextReplacementCount = largestFormatIndex + 1,
-			FormatType = keepAsNumberized switch
-			{
-				null => FormatType.None,
-				true => FormatType.Numberized,
-				false => FormatType.Named
-			}
+			FormatType = formatType
 		};
 	}
-	private static bool IsNumberized(ReadOnlySpan<char> formatText)
+	private static bool IsNumberized<TNum>(ReadOnlySpan<char> formatText, [NotNullWhen(true)] out TNum? num) where TNum : INumber<TNum>
 	{
+		num = TNum.Zero;
 		if(formatText.Length == 0)
 		{
 			return false;
 		}
 		formatText = formatText.Trim("{} ");
-		for(int i = 0; i < formatText.Length; i++)
-		{
-			if(!char.IsDigit(formatText[i]))
-			{
-				return false;
-			}
-		}
-		return true;
+		return TNum.TryParse(formatText, null, out num);
 	}
 	public override string ToString() => Text;
 }

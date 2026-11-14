@@ -7,8 +7,8 @@ internal interface ILocalizationService : INotifyPropertyChanged
 {
 	string CurrentLocaleCode { get; }
 	LocaleData? CurrentLocale { get; }
-	string this[string key, params (string Key, object Value)[] paramaters] { get; }
 	LocalizedText this[string key] { get; }
+	string GetFormattedTranslation(string key, params (string Key, object Value)[] paramaters);
 	void ChangeLocale(LocaleData locale);
 	void ChangeLocale(string code);
 }

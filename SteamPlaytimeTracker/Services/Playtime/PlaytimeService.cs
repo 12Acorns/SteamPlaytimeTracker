@@ -48,7 +48,7 @@ internal sealed class PlaytimeService : IPlaytimeService
 				}
 				foreach(var intervals in parsedIntervals)
 				{
-					parsedIntervals[intervals.Key] = PlaytimeUtility.CorrectIntervalOverlap(intervals.Value);
+					parsedIntervals[intervals.Key] = PlaytimeUtility.CorrectIntervalOverlapV2(intervals.Value);
 				}
 				return parsedIntervals;
 			}

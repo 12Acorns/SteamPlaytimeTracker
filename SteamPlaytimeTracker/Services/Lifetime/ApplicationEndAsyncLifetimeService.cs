@@ -13,7 +13,7 @@ internal sealed class ApplicationEndAsyncLifetimeService : ILifetimeService
 	{
 		_source = new CancellationTokenSource();
 		CancellationToken = _source.Token;
-		App.OnSessionEndingA.Subscribe(OrderedEventPriority.Minimum, async (sender, e) =>
+		App.OnSessionEndingA.Value.Subscribe(OrderedEventPriority.Minimum, async (sender, e) =>
 		{
 			if(e.Cancel)
 			{
@@ -23,7 +23,7 @@ internal sealed class ApplicationEndAsyncLifetimeService : ILifetimeService
 			await _source.CancelAsync().ConfigureAwait(false);
 			logger.Information("App was requested to end");
 		});
-		App.OnSessionClose.Subscribe(OrderedEventPriority.Minimum, async (sender, e) =>
+		App.OnSessionClose.Value.Subscribe(OrderedEventPriority.Minimum, async (sender, e) =>
 		{
 			if(e.Cancel)
 			{

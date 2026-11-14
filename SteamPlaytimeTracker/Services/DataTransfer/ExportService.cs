@@ -1,9 +1,10 @@
 ﻿using SteamPlaytimeTracker.DataTransfer;
-using SteamPlaytimeTracker.DbObject;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.IO;
+using SteamPlaytimeTracker.Steam.Data.App;
+using SteamPlaytimeTracker.DbObject;
 
 namespace SteamPlaytimeTracker.Services.DataTransfer;
 
@@ -35,8 +36,13 @@ internal sealed class ExportService
 			new PlaytimeExportStructureContainer(allPlaytimes.Select(g => new AppPlaytimeStructure(g)).ToList()), _options, token)
 			.ConfigureAwait(false);
 	}
-	public static void ExportPlaytimeData(Stream stream, SteamAppEntry appToExport)
+	public void ExportPlaytimeData(Stream stream, AppDTO appDTO)
 	{
+		var appToExport = _db.UserApps.FirstOrDefault(x => x.SteamApp != null && x.SteamApp.AppId == appDTO.AppId);
+		if(appToExport is null)
+		{
+			return;
+		}
 		JsonSerializer.Serialize(stream, new AppPlaytimeStructure(appToExport), _options);
 	}
 }

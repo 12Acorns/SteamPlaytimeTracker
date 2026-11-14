@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using SteamPlaytimeTracker.Services.Navigation;
-using SteamPlaytimeTracker.MVVM.ViewModel;
-using SteamPlaytimeTracker.Extensions;
 using SteamPlaytimeTracker.Core;
-using System.Windows.Controls;
+using SteamPlaytimeTracker.Extensions;
+using SteamPlaytimeTracker.MVVM.ViewModel;
+using SteamPlaytimeTracker.Services.ChromeBar;
+using SteamPlaytimeTracker.Services.Navigation;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace SteamPlaytimeTracker.MVVM.View.UserControls.WindowChrome;
 
@@ -13,19 +14,17 @@ public partial class WindowChromeBar : UserControl, INotifyPropertyChanged
 {
 	private static readonly DependencyProperty _titleProperty = DependencyProperty.Register(
 		nameof(Title), typeof(string), typeof(WindowChromeBar), new PropertyMetadata(string.Empty));
-	private static readonly DependencyProperty _settingsButtonVisibility = DependencyProperty.Register(
-		nameof(SettingsButtonVisibility), typeof(Visibility), typeof(WindowChromeBar), new PropertyMetadata(Visibility.Visible));
-
 	private readonly INavigationService _navigationService;
 
-    public WindowChromeBar()
+	public WindowChromeBar()
     {
-        InitializeComponent();
 		DataContext = this;
+        InitializeComponent();
 
 		_navigationService = App.ServiceProvider?.GetRequiredService<INavigationService>() ?? default!;
+		Options = App.ServiceProvider?.GetRequiredService<IChromeBarOptions>() ?? default!;
 
-		Loaded += (_, _) => Load();
+		Loaded += Load;
 	}
 
 	public event PropertyChangedEventHandler? PropertyChanged;
@@ -34,11 +33,6 @@ public partial class WindowChromeBar : UserControl, INotifyPropertyChanged
 	{
 		get => (string)GetValue(_titleProperty);
 		set => SetValue(_titleProperty, value);
-	}
-	public Visibility SettingsButtonVisibility
-	{
-		get => (Visibility)GetValue(_settingsButtonVisibility);
-		set => SetValue(_settingsButtonVisibility, value);
 	}
 	public RelayCommand SettingsCommand
 	{
@@ -76,8 +70,9 @@ public partial class WindowChromeBar : UserControl, INotifyPropertyChanged
 			PropertyChanged.OnPropertyChanged(this);
 		}
 	} = default!;
+	public IChromeBarOptions Options { get; }
 
-	private void Load()
+	private void Load(object sender, RoutedEventArgs e)
 	{
 		var window = Window.GetWindow(this);
 
@@ -93,6 +88,6 @@ public partial class WindowChromeBar : UserControl, INotifyPropertyChanged
 			};
 		});
 		QuitApplicationCommand = new(_ => window.Close());
-		Loaded -= (_, _) => Load();
+		Loaded -= Load;
 	}
 }

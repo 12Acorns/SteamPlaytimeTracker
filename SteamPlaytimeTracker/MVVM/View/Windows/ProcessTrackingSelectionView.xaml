@@ -29,7 +29,7 @@
             <RowDefinition Height="25" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <windowchrome:WindowChromeBar Title="{Binding Title}" SettingsButtonVisibility="Hidden" />
+        <windowchrome:WindowChromeBar Title="{Binding Title}" />
         <vwp:VirtualizingItemsControl Grid.Row="1" ItemsSource="{Binding ProcessView}"
                                       VirtualizingPanel.ScrollUnit="Pixel"
                                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"

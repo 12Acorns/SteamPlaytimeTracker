@@ -17,35 +17,20 @@
             <RowDefinition Height="25"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.1*" MinWidth="50" MaxWidth="75" />
-                <ColumnDefinition Width="0.9*"/>
-            </Grid.ColumnDefinitions>
-
-            <usercontrols:ExtendedButton x:Name="btn_BackToHomeView" Background="Transparent" HoverBackground="{StaticResource translucentGray}" 
-                                         Foreground="LightGray"
-                                         Command="{Binding SwitchBackToHomeViewCommand}"
-                                         BorderThickness="0,0,1,1">
-                <TextBlock Text="&lt;" FontSize="16" />
-            </usercontrols:ExtendedButton>
-            <Border Grid.Column="1" Background="Transparent" BorderBrush="DimGray" BorderThickness="0,0,0,1" />
-        </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.1*" MinWidth="150" MaxWidth="200" />
-                <ColumnDefinition Width="0.9*" />
+                <ColumnDefinition Width="{Binding ImageWidth}" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="0.4*" MinHeight="200" MaxHeight="400" />
-                    <RowDefinition Height="0.6*" />
+                    <RowDefinition Height="{Binding ImageHeight}" MinHeight="200" MaxHeight="400" />
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="20" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding SelectedApp.SteamApp.ImageUrl}" Margin="5,5,5,0" />
-                <TextBlock Grid.Row="1" Text="{Binding SelectedApp.SteamApp.Name}" 
+                <Image Source="{Binding CapsuleImage}" Margin="5,5,5,0" />
+                <TextBlock Grid.Row="1" Text="{Binding SelectedApp.Name}" 
                            Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" 
                            TextWrapping="Wrap" FontSize="12" Padding="5,0,5,0" />
 
@@ -70,7 +55,7 @@
 
                     <usercontrols:ExtendedButton Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                           Background="Transparent" HoverBackground="Transparent" HoverBorder="Transparent"
-                          Foreground="LightGray" BorderBrush="Transparent" Command="{Binding ImportDataCommand}" ToolTip="Import data">
+                          Foreground="LightGray" BorderBrush="Transparent" Command="{Binding ImportPlaytimeCommand}" ToolTip="Import data">
                         <usercontrols:ExtendedButton.Content>
 
                             <Path Data="{StaticResource ImportFileSVGData}" 
@@ -89,9 +74,9 @@
                     <RowDefinition Height="0.2*" MinHeight="80"/>
                 </Grid.RowDefinitions>
 
-                <ContentControl Grid.Column="1" Content="{Binding Plot, Mode=OneTime}" />
+                <ContentControl Grid.Column="1" Content="{Binding PlaytimePlot, Mode=OneTime}" />
 
-                <Grid Grid.Row="1" Margin="5,0,5,5">
+                <Grid Grid.Row="1" Margin="5,0,5,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="0.3*" />
                         <RowDefinition Height="0.7*" />
@@ -137,10 +122,12 @@
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
                                     <modern:ModernDatePicker BlankDateText="Start Date" Width="120" Padding="5 0 0 0" 
-                                                             MaximumAllowedDate="{Binding GraphingDates.MaximumDateAllowed}"
-                                                             MinimumAllowedDate="{Binding GraphingDates.MinimumDateAllowed}"
-                                                             SelectedDate="{Binding GraphingDates.XAML_SetStartDate, Mode=OneWayToSource}"/>
-                                    <modern:ModernDatePicker Grid.Column="1" BlankDateText="End Date" Width="120" Margin="5 0 0 0" />
+                                                             MaximumAllowedDate="{Binding GraphingDates.MaximumDateAllowed, Converter={StaticResource DefaultDateTimeToNullableDateTimeConverter}}"
+                                                             MinimumAllowedDate="{Binding GraphingDates.MinimumDateAllowed, Converter={StaticResource DefaultDateTimeToNullableDateTimeConverter}}"
+                                                             SelectedDate="{Binding GraphingDates.XAML_SetStartDate, Mode=OneWayToSource}"
+                                                             BorderThickness="1.2"/>
+                                    <modern:ModernDatePicker Grid.Column="1" BlankDateText="End Date" Width="120" Margin="5 0 0 0" 
+                                                             BorderThickness="1.2"/>
                                 </Grid>
                             </Grid>
                         </Grid>
@@ -152,8 +139,8 @@
                             <ColumnDefinition Width="67*"/>
                             <ColumnDefinition Width="394*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding TotalPlaytimeText}" Foreground="White" Background="Transparent" Grid.ColumnSpan="3" />
-                        <TextBlock Text="{Binding GraphingDates.StartDate, Mode=OneWay}" Foreground="White"/>
+                        <TextBlock Text="{Binding TotalPlaytimeText}" Foreground="White" Background="Transparent" />
+                        <TextBlock Text="{Binding GraphingDates.StartDate, Mode=OneWay}" Foreground="White" Grid.Column="3" />
                     </Grid>
                 </Grid>
             </Grid>

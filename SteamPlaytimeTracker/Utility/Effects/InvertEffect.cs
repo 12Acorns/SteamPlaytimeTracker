@@ -36,5 +36,5 @@ class InvertEffect : ShaderEffect
 	}
 
 	public static readonly DependencyProperty InputProperty =
-		ShaderEffect.RegisterPixelShaderSamplerProperty("Input", typeof(InvertEffect), 0);
+		RegisterPixelShaderSamplerProperty("Input", typeof(InvertEffect), 0);
 }

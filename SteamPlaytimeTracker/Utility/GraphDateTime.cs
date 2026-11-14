@@ -1,7 +1,4 @@
-﻿using SteamPlaytimeTracker.Extensions;
-using System.ComponentModel;
-
-namespace SteamPlaytimeTracker.Utility;
+﻿namespace SteamPlaytimeTracker.Utility;
 
 internal sealed record GraphDateTime
 {

@@ -31,7 +31,7 @@
             <RowDefinition Height="25" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <windowchrome:WindowChromeBar Title="{Binding Title}" SettingsButtonVisibility="Hidden" />
+        <windowchrome:WindowChromeBar Title="{Binding Title}" />
         <vwp:VirtualizingItemsControl Grid.Row="1" ItemsSource="{Binding MessagesView}" VirtualizingPanel.VirtualizationMode="Recycling"
                                       VirtualizingPanel.ScrollUnit="Pixel"
                                       VerticalAlignment="Top" ScrollViewer.HorizontalScrollBarVisibility="Disabled">

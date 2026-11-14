@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- Static Resources -->
     <SolidColorBrush x:Key="translucentGray">#40AAAAAA</SolidColorBrush>
-    <SolidColorBrush x:Key="defaultGray">#252525</SolidColorBrush>
+    <SolidColorBrush x:Key="defaultGray">#121212</SolidColorBrush>
 
     <Style x:Key="DefaultButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />

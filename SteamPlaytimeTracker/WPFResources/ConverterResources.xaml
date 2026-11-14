@@ -3,5 +3,6 @@
                     xmlns:converter="clr-namespace:SteamPlaytimeTracker.Utility.Converter"
                     xmlns:ext="clr-namespace:SteamPlaytimeTracker.Extensions">
     <converter:EnumToStringConverter x:Key="DefaultEnumToStringConverter" />
+    <converter:DateTimeToNullableDateTimeConverterExtension x:Key="DefaultDateTimeToNullableDateTimeConverter" />
     <ext:AspectRatioConverterExtension x:Key="AspectRatioConverter" />
 </ResourceDictionary>

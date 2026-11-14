@@ -1,9 +1,9 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
-                    xmlns:dbo="clr-namespace:SteamPlaytimeTracker.DbObject" 
+                    xmlns:apps="clr-namespace:SteamPlaytimeTracker.Steam.Data.App" 
                     xmlns:ucsteam="clr-namespace:SteamPlaytimeTracker.MVVM.View.UserControls.Steam">
-    
-    <DataTemplate x:Key="SteamAppEntryDataTemplate" DataType="{x:Type dbo:SteamAppEntry}">
+
+    <DataTemplate x:Key="SteamAppEntryDataTemplate" DataType="{x:Type apps:SteamAppEntry}">
         <ucsteam:SteamCapsule Width="{Binding DataContext.UniformWidth, RelativeSource={RelativeSource AncestorType=ListBox}}" 
                               Height="{Binding DataContext.UniformHeight, RelativeSource={RelativeSource AncestorType=ListBox}}"
                           Title="{Binding SteamApp.Name}"

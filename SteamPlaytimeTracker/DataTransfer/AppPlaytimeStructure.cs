@@ -1,4 +1,4 @@
-﻿using SteamPlaytimeTracker.DbObject;
+﻿using SteamPlaytimeTracker.Steam.Data.App;
 using SteamPlaytimeTracker.Steam.Data.Playtime;
 using System.Text.Json.Serialization;
 

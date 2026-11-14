@@ -1,4 +1,4 @@
-﻿using SteamPlaytimeTracker.DbObject;
+﻿using SteamPlaytimeTracker.Steam.Data.App;
 using System.Collections;
 
 namespace SteamPlaytimeTracker.Utility.Comparer;
