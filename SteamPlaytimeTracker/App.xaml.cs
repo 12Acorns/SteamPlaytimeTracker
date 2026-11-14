@@ -287,7 +287,6 @@ public partial class App : Application
 			}
 			chromeBarOptionsService.SettingsButtonVisibility = (e.ViewModel is SettingsViewModel) ? Visibility.Hidden : Visibility.Visible;
 		});
-
 		menuService.ShowMenu<HomeWindowModel, HomeWindow>(true);
 	}
 

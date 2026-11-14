@@ -48,6 +48,7 @@ internal sealed class MenuService : ObservableObject, IMenuService
 			}
 			else
 			{
+				curr.Menu.Owner = Menus.FirstOrDefault(x => x.Menu.IsModal).Menu;
 				curr.Menu.Show();
 			}
 		}

@@ -166,17 +166,17 @@ internal sealed class HomeViewModel : Core.ViewModel
 			}
 		});
 		CapsuleSortType = CapsuleSortType.Name | CapsuleSortType.Ascending;
-		OpenMessageMenu = new RelayCommand(_ =>
+		OpenMessageMenu = new RelayCommand(o =>
 		{
-			if(_menuService.Menus.TryPeek(out var menu) && menu.Menu is ApplicationInfoSubWindow)
+			if(_menuService.TryGetMenu<ApplicationInfoSubWindow>(out _))
 			{
 				return;
 			}
 			_menuService.ShowMenu<ApplicationInfoWindowModel, ApplicationInfoSubWindow>();
 		});
-		OpenProcessTrackingMenu = new RelayCommand(_ =>
+		OpenProcessTrackingMenu = new RelayCommand(o =>
 		{
-			if(_menuService.Menus.TryPeek(out var menu) && menu.Menu is ProcessTrackingSelectionWindow)
+			if(_menuService.TryGetMenu<ProcessTrackingSelectionWindow>(out _))
 			{
 				return;
 			}
